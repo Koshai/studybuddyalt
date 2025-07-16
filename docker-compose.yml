@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  study-ai:
+    build: .
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+      - "11434:11434"
+    volumes:
+      - ./src/data:/app/src/data
+      - ./src/uploads:/app/src/uploads
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+
+  # Optional: Add database backup service
+  backup:
+    image: alpine:latest
+    volumes:
+      - ./src/data:/data
+      - ./backups:/backups
+    command: |
+      sh -c "
+        while true; do
+          tar -czf /backups/backup-$(date +%Y%m%d-%H%M%S).tar.gz /data
+          find /backups -name '*.tar.gz' -mtime +7 -delete
+          sleep 86400
+        done
+      "
+    restart: unless-stopped
