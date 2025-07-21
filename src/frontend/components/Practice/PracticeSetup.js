@@ -3,10 +3,10 @@ window.PracticeSetupComponent = {
     template: `
     <div class="animate-fade-in space-y-6">
         <div class="text-center mb-8">
-            <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">
+            <h2 class="text-2xl md:text-3xl font-bold text-black mb-4">
                 <span class="mr-3">🎯</span>Practice & Learn
             </h2>
-            <p class="text-white/80 text-lg">Test your knowledge with AI-generated questions!</p>
+            <p class="text-black/80 text-lg">Test your knowledge with AI-generated questions!</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">

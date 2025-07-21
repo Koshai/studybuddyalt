@@ -1,4 +1,4 @@
-// js/main.js - Main Vue Application
+// js/main.js - Main Vue Application - FIXED with proper component registration
 
 const { createApp } = Vue;
 
@@ -128,6 +128,16 @@ app.component('UploadFormComponent', window.UploadFormComponent);
 app.component('PracticeSetupComponent', window.PracticeSetupComponent);
 app.component('CreateSubjectModal', window.CreateSubjectModal);
 app.component('CreateTopicModal', window.CreateTopicModal);
+
+// Register practice-related components
+app.component('QuestionCard', window.QuestionCard);
+app.component('DebugPracticeComponent', window.DebugPracticeComponent);
+
+// Register other utility components
+app.component('SubjectCard', window.SubjectCard);
+app.component('TopicCard', window.TopicCard);
+app.component('FileDropzone', window.FileDropzone);
+app.component('NotesDisplayComponent', window.NotesDisplayComponent);
 
 // Global properties
 app.config.globalProperties.$store = window.store;

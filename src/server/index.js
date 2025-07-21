@@ -146,6 +146,17 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   }
 });
 
+// Add this endpoint for notes
+app.get('/api/topics/:topicId/notes', async (req, res) => {
+  try {
+    const notes = await db.getNotes(req.params.topicId);
+    res.json(notes);
+  } catch (error) {
+    console.error('Error getting notes:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Generate questions for a topic
 app.post('/api/topics/:topicId/generate-questions', async (req, res) => {
   try {

@@ -69,10 +69,19 @@ class Store {
     // ===== STATE GETTERS =====
     
     get currentQuestion() {
-        if (this.state.questions.length > 0 && this.state.currentQuestionIndex < this.state.questions.length) {
-            return this.state.questions[this.state.currentQuestionIndex];
-        }
-        return null;
+        const question = this.state.questions.length > 0 && 
+                        this.state.currentQuestionIndex < this.state.questions.length
+            ? this.state.questions[this.state.currentQuestionIndex]
+            : null;
+        
+        console.log('Store getter: currentQuestion called', {
+            questionsCount: this.state.questions.length,
+            currentIndex: this.state.currentQuestionIndex,
+            practiceStarted: this.state.practiceStarted,
+            question: question ? question.question?.substring(0, 50) + '...' : 'null'
+        });
+        
+        return question;
     }
 
     get progressPercentage() {
@@ -179,7 +188,7 @@ class Store {
 
     setQuestions(questions) {
         this.state.questions = questions;
-        this.resetPracticeState();
+        console.log('Store: Questions set to:', questions);
         this.updateStatistics();
     }
 
@@ -190,12 +199,18 @@ class Store {
     // ===== PRACTICE ACTIONS =====
     
     startPractice(questions) {
+        console.log('Store: Starting practice with questions:', questions);
         this.state.questions = questions;
         this.state.practiceStarted = true;
         this.state.currentQuestionIndex = 0;
         this.state.userAnswer = '';
         this.state.showAnswer = false;
-        this.state.score = { correct: 0, total: 0 };
+        console.log('Store: Practice state after start:', {
+            practiceStarted: this.state.practiceStarted,
+            questionCount: this.state.questions.length,
+            currentIndex: this.state.currentQuestionIndex
+        });
+        this.updateStatistics();
     }
 
     nextQuestion() {
