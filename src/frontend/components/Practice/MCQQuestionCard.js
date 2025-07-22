@@ -129,42 +129,61 @@ window.MCQQuestionCard = {
                 </div>
             </div>
 
-            <!-- Correct Answer Explanation -->
-            <div class="bg-green-50 border-l-4 border-green-400 rounded-lg p-6">
-                <div class="flex items-center mb-4">
-                    <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-4">
-                        <i class="fas fa-lightbulb text-white"></i>
+            <!-- Answer Summary -->
+            <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Your Answer -->
+                    <div>
+                        <div class="flex items-center mb-3">
+                            <div :class="[
+                                'w-8 h-8 rounded-full flex items-center justify-center mr-3',
+                                lastAnswerCorrect ? 'bg-green-500' : 'bg-red-500'
+                            ]">
+                                <i :class="lastAnswerCorrect ? 'fas fa-check text-white' : 'fas fa-times text-white'"></i>
+                            </div>
+                            <h4 class="font-semibold text-gray-900">Your Answer</h4>
+                        </div>
+                        <div :class="[
+                            'p-3 rounded-lg border-2',
+                            lastAnswerCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                        ]">
+                            <p :class="[
+                                'font-medium',
+                                lastAnswerCorrect ? 'text-green-800' : 'text-red-800'
+                            ]">
+                                {{ String.fromCharCode(65 + selectedChoice) }}. {{ currentQuestion?.options[selectedChoice] }}
+                            </p>
+                        </div>
                     </div>
-                    <h4 class="text-xl font-semibold text-green-900">Correct Answer</h4>
-                </div>
-                
-                <div class="bg-white p-4 rounded-lg border border-green-200 mb-4">
-                    <p class="text-green-800 text-lg font-medium mb-2">
-                        <strong>{{ String.fromCharCode(65 + getCorrectIndex()) }}. {{ getCorrectOption() }}</strong>
-                    </p>
-                </div>
-                
-                <div v-if="currentQuestion?.explanation" class="text-green-700">
-                    <h5 class="font-medium mb-2">Explanation:</h5>
-                    <p class="leading-relaxed">{{ currentQuestion.explanation }}</p>
+
+                    <!-- Correct Answer -->
+                    <div>
+                        <div class="flex items-center mb-3">
+                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-lightbulb text-white"></i>
+                            </div>
+                            <h4 class="font-semibold text-gray-900">Correct Answer</h4>
+                        </div>
+                        <div class="p-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                            <p class="text-blue-800 font-medium">
+                                {{ String.fromCharCode(65 + getCorrectIndex()) }}. {{ getCorrectOption() }}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Why Wrong Answer (if incorrect) -->
-            <div v-if="!lastAnswerCorrect" class="bg-red-50 border-l-4 border-red-400 rounded-lg p-6">
+            <!-- Explanation Section -->
+            <div class="bg-gradient-to-br from-indigo-50 to-purple-50 border-l-4 border-indigo-400 rounded-lg p-6">
                 <div class="flex items-center mb-4">
-                    <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center mr-4">
-                        <i class="fas fa-info-circle text-white"></i>
+                    <div class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center mr-4">
+                        <i class="fas fa-graduation-cap text-white"></i>
                     </div>
-                    <h4 class="text-xl font-semibold text-red-900">Your Answer</h4>
+                    <h4 class="text-xl font-semibold text-indigo-900">Explanation</h4>
                 </div>
-                <div class="bg-white p-4 rounded-lg border border-red-200">
-                    <p class="text-red-800 text-lg">
-                        You selected: <strong>{{ String.fromCharCode(65 + selectedChoice) }}. {{ currentQuestion?.options[selectedChoice] }}</strong>
-                    </p>
-                    <p class="text-red-700 mt-3">
-                        The correct answer is <strong>{{ String.fromCharCode(65 + getCorrectIndex()) }}</strong> because it accurately represents the information from your study materials.
-                    </p>
+                
+                <div class="bg-white p-4 rounded-lg border border-indigo-200">
+                    <p class="text-gray-800 leading-relaxed">{{ getExplanationText() }}</p>
                 </div>
             </div>
 
@@ -279,6 +298,35 @@ window.MCQQuestionCard = {
             return 'border-gray-200 bg-gray-50';
         };
 
+        const getExplanationText = () => {
+            if (!currentQuestion.value) return 'No explanation available.';
+            
+            // Use the AI-generated explanation if available and meaningful
+            const explanation = currentQuestion.value.explanation;
+            if (explanation && 
+                explanation.length > 20 && 
+                !explanation.includes('The correct answer is') &&
+                !explanation.includes('it accurately represents')) {
+                return explanation;
+            }
+            
+            // If we have a basic explanation, try to make it more informative
+            if (explanation && explanation.includes('The correct answer is')) {
+                // Extract any additional context from the explanation
+                const parts = explanation.split('.');
+                const additionalInfo = parts.slice(1).join('.').trim();
+                if (additionalInfo.length > 10) {
+                    return `The correct answer is ${getCorrectOption()}. ${additionalInfo}`;
+                }
+            }
+            
+            // Fallback to a simple but clear explanation
+            const correctLetter = String.fromCharCode(65 + getCorrectIndex());
+            const correctOption = getCorrectOption();
+            
+            return `The correct answer is ${correctLetter}. ${correctOption}. This information comes directly from your study materials.`;
+        };
+
         const getOptionBadgeClass = (index) => {
             const correctIndex = getCorrectIndex();
             
@@ -303,6 +351,7 @@ window.MCQQuestionCard = {
             lastAnswerCorrect,
             getCorrectIndex,
             getCorrectOption,
+            getExplanationText,
             selectOption,
             checkAnswer,
             nextQuestion,

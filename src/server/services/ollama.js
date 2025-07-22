@@ -122,6 +122,7 @@ INSTRUCTIONS:
 - ${difficultyInstructions[difficulty]}
 - Use clear, concise language
 - Focus on important concepts from the content
+- Provide a brief explanation for each answer using information from the source material
 
 FORMAT EACH QUESTION EXACTLY LIKE THIS:
 
@@ -132,6 +133,7 @@ B) Second option here
 C) Third option here
 D) Fourth option here
 CORRECT: B
+EXPLANATION: Brief explanation based on the source material explaining why B is correct and referencing specific facts from the content.
 
 QUESTION 2:
 [Next question here]
@@ -140,6 +142,7 @@ B) Option B
 C) Option C  
 D) Option D
 CORRECT: A
+EXPLANATION: Clear explanation using details from the source material.
 
 Create exactly ${count} questions now following this format:`;
   }
@@ -188,17 +191,17 @@ Create exactly ${count} questions now following this format:`;
     try {
       const lines = block.split('\n').map(line => line.trim()).filter(line => line);
       
-      if (lines.length < 6) { // Question + 4 options + correct answer
+      if (lines.length < 6) { // Question + 4 options + correct answer + explanation
         return null;
       }
       
-      // Find the question (first non-empty line that doesn't start with A), B), C), D), or CORRECT:)
+      // Find the question (first non-empty line that doesn't start with A), B), C), D), CORRECT:, or EXPLANATION:)
       let questionText = '';
       let optionStartIndex = -1;
       
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        if (!line.match(/^[A-D]\)/i) && !line.toLowerCase().startsWith('correct:')) {
+        if (!line.match(/^[A-D]\)/i) && !line.toLowerCase().startsWith('correct:') && !line.toLowerCase().startsWith('explanation:')) {
           if (!questionText) {
             questionText = line;
           } else {
@@ -215,9 +218,10 @@ Create exactly ${count} questions now following this format:`;
         return null;
       }
       
-      // Extract options
+      // Extract options, correct answer, and explanation
       const options = [];
       let correctAnswer = null;
+      let explanation = '';
       
       for (let i = optionStartIndex; i < lines.length; i++) {
         const line = lines[i];
@@ -234,6 +238,21 @@ Create exactly ${count} questions now following this format:`;
         if (correctMatch) {
           const letter = correctMatch[1].toUpperCase();
           correctAnswer = letter.charCodeAt(0) - 65; // A=0, B=1, C=2, D=3
+          continue;
+        }
+        
+        // Check for explanation
+        const explanationMatch = line.match(/^EXPLANATION:\s*(.+)$/i);
+        if (explanationMatch) {
+          explanation = explanationMatch[1].trim();
+          // Continue reading following lines for multi-line explanations
+          for (let j = i + 1; j < lines.length; j++) {
+            const nextLine = lines[j];
+            if (nextLine.match(/^(QUESTION|CORRECT:|EXPLANATION:|[A-D]\))/i)) {
+              break;
+            }
+            explanation += ' ' + nextLine;
+          }
           break;
         }
       }
@@ -251,6 +270,10 @@ Create exactly ${count} questions now following this format:`;
       // Ensure we have exactly 4 options
       const finalOptions = options.slice(0, 4);
       
+      // Use AI explanation if available, otherwise create a simple one
+      const finalExplanation = explanation.trim() || 
+        `The correct answer is ${String.fromCharCode(65 + correctAnswer)}. ${finalOptions[correctAnswer]}`;
+      
       const questionObj = {
         question: questionText.trim(),
         answer: finalOptions[correctAnswer],
@@ -258,14 +281,15 @@ Create exactly ${count} questions now following this format:`;
         type: 'multiple_choice',
         options: finalOptions,
         correctIndex: correctAnswer,
-        explanation: `The correct answer is ${String.fromCharCode(65 + correctAnswer)}. ${finalOptions[correctAnswer]}`
+        explanation: finalExplanation
       };
       
       console.log('✅ Parsed question:', {
         question: questionObj.question.substring(0, 50) + '...',
         optionsCount: questionObj.options.length,
         correctIndex: questionObj.correctIndex,
-        correctOption: questionObj.options[questionObj.correctIndex]
+        correctOption: questionObj.options[questionObj.correctIndex],
+        hasExplanation: !!explanation.trim()
       });
       
       return questionObj;
