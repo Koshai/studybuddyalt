@@ -1,4 +1,4 @@
-// js/main.js - Main Vue Application - FIXED with proper component registration
+// js/main.js - Main Vue Application - UPDATED with MCQ Component
 
 const { createApp } = Vue;
 
@@ -129,9 +129,8 @@ app.component('PracticeSetupComponent', window.PracticeSetupComponent);
 app.component('CreateSubjectModal', window.CreateSubjectModal);
 app.component('CreateTopicModal', window.CreateTopicModal);
 
-// Register practice-related components
-app.component('QuestionCard', window.QuestionCard);
-app.component('DebugPracticeComponent', window.DebugPracticeComponent);
+// Register practice-related components - UPDATED
+app.component('MCQQuestionCard', window.MCQQuestionCard);
 
 // Register other utility components
 app.component('SubjectCard', window.SubjectCard);

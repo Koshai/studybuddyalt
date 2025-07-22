@@ -76,7 +76,15 @@ class Store {
             return null;
         }
         
-        return this.state.questions[this.state.currentQuestionIndex];
+        const question = this.state.questions[this.state.currentQuestionIndex];
+        console.log('📋 Current question:', {
+            index: this.state.currentQuestionIndex,
+            question: question?.question?.substring(0, 50),
+            type: question?.type,
+            optionsCount: question?.options?.length
+        });
+        
+        return question;
     }
 
     get progressPercentage() {
@@ -194,18 +202,33 @@ class Store {
     // ===== PRACTICE ACTIONS =====
     
     startPractice(questions) {
+        console.log('🎯 Starting practice with questions:', questions);
+        
         if (!questions || !Array.isArray(questions) || questions.length === 0) {
-            console.error('Invalid questions provided to startPractice');
-            return;
+            console.error('❌ Invalid questions provided to startPractice:', questions);
+            this.showNotification('No valid questions to start practice', 'error');
+            return false;
         }
         
+        // Reset practice state first
+        this.resetPracticeState();
+        
+        // Set questions and start practice
         this.state.questions = [...questions];
         this.state.practiceStarted = true;
         this.state.currentQuestionIndex = 0;
         this.state.userAnswer = '';
         this.state.showAnswer = false;
         
+        console.log('✅ Practice started successfully:', {
+            questionsCount: this.state.questions.length,
+            practiceStarted: this.state.practiceStarted,
+            currentIndex: this.state.currentQuestionIndex,
+            firstQuestion: this.state.questions[0]?.question?.substring(0, 50)
+        });
+        
         this.updateStatistics();
+        return true;
     }
 
     nextQuestion() {
@@ -213,7 +236,10 @@ class Store {
             this.state.currentQuestionIndex++;
             this.state.userAnswer = '';
             this.state.showAnswer = false;
+            
+            console.log(`➡️ Moved to question ${this.state.currentQuestionIndex + 1} of ${this.state.questions.length}`);
         } else {
+            console.log('🏁 Reached end of practice');
             this.endPractice();
         }
     }
@@ -224,6 +250,9 @@ class Store {
             this.state.score.correct++;
         }
         this.state.score.total++;
+        
+        console.log(`📝 Answer submitted: ${isCorrect ? 'Correct' : 'Incorrect'} (${this.state.score.correct}/${this.state.score.total})`);
+        
         this.updateStatistics();
     }
 
@@ -232,9 +261,11 @@ class Store {
     }
 
     endPractice() {
-        this.state.practiceStarted = false;
         const percentage = this.accuracyPercentage;
-        this.showNotification(`Practice completed! Score: ${percentage}%`, 'success');
+        this.state.practiceStarted = false;
+        
+        console.log('🎉 Practice completed with score:', percentage + '%');
+        this.showNotification(`Practice completed! Final Score: ${percentage}%`, 'success');
     }
 
     resetPracticeState() {
@@ -242,6 +273,9 @@ class Store {
         this.state.userAnswer = '';
         this.state.showAnswer = false;
         this.state.practiceStarted = false;
+        this.state.questions = [];
+        
+        console.log('🔄 Practice state reset');
     }
 
     setPracticeConfig(config) {
