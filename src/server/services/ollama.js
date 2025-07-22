@@ -1,4 +1,4 @@
-// src/server/services/ollama.js
+// src/server/services/ollama.js - CLEAN VERSION
 const { Ollama } = require('ollama');
 
 class OllamaService {
@@ -6,7 +6,7 @@ class OllamaService {
     this.ollama = new Ollama({
       host: 'http://localhost:11434'
     });
-    this.defaultModel = 'llama3.2:3b'; // You can change this to any model you prefer
+    this.defaultModel = 'llama3.2:3b';
   }
 
   async listModels() {
@@ -31,8 +31,22 @@ class OllamaService {
 
   async generateQuestions(content, count = 5, difficulty = 'medium') {
     try {
-      const prompt = this.createQuestionPrompt(content, count, difficulty);
-      
+      // Use a simple, reliable prompt
+      const prompt = `Based on this text, create ${count} multiple choice questions.
+
+TEXT:
+${content.substring(0, 1500)} 
+
+For each question, write:
+Question: [your question]
+A) [option A]
+B) [option B] 
+C) [option C]
+D) [option D]
+Correct: [A, B, C, or D]
+
+Create exactly ${count} questions now:`;
+
       const response = await this.ollama.generate({
         model: this.defaultModel,
         prompt: prompt,
@@ -40,117 +54,112 @@ class OllamaService {
         options: {
           temperature: 0.7,
           top_p: 0.9,
-          repeat_penalty: 1.1
+          num_predict: 2000
         }
       });
 
-      return this.parseQuestions(response.response);
+      if (!response.response || response.response.trim().length === 0) {
+        return [];
+      }
+
+      return this.parseSimpleFormat(response.response);
+      
     } catch (error) {
       console.error('Error generating questions:', error);
-      throw error;
+      return [];
     }
   }
 
-  createQuestionPrompt(content, count, difficulty) {
-    const difficultyInstructions = {
-      easy: "Create simple, direct questions that test basic understanding and recall of key facts.",
-      medium: "Create questions that require some analysis and understanding of concepts, including application of knowledge.",
-      hard: "Create complex questions that require critical thinking, analysis, synthesis, and deep understanding of the material."
-    };
-
-    return `Based on the following study material, generate exactly ${count} ${difficulty} difficulty questions with detailed answers.
-
-Study Material:
-${content}
-
-Instructions:
-- ${difficultyInstructions[difficulty]}
-- Each question should be clear and specific
-- Provide comprehensive answers that explain the reasoning
-- Format your response as a JSON array with objects containing "question", "answer", and "difficulty" fields
-- Make sure all questions are different and cover various aspects of the material
-- Questions should be suitable for exam preparation
-
-Example format:
-[
-  {
-    "question": "What is the main concept discussed in the material?",
-    "answer": "The main concept is... [detailed explanation]",
-    "difficulty": "${difficulty}"
-  }
-]
-
-Generate the questions now:`;
-  }
-
-  parseQuestions(response) {
-    try {
-      // Try to extract JSON from the response
-      const jsonMatch = response.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return parsed.map(q => ({
-          question: q.question,
-          answer: q.answer,
-          difficulty: q.difficulty
-        }));
-      }
-      
-      // Fallback: parse manually if JSON parsing fails
-      return this.parseQuestionsManually(response);
-    } catch (error) {
-      console.error('Error parsing questions:', error);
-      return this.parseQuestionsManually(response);
-    }
-  }
-
-  parseQuestionsManually(response) {
+  parseSimpleFormat(response) {
     const questions = [];
-    const lines = response.split('\n');
+    const lines = response.split('\n').map(line => line.trim()).filter(line => line);
+    
     let currentQuestion = null;
-    let currentAnswer = '';
-    let isAnswer = false;
-
-    for (let line of lines) {
-      line = line.trim();
+    let currentOptions = [];
+    let currentCorrect = null;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       
-      if (line.startsWith('Q:') || line.startsWith('Question:') || /^\d+\./.test(line)) {
-        if (currentQuestion) {
-          questions.push({
-            question: currentQuestion,
-            answer: currentAnswer.trim(),
-            difficulty: 'medium'
-          });
+      // Look for question
+      if (line.toLowerCase().startsWith('question:') || line.match(/^\d+\./)) {
+        // Save previous question if complete
+        if (currentQuestion && currentOptions.length >= 3 && currentCorrect !== null) {
+          const questionObj = this.createQuestionObject(currentQuestion, currentOptions, currentCorrect);
+          if (questionObj) {
+            questions.push(questionObj);
+          }
         }
-        currentQuestion = line.replace(/^(Q:|Question:|\d+\.)/, '').trim();
-        currentAnswer = '';
-        isAnswer = false;
-      } else if (line.startsWith('A:') || line.startsWith('Answer:')) {
-        isAnswer = true;
-        currentAnswer = line.replace(/^(A:|Answer:)/, '').trim();
-      } else if (isAnswer && line) {
-        currentAnswer += ' ' + line;
+        
+        // Start new question
+        currentQuestion = line.replace(/^(question:|Question:|\d+\.)/i, '').trim();
+        currentOptions = [];
+        currentCorrect = null;
+        continue;
+      }
+      
+      // Look for options A) B) C) D)
+      const optionMatch = line.match(/^([A-D])\)\s*(.+)$/i);
+      if (optionMatch) {
+        const optionText = optionMatch[2].trim();
+        currentOptions.push(optionText);
+        continue;
+      }
+      
+      // Look for correct answer
+      if (line.toLowerCase().startsWith('correct:') || line.toLowerCase().startsWith('answer:')) {
+        const correctMatch = line.match(/[A-D]/i);
+        if (correctMatch) {
+          const correctLetter = correctMatch[0].toUpperCase();
+          currentCorrect = correctLetter.charCodeAt(0) - 65; // A=0, B=1, C=2, D=3
+        }
+        continue;
       }
     }
-
-    if (currentQuestion) {
-      questions.push({
-        question: currentQuestion,
-        answer: currentAnswer.trim(),
-        difficulty: 'medium'
-      });
+    
+    // Add the last question
+    if (currentQuestion && currentOptions.length >= 3 && currentCorrect !== null) {
+      const questionObj = this.createQuestionObject(currentQuestion, currentOptions, currentCorrect);
+      if (questionObj) {
+        questions.push(questionObj);
+      }
     }
-
+    
     return questions;
+  }
+
+  createQuestionObject(question, options, correctIndex) {
+    // Ensure we have at least 4 options
+    while (options.length < 4) {
+      options.push(`Option ${options.length + 1}`);
+    }
+    
+    // Take only first 4 options
+    options = options.slice(0, 4);
+    
+    // Validate correctIndex
+    if (correctIndex < 0 || correctIndex >= options.length) {
+      correctIndex = 0;
+    }
+    
+    return {
+      question: question,
+      answer: options[correctIndex],
+      difficulty: 'medium',
+      type: 'multiple_choice',
+      options: options,
+      correctIndex: correctIndex,
+      explanation: `The correct answer is ${String.fromCharCode(65 + correctIndex)}. ${options[correctIndex]}`
+    };
   }
 
   async generateSummary(content) {
     try {
-      const prompt = `Summarize the following study material in a clear, concise way that highlights the key concepts and important points:
+      const prompt = `Summarize this text in 2-3 sentences:
 
 ${content}
 
-Provide a well-structured summary that a student can use for quick review.`;
+Summary:`;
 
       const response = await this.ollama.generate({
         model: this.defaultModel,

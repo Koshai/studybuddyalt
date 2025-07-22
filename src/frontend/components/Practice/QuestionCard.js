@@ -1,4 +1,4 @@
-// components/Practice/QuestionCard.js - IMPROVED with multiple choice and better evaluation
+// components/Practice/QuestionCard.js - CLEAN VERSION
 window.QuestionCard = {
     template: `
     <div class="content-card p-8">
@@ -16,6 +16,9 @@ window.QuestionCard = {
             <div class="flex items-center space-x-2">
                 <span :class="getDifficultyClass(currentQuestion?.difficulty)" class="px-3 py-1 rounded-full text-xs font-medium">
                     {{ currentQuestion?.difficulty || 'medium' }}
+                </span>
+                <span :class="getTypeClass(currentQuestion?.type)" class="px-3 py-1 rounded-full text-xs font-medium">
+                    {{ getTypeLabel(currentQuestion?.type) }}
                 </span>
                 <div class="flex space-x-1">
                     <div v-for="i in store.state.questions.length" :key="i" 
@@ -43,55 +46,14 @@ window.QuestionCard = {
             </div>
         </div>
 
-        <!-- Answer Format Toggle -->
+        <!-- Answer Input -->
         <div class="mb-6">
-            <div class="flex items-center space-x-4 mb-4">
-                <label class="text-sm font-medium text-gray-700">Answer Format:</label>
-                <div class="flex space-x-2">
-                    <button
-                        @click="answerFormat = 'text'"
-                        :class="[
-                            'px-3 py-1 rounded-full text-sm transition-colors',
-                            answerFormat === 'text' ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        ]"
-                    >
-                        <i class="fas fa-edit mr-1"></i>Written Answer
-                    </button>
-                    <button
-                        @click="generateMultipleChoice"
-                        :disabled="answerFormat === 'multiple' && multipleChoiceOptions.length > 0"
-                        :class="[
-                            'px-3 py-1 rounded-full text-sm transition-colors',
-                            answerFormat === 'multiple' ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        ]"
-                    >
-                        <i class="fas fa-list mr-1"></i>Multiple Choice
-                    </button>
-                </div>
-            </div>
-
-            <!-- Text Answer Input -->
-            <div v-if="answerFormat === 'text'">
-                <label class="block text-sm font-medium text-gray-700 mb-3">Your Answer</label>
-                <textarea
-                    v-model="store.state.userAnswer"
-                    :disabled="store.state.showAnswer"
-                    class="form-input w-full px-4 py-3 rounded-lg resize-none focus:outline-none"
-                    rows="4"
-                    placeholder="Type your answer here..."
-                ></textarea>
-            </div>
-
-            <!-- Multiple Choice Options -->
-            <div v-else-if="answerFormat === 'multiple'" class="space-y-3">
+            <!-- Multiple Choice Questions -->
+            <div v-if="currentQuestion?.type === 'multiple_choice' && currentQuestion?.options" class="space-y-3">
                 <label class="block text-sm font-medium text-gray-700 mb-3">Choose the best answer:</label>
-                <div v-if="multipleChoiceOptions.length === 0" class="text-center py-4">
-                    <div class="w-8 h-8 bg-primary-500 rounded-full mx-auto mb-2 animate-pulse"></div>
-                    <p class="text-gray-600 text-sm">Generating options...</p>
-                </div>
-                <div v-else class="space-y-3">
+                <div class="space-y-3">
                     <button
-                        v-for="(option, index) in multipleChoiceOptions"
+                        v-for="(option, index) in currentQuestion.options"
                         :key="index"
                         @click="selectMultipleChoice(index)"
                         :disabled="store.state.showAnswer"
@@ -100,22 +62,50 @@ window.QuestionCard = {
                             selectedChoice === index 
                                 ? 'border-primary-500 bg-primary-50' 
                                 : 'border-gray-200 hover:border-gray-300 bg-white',
-                            store.state.showAnswer && getOptionResultClass(index, option.isCorrect)
+                            store.state.showAnswer && getOptionResultClass(index)
                         ]"
                     >
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-3">
-                                <span class="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium">
+                                <span :class="[
+                                    'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
+                                    selectedChoice === index 
+                                        ? 'bg-primary-500 text-white' 
+                                        : 'bg-gray-100 text-gray-600',
+                                    store.state.showAnswer && getOptionBadgeClass(index)
+                                ]">
                                     {{ String.fromCharCode(65 + index) }}
                                 </span>
-                                <span>{{ option.text }}</span>
+                                <span class="flex-1">{{ option }}</span>
                             </div>
                             <div v-if="store.state.showAnswer" class="flex items-center">
-                                <i v-if="option.isCorrect" class="fas fa-check text-green-600"></i>
-                                <i v-else-if="selectedChoice === index" class="fas fa-times text-red-600"></i>
+                                <i v-if="index === getCorrectIndex()" class="fas fa-check text-green-600 text-lg"></i>
+                                <i v-else-if="selectedChoice === index && index !== getCorrectIndex()" class="fas fa-times text-red-600 text-lg"></i>
                             </div>
                         </div>
                     </button>
+                </div>
+            </div>
+
+            <!-- Text Answer Questions -->
+            <div v-else class="space-y-4">
+                <label class="block text-sm font-medium text-gray-700 mb-3">Your Answer</label>
+                <textarea
+                    v-model="store.state.userAnswer"
+                    :disabled="store.state.showAnswer"
+                    class="form-input w-full px-4 py-3 rounded-lg resize-none focus:outline-none"
+                    rows="4"
+                    placeholder="Type your detailed answer here..."
+                ></textarea>
+                
+                <!-- Writing Tips -->
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <div class="flex items-start space-x-2">
+                        <i class="fas fa-lightbulb text-yellow-600 mt-1"></i>
+                        <div class="text-sm text-yellow-800">
+                            <strong>Tip:</strong> Provide a detailed explanation with specific examples and reasoning.
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -161,6 +151,9 @@ window.QuestionCard = {
                 ]">
                     <i :class="lastAnswerCorrect ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
                     <span>{{ lastAnswerCorrect ? 'Correct!' : 'Incorrect' }}</span>
+                    <span v-if="answerAnalysis?.score !== undefined" class="text-sm opacity-75">
+                        ({{ answerAnalysis.score }}%)
+                    </span>
                 </div>
             </div>
 
@@ -172,11 +165,46 @@ window.QuestionCard = {
                     </div>
                     <h4 class="font-semibold text-green-900">Correct Answer</h4>
                 </div>
-                <p class="text-green-800 leading-relaxed">{{ currentQuestion?.answer }}</p>
+                
+                <!-- For MCQ, show the correct option -->
+                <div v-if="currentQuestion?.type === 'multiple_choice'">
+                    <p class="text-green-800 leading-relaxed mb-3">
+                        <strong>{{ String.fromCharCode(65 + getCorrectIndex()) }}. {{ getCorrectOption() }}</strong>
+                    </p>
+                    <p class="text-green-700 text-sm">{{ currentQuestion?.answer || 'No explanation provided.' }}</p>
+                </div>
+                
+                <!-- For text questions, show the answer -->
+                <div v-else>
+                    <p class="text-green-800 leading-relaxed">{{ currentQuestion?.answer }}</p>
+                </div>
+                
+                <!-- Show explanation if available and different from answer -->
+                <div v-if="currentQuestion?.explanation && currentQuestion?.explanation !== currentQuestion?.answer" class="mt-4 pt-4 border-t border-green-200">
+                    <h5 class="font-medium text-green-900 mb-2">Explanation:</h5>
+                    <p class="text-green-700 text-sm">{{ currentQuestion.explanation }}</p>
+                </div>
+            </div>
+
+            <!-- MCQ Explanation of Wrong Answers -->
+            <div v-if="currentQuestion?.type === 'multiple_choice' && selectedChoice !== getCorrectIndex()" class="bg-red-50 border border-red-200 rounded-xl p-6">
+                <div class="flex items-center mb-3">
+                    <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-info-circle text-white text-sm"></i>
+                    </div>
+                    <h4 class="font-semibold text-red-900">Why Your Answer Was Incorrect</h4>
+                </div>
+                <p class="text-red-800">
+                    You selected: <strong>{{ String.fromCharCode(65 + selectedChoice) }}. {{ currentQuestion.options[selectedChoice] }}</strong>
+                </p>
+                <p class="text-red-700 mt-2 text-sm">
+                    The correct answer is <strong>{{ String.fromCharCode(65 + getCorrectIndex()) }}. {{ getCorrectOption() }}</strong> 
+                    because {{ getExplanationText() }}
+                </p>
             </div>
 
             <!-- Answer Analysis (for text answers) -->
-            <div v-if="answerFormat === 'text' && answerAnalysis" class="bg-blue-50 border border-blue-200 rounded-xl p-6">
+            <div v-if="currentQuestion?.type !== 'multiple_choice' && answerAnalysis" class="bg-blue-50 border border-blue-200 rounded-xl p-6">
                 <div class="flex items-center mb-3">
                     <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
                         <i class="fas fa-chart-line text-white text-sm"></i>
@@ -186,7 +214,7 @@ window.QuestionCard = {
                 <div class="space-y-2">
                     <p class="text-blue-800"><strong>Similarity Score:</strong> {{ answerAnalysis.score }}%</p>
                     <p class="text-blue-800"><strong>Feedback:</strong> {{ answerAnalysis.feedback }}</p>
-                    <div v-if="answerAnalysis.keywordMatches.length > 0" class="text-blue-800">
+                    <div v-if="answerAnalysis.keywordMatches && answerAnalysis.keywordMatches.length > 0" class="text-blue-800">
                         <strong>Key concepts mentioned:</strong>
                         <span v-for="keyword in answerAnalysis.keywordMatches" :key="keyword" 
                               class="inline-block bg-blue-200 text-blue-800 px-2 py-1 rounded-full text-xs ml-1">
@@ -201,73 +229,48 @@ window.QuestionCard = {
 
     setup() {
         const store = window.store;
-        const answerFormat = Vue.ref('multiple'); // Default to multiple choice
-        const multipleChoiceOptions = Vue.ref([]);
         const selectedChoice = Vue.ref(null);
         const lastAnswerCorrect = Vue.ref(false);
         const answerAnalysis = Vue.ref(null);
 
         const currentQuestion = Vue.computed(() => {
-            console.log('Current question computed:', store.currentQuestion);
-            console.log('Store state - questions:', store.state.questions.length);
-            console.log('Store state - current index:', store.state.currentQuestionIndex);
-            console.log('Store state - practice started:', store.state.practiceStarted);
             return store.currentQuestion;
         });
 
         const canSubmitAnswer = Vue.computed(() => {
-            if (answerFormat.value === 'text') {
-                return store.state.userAnswer.trim().length > 0;
-            } else {
+            if (currentQuestion.value?.type === 'multiple_choice') {
                 return selectedChoice.value !== null;
+            } else {
+                return store.state.userAnswer && store.state.userAnswer.trim().length > 0;
             }
         });
 
-        const generateMultipleChoice = () => {
-            answerFormat.value = 'multiple';
-            if (multipleChoiceOptions.value.length > 0) return;
-
-            // Generate 4 options: 1 correct + 3 distractors
-            const correctAnswer = currentQuestion.value?.answer || '';
-            
-            // Simple distractor generation (in a real app, you'd use AI for this)
-            const distractors = generateDistractors(correctAnswer);
-            
-            const options = [
-                { text: correctAnswer, isCorrect: true },
-                ...distractors.map(text => ({ text, isCorrect: false }))
-            ];
-
-            // Shuffle options
-            multipleChoiceOptions.value = shuffleArray(options);
+        // Helper functions for MCQ handling
+        const getCorrectIndex = () => {
+            if (!currentQuestion.value) return -1;
+            const correctIndex = currentQuestion.value.correct_index ?? currentQuestion.value.correctIndex;
+            return correctIndex ?? -1;
         };
 
-        const generateDistractors = (correctAnswer) => {
-            // Simple distractor generation - in a real app, use AI
-            const words = correctAnswer.split(' ');
-            const distractors = [];
-
-            // Create variations by changing key words
-            if (words.length > 1) {
-                distractors.push(words.slice(0, -1).join(' ') + ' and other factors');
-                distractors.push('The opposite of ' + correctAnswer.toLowerCase());
-                distractors.push(words.reverse().join(' '));
-            } else {
-                distractors.push('Not ' + correctAnswer);
-                distractors.push(correctAnswer + ' theory');
-                distractors.push('Alternative to ' + correctAnswer);
+        const getCorrectOption = () => {
+            const index = getCorrectIndex();
+            if (index >= 0 && currentQuestion.value?.options && index < currentQuestion.value.options.length) {
+                return currentQuestion.value.options[index];
             }
-
-            return distractors.slice(0, 3);
+            return 'Unknown';
         };
 
-        const shuffleArray = (array) => {
-            const shuffled = [...array];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        const getExplanationText = () => {
+            if (currentQuestion.value?.explanation && 
+                currentQuestion.value.explanation !== currentQuestion.value.answer) {
+                return currentQuestion.value.explanation;
             }
-            return shuffled;
+            
+            if (currentQuestion.value?.answer) {
+                return currentQuestion.value.answer;
+            }
+            
+            return 'it provides the accurate information requested in the question.';
         };
 
         const selectMultipleChoice = (index) => {
@@ -279,8 +282,9 @@ window.QuestionCard = {
         const checkAnswer = async () => {
             let isCorrect = false;
 
-            if (answerFormat.value === 'multiple') {
-                isCorrect = multipleChoiceOptions.value[selectedChoice.value]?.isCorrect || false;
+            if (currentQuestion.value?.type === 'multiple_choice') {
+                const correctIndex = getCorrectIndex();
+                isCorrect = selectedChoice.value === correctIndex;
             } else {
                 // Advanced text answer checking
                 const analysis = await analyzeTextAnswer(
@@ -305,18 +309,20 @@ window.QuestionCard = {
             );
 
             // Calculate similarity score
-            const score = Math.min(100, (keywordMatches.length / Math.max(correctWords.length * 0.5, 1)) * 100);
+            const score = Math.min(100, Math.max(0, (keywordMatches.length / Math.max(correctWords.length * 0.5, 1)) * 100));
 
             // Generate feedback
             let feedback = '';
             if (score >= 90) {
-                feedback = 'Excellent! Your answer covers all key points.';
+                feedback = 'Excellent! Your answer covers all key points comprehensively.';
             } else if (score >= 70) {
                 feedback = 'Good answer! You mentioned most important concepts.';
             } else if (score >= 50) {
                 feedback = 'Partially correct. You got some key points but missed others.';
+            } else if (score >= 30) {
+                feedback = 'Your answer shows some understanding but needs significant improvement.';
             } else {
-                feedback = 'Your answer needs improvement. Review the correct answer carefully.';
+                feedback = 'Your answer needs major improvement. Please review the correct answer carefully.';
             }
 
             return { score: Math.round(score), feedback, keywordMatches };
@@ -325,7 +331,6 @@ window.QuestionCard = {
         const nextQuestion = () => {
             // Reset state for next question
             selectedChoice.value = null;
-            multipleChoiceOptions.value = [];
             answerAnalysis.value = null;
             store.nextQuestion();
         };
@@ -344,40 +349,63 @@ window.QuestionCard = {
             return classes[difficulty] || classes.medium;
         };
 
-        const getOptionResultClass = (index, isCorrect) => {
-            if (isCorrect) {
+        const getTypeClass = (type) => {
+            const classes = {
+                'multiple_choice': 'bg-blue-100 text-blue-700',
+                'text': 'bg-purple-100 text-purple-700'
+            };
+            return classes[type] || classes.text;
+        };
+
+        const getTypeLabel = (type) => {
+            const labels = {
+                'multiple_choice': 'MCQ',
+                'text': 'Text'
+            };
+            return labels[type] || 'Text';
+        };
+
+        const getOptionResultClass = (index) => {
+            const correctIndex = getCorrectIndex();
+            
+            if (index === correctIndex) {
                 return 'border-green-500 bg-green-50';
             } else if (selectedChoice.value === index) {
                 return 'border-red-500 bg-red-50';
             }
-            return '';
+            return 'border-gray-200 bg-gray-50';
         };
 
-        // Auto-generate multiple choice when question changes
-        Vue.watch(currentQuestion, () => {
-            if (currentQuestion.value && answerFormat.value === 'multiple') {
-                Vue.nextTick(() => {
-                    generateMultipleChoice();
-                });
+        const getOptionBadgeClass = (index) => {
+            const correctIndex = getCorrectIndex();
+            
+            if (index === correctIndex) {
+                return 'bg-green-500 text-white';
+            } else if (selectedChoice.value === index) {
+                return 'bg-red-500 text-white';
             }
-        }, { immediate: true });
+            return selectedChoice.value === index ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600';
+        };
 
         return {
             store,
             currentQuestion,
-            answerFormat,
-            multipleChoiceOptions,
             selectedChoice,
             lastAnswerCorrect,
             answerAnalysis,
             canSubmitAnswer,
-            generateMultipleChoice,
+            getCorrectIndex,
+            getCorrectOption,
+            getExplanationText,
             selectMultipleChoice,
             checkAnswer,
             nextQuestion,
             skipQuestion,
             getDifficultyClass,
-            getOptionResultClass
+            getTypeClass,
+            getTypeLabel,
+            getOptionResultClass,
+            getOptionBadgeClass
         };
     }
 };

@@ -1,4 +1,4 @@
-// src/frontend/components/Practice/PracticeSetup.js
+// src/frontend/components/Practice/PracticeSetup.js - CLEAN VERSION
 window.PracticeSetupComponent = {
     template: `
     <div class="animate-fade-in space-y-6">
@@ -38,6 +38,7 @@ window.PracticeSetupComponent = {
                             <label class="block text-sm font-medium text-gray-700 mb-2">Topic</label>
                             <select
                                 v-model="selectedTopic"
+                                @change="handleTopicChange"
                                 class="form-input w-full px-3 py-2 rounded-lg focus:outline-none"
                             >
                                 <option value="">Choose topic...</option>
@@ -52,6 +53,7 @@ window.PracticeSetupComponent = {
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Questions Count</label>
                                 <select v-model="practiceConfig.count" class="form-input w-full px-3 py-2 rounded-lg focus:outline-none">
+                                    <option :value="3">3 Questions</option>
                                     <option :value="5">5 Questions</option>
                                     <option :value="10">10 Questions</option>
                                     <option :value="15">15 Questions</option>
@@ -78,15 +80,15 @@ window.PracticeSetupComponent = {
                             >
                                 <i v-if="!store.state.generating" class="fas fa-magic mr-2"></i>
                                 <i v-else class="fas fa-spinner fa-spin mr-2"></i>
-                                {{ store.state.generating ? 'Generating...' : 'Generate Questions' }}
+                                {{ store.state.generating ? 'Generating...' : 'Generate New Questions' }}
                             </button>
                             
                             <button
-                                @click="loadRandomQuestions"
+                                @click="loadExistingQuestions"
                                 class="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                             >
                                 <i class="fas fa-random mr-2"></i>
-                                Practice Random
+                                Practice Existing Questions
                             </button>
                         </div>
                     </div>
@@ -135,22 +137,22 @@ window.PracticeSetupComponent = {
                             <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                                 <i class="fas fa-book text-primary-600"></i>
                             </div>
-                            <h4 class="font-medium text-gray-900 mb-1">1. Choose Subject</h4>
-                            <p class="text-sm text-gray-600">Select the subject you want to practice</p>
+                            <h4 class="font-medium text-gray-900 mb-1">1. Choose Subject & Topic</h4>
+                            <p class="text-sm text-gray-600">Select what you want to practice</p>
                         </div>
                         <div class="p-4 bg-gray-50 rounded-xl">
                             <div class="w-10 h-10 bg-secondary-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                                <i class="fas fa-file-alt text-secondary-600"></i>
+                                <i class="fas fa-cogs text-secondary-600"></i>
                             </div>
-                            <h4 class="font-medium text-gray-900 mb-1">2. Pick Topic</h4>
-                            <p class="text-sm text-gray-600">Choose a specific topic to focus on</p>
+                            <h4 class="font-medium text-gray-900 mb-1">2. Configure Practice</h4>
+                            <p class="text-sm text-gray-600">Set difficulty and question count</p>
                         </div>
                         <div class="p-4 bg-gray-50 rounded-xl">
                             <div class="w-10 h-10 bg-accent-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                                <i class="fas fa-magic text-accent-600"></i>
+                                <i class="fas fa-play text-accent-600"></i>
                             </div>
-                            <h4 class="font-medium text-gray-900 mb-1">3. Start Practice</h4>
-                            <p class="text-sm text-gray-600">Generate AI questions and begin learning</p>
+                            <h4 class="font-medium text-gray-900 mb-1">3. Start Learning</h4>
+                            <p class="text-sm text-gray-600">Begin your practice session</p>
                         </div>
                     </div>
                 </div>
@@ -167,7 +169,11 @@ window.PracticeSetupComponent = {
         const selectedSubject = Vue.ref(null);
         const selectedTopic = Vue.ref(null);
         const availableTopics = Vue.ref([]);
-        const practiceConfig = Vue.reactive({ count: 5, difficulty: 'medium' });
+
+        const practiceConfig = Vue.reactive({ 
+            count: 5, 
+            difficulty: 'medium'
+        });
 
         const handleSubjectChange = async () => {
             selectedTopic.value = null;
@@ -183,39 +189,57 @@ window.PracticeSetupComponent = {
             }
         };
 
+        const handleTopicChange = () => {
+            if (selectedTopic.value) {
+                store.selectTopic(selectedTopic.value);
+            }
+        };
+
         const generateQuestions = async () => {
             if (!selectedTopic.value) return;
 
             store.setGenerating(true);
+            
             try {
                 const questions = await window.api.generateQuestions(
                     selectedTopic.value.id,
                     practiceConfig.count,
                     practiceConfig.difficulty
                 );
-                store.startPractice(questions);
-                store.showNotification('Questions generated successfully!', 'success');
+                
+                if (questions && questions.length > 0) {
+                    store.startPractice(questions);
+                    store.showNotification(`Generated ${questions.length} questions successfully!`, 'success');
+                } else {
+                    store.showNotification('No questions were generated. Make sure you have study materials uploaded.', 'warning');
+                }
+                
             } catch (error) {
-                console.error('Error generating questions:', error);
-                store.showNotification('Add study materials first to generate questions', 'warning');
+                store.showNotification('Failed to generate questions. Add study materials first.', 'error');
             } finally {
                 store.setGenerating(false);
             }
         };
 
-        const loadRandomQuestions = async () => {
+        const loadExistingQuestions = async () => {
             if (!selectedTopic.value) return;
 
             try {
-                const questions = await window.api.getRandomQuestions(selectedTopic.value.id, practiceConfig.count);
+                const questions = await window.api.getQuestions(selectedTopic.value.id);
+                
                 if (questions.length === 0) {
-                    store.showNotification('No questions available. Generate some first!', 'info');
+                    store.showNotification('No existing questions found. Generate some first!', 'info');
                     return;
                 }
-                store.startPractice(questions);
+
+                const randomQuestions = questions
+                    .sort(() => 0.5 - Math.random())
+                    .slice(0, practiceConfig.count);
+                
+                store.startPractice(randomQuestions);
                 store.showNotification('Practice session started!', 'success');
+                
             } catch (error) {
-                console.error('Error loading questions:', error);
                 store.showNotification('Failed to load questions', 'error');
             }
         };
@@ -239,8 +263,9 @@ window.PracticeSetupComponent = {
             availableTopics,
             practiceConfig,
             handleSubjectChange,
+            handleTopicChange,
             generateQuestions,
-            loadRandomQuestions
+            loadExistingQuestions
         };
     }
 };

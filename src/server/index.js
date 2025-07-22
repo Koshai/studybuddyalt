@@ -157,11 +157,13 @@ app.get('/api/topics/:topicId/notes', async (req, res) => {
   }
 });
 
-// Generate questions for a topic
+// Generate questions for a topic - FIXED VERSION
 app.post('/api/topics/:topicId/generate-questions', async (req, res) => {
   try {
     const { count = 5, difficulty = 'medium' } = req.body;
     const topicId = req.params.topicId;
+    
+    console.log(`Generating ${count} questions for topic ${topicId} with difficulty ${difficulty}`);
     
     // Get notes for this topic
     const notes = await db.getNotes(topicId);
@@ -170,20 +172,53 @@ app.post('/api/topics/:topicId/generate-questions', async (req, res) => {
       return res.status(400).json({ error: 'No notes found for this topic' });
     }
 
+    console.log(`Found ${notes.length} notes for topic ${topicId}`);
+
     // Combine all notes content
     const combinedContent = notes.map(note => note.content).join('\n\n');
     
-    // Generate questions using Ollama
-    const questions = await ollama.generateQuestions(combinedContent, count, difficulty);
+    // Generate questions using enhanced Ollama service
+    const generatedQuestions = await ollama.generateQuestions(combinedContent, count, difficulty);
     
-    // Save questions to database
+    console.log(`AI generated ${generatedQuestions.length} questions`);
+    
+    // Save questions to database with proper structure
     const savedQuestions = [];
-    for (const q of questions) {
-      const question = await db.createQuestion(topicId, q.question, q.answer, q.difficulty);
-      savedQuestions.push(question);
+    for (let i = 0; i < generatedQuestions.length; i++) {
+      const q = generatedQuestions[i];
+      
+      try {
+        console.log(`Saving question ${i + 1}:`, {
+          question: q.question?.substring(0, 50) + '...',
+          type: q.type,
+          correctIndex: q.correctIndex,
+          optionsCount: q.options?.length
+        });
+        
+        const questionData = {
+          question: q.question,
+          answer: q.answer,
+          difficulty: q.difficulty || difficulty,
+          type: q.type || 'multiple_choice',
+          options: q.options || null,
+          correctIndex: q.correctIndex !== undefined ? q.correctIndex : null,
+          explanation: q.explanation || null
+        };
+        
+        const savedQuestion = await db.createQuestion(topicId, questionData);
+        savedQuestions.push(savedQuestion);
+        
+        console.log(`Question ${i + 1} saved successfully with ID: ${savedQuestion.id}`);
+        
+      } catch (error) {
+        console.error(`Error saving question ${i + 1}:`, error);
+        // Continue with other questions even if one fails
+      }
     }
 
+    console.log(`Successfully saved ${savedQuestions.length} out of ${generatedQuestions.length} questions`);
     res.json(savedQuestions);
+    
   } catch (error) {
     console.error('Question generation error:', error);
     res.status(500).json({ error: error.message });
@@ -200,6 +235,29 @@ app.get('/api/topics/:topicId/questions', async (req, res) => {
   }
 });
 
+// Enhanced endpoint to get questions with full MCQ support
+app.get('/api/topics/:topicId/questions/enhanced', async (req, res) => {
+  try {
+    const { type, difficulty } = req.query;
+    const topicId = req.params.topicId;
+    
+    let questions;
+    if (type) {
+      questions = await db.getQuestionsByType(topicId, type);
+    } else {
+      questions = await db.getQuestions(topicId);
+    }
+    
+    if (difficulty) {
+      questions = questions.filter(q => q.difficulty === difficulty);
+    }
+    
+    res.json(questions);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get random questions
 app.get('/api/topics/:topicId/random-questions', async (req, res) => {
   try {
@@ -207,6 +265,153 @@ app.get('/api/topics/:topicId/random-questions', async (req, res) => {
     const questions = await db.getRandomQuestions(req.params.topicId, parseInt(count));
     res.json(questions);
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update question endpoint
+app.put('/api/questions/:questionId', async (req, res) => {
+  try {
+    const questionId = req.params.questionId;
+    const updates = req.body;
+    
+    const result = await db.updateQuestion(questionId, updates);
+    res.json({ success: true, changes: result.changes });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete question endpoint
+app.delete('/api/questions/:questionId', async (req, res) => {
+  try {
+    const questionId = req.params.questionId;
+    const result = await db.deleteQuestion(questionId);
+    res.json({ success: true, changes: result.changes });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Enhanced topic statistics
+app.get('/api/topics/:topicId/stats', async (req, res) => {
+  try {
+    const stats = await db.getTopicStats(req.params.topicId);
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Validate question endpoint (for testing AI generation)
+app.post('/api/questions/validate', async (req, res) => {
+  try {
+    const { question, options, correctIndex } = req.body;
+    
+    // Basic validation
+    const validation = {
+      isValid: true,
+      errors: [],
+      warnings: []
+    };
+    
+    if (!question || question.trim().length < 10) {
+      validation.isValid = false;
+      validation.errors.push('Question must be at least 10 characters long');
+    }
+    
+    if (options && options.length === 4) {
+      // MCQ validation
+      if (correctIndex < 0 || correctIndex >= 4) {
+        validation.isValid = false;
+        validation.errors.push('Correct index must be between 0 and 3');
+      }
+      
+      // Check for duplicate options
+      const uniqueOptions = [...new Set(options)];
+      if (uniqueOptions.length !== options.length) {
+        validation.warnings.push('Some options appear to be duplicates');
+      }
+      
+      // Check for obviously wrong patterns
+      const problematicPatterns = [
+        'and other factors',
+        'the opposite of',
+        'not ',
+        'none of the above'
+      ];
+      
+      options.forEach((option, index) => {
+        if (index !== correctIndex) {
+          const lowerOption = option.toLowerCase();
+          problematicPatterns.forEach(pattern => {
+            if (lowerOption.includes(pattern)) {
+              validation.warnings.push(`Option ${index + 1} contains potentially problematic pattern: "${pattern}"`);
+            }
+          });
+        }
+      });
+    }
+    
+    res.json(validation);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Bulk question generation for testing
+app.post('/api/topics/:topicId/generate-bulk', async (req, res) => {
+  try {
+    const { 
+      textCount = 3, 
+      mcqCount = 2, 
+      difficulty = 'medium' 
+    } = req.body;
+    const topicId = req.params.topicId;
+    
+    // Get notes for this topic
+    const notes = await db.getNotes(topicId);
+    
+    if (notes.length === 0) {
+      return res.status(400).json({ error: 'No notes found for this topic' });
+    }
+
+    const combinedContent = notes.map(note => note.content).join('\n\n');
+    
+    // Generate different types of questions
+    const textQuestions = await ollama.generateTextQuestions(combinedContent, textCount, difficulty);
+    const mcqQuestions = await ollama.generateMCQQuestions(combinedContent, mcqCount, difficulty);
+    
+    const allQuestions = [...textQuestions, ...mcqQuestions];
+    
+    // Save all questions
+    const savedQuestions = [];
+    for (const q of allQuestions) {
+      try {
+        const questionData = {
+          question: q.question,
+          answer: q.answer,
+          difficulty: q.difficulty,
+          type: q.type || 'text',
+          options: q.options || null,
+          correctIndex: q.correctIndex || null,
+          explanation: q.explanation || null
+        };
+        
+        const question = await db.createQuestion(topicId, questionData);
+        savedQuestions.push(question);
+      } catch (error) {
+        console.error('Error saving question:', error);
+      }
+    }
+
+    res.json({
+      generated: allQuestions.length,
+      saved: savedQuestions.length,
+      questions: savedQuestions
+    });
+  } catch (error) {
+    console.error('Bulk generation error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -228,6 +433,230 @@ app.post('/api/ollama/pull', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Enhanced Ollama test endpoint
+app.get('/api/test-ollama-detailed', async (req, res) => {
+  try {
+    console.log('=== DETAILED OLLAMA TEST ===');
+    
+    const results = {
+      status: 'running tests...',
+      tests: {}
+    };
+    
+    // Test 1: List models
+    try {
+      const models = await ollama.listModels();
+      results.tests.modelsAvailable = {
+        status: 'success',
+        count: models.length,
+        models: models.map(m => m.name)
+      };
+    } catch (error) {
+      results.tests.modelsAvailable = {
+        status: 'failed',
+        error: error.message
+      };
+    }
+    
+    // Test 2: Simple generation
+    try {
+      const { Ollama } = require('ollama');
+      const ollamaClient = new Ollama({ host: 'http://localhost:11434' });
+      
+      const simpleTest = await ollamaClient.generate({
+        model: 'llama3.2:3b',
+        prompt: 'Say "Hello World" and nothing else.',
+        stream: false,
+        options: {
+          temperature: 0.1,
+          num_predict: 20
+        }
+      });
+      
+      results.tests.simpleGeneration = {
+        status: 'success',
+        response: simpleTest.response,
+        responseLength: simpleTest.response?.length
+      };
+    } catch (error) {
+      results.tests.simpleGeneration = {
+        status: 'failed',
+        error: error.message
+      };
+    }
+    
+    // Test 3: Question generation with detailed logging
+    const testContent = `
+The Battle of Hastings was fought on 14 October 1066 between the Norman-French army of William, 
+the Duke of Normandy, and an English army under the Anglo-Saxon King Harold Godwinson. 
+William defeated Harold and became King of England. This battle marked the beginning of Norman rule in England.
+The battle was decisive and changed the course of English history forever.
+    `;
+    
+    try {
+      console.log('Testing question generation...');
+      const questions = await ollama.generateQuestions(testContent, 2, 'medium');
+      
+      results.tests.questionGeneration = {
+        status: questions.length > 0 ? 'success' : 'failed',
+        questionsGenerated: questions.length,
+        questions: questions.map(q => ({
+          question: q.question?.substring(0, 100),
+          type: q.type,
+          optionsCount: q.options?.length,
+          correctIndex: q.correctIndex,
+          hasAnswer: !!q.answer
+        }))
+      };
+      
+      if (questions.length === 0) {
+        // Try the backup method
+        console.log('Trying backup generation method...');
+        const backupQuestions = await ollama.generateSimpleQuestions(testContent, 2);
+        
+        results.tests.backupGeneration = {
+          status: backupQuestions.length > 0 ? 'success' : 'failed',
+          questionsGenerated: backupQuestions.length,
+          questions: backupQuestions.map(q => ({
+            question: q.question?.substring(0, 100),
+            type: q.type,
+            optionsCount: q.options?.length,
+            correctIndex: q.correctIndex
+          }))
+        };
+      }
+      
+    } catch (error) {
+      results.tests.questionGeneration = {
+        status: 'failed',
+        error: error.message,
+        stack: error.stack
+      };
+    }
+    
+    // Determine overall status
+    const allTests = Object.values(results.tests);
+    const failedTests = allTests.filter(test => test.status === 'failed');
+    
+    if (failedTests.length === 0) {
+      results.status = 'success';
+      results.message = 'All tests passed!';
+    } else {
+      results.status = 'partial';
+      results.message = `${failedTests.length} out of ${allTests.length} tests failed`;
+    }
+    
+    res.json(results);
+    
+  } catch (error) {
+    console.error('Test endpoint error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
+// Test question generation with your actual data
+app.post('/api/test-generation/:topicId', async (req, res) => {
+  try {
+    const topicId = req.params.topicId;
+    console.log(`Testing generation for topic: ${topicId}`);
+    
+    // Get notes for this topic
+    const notes = await db.getNotes(topicId);
+    console.log(`Found ${notes.length} notes`);
+    
+    if (notes.length === 0) {
+      return res.json({
+        status: 'no_content',
+        message: 'No study materials found for this topic',
+        solution: 'Upload some notes, PDFs, or images first'
+      });
+    }
+    
+    // Combine content
+    const combinedContent = notes.map(note => note.content).join('\n\n');
+    console.log(`Combined content length: ${combinedContent.length}`);
+    
+    if (combinedContent.length < 50) {
+      return res.json({
+        status: 'insufficient_content',
+        message: 'Study materials are too short',
+        contentLength: combinedContent.length,
+        solution: 'Upload more detailed study materials'
+      });
+    }
+    
+    // Test both generation methods
+    const results = {};
+    
+    try {
+      console.log('Testing primary generation method...');
+      const primaryQuestions = await ollama.generateQuestions(combinedContent, 2, 'medium');
+      results.primary = {
+        method: 'generateQuestions',
+        questionsGenerated: primaryQuestions.length,
+        questions: primaryQuestions
+      };
+    } catch (error) {
+      results.primary = {
+        method: 'generateQuestions',
+        error: error.message
+      };
+    }
+    
+    try {
+      console.log('Testing backup generation method...');
+      const backupQuestions = await ollama.generateSimpleQuestions(combinedContent, 2);
+      results.backup = {
+        method: 'generateSimpleQuestions',
+        questionsGenerated: backupQuestions.length,
+        questions: backupQuestions
+      };
+    } catch (error) {
+      results.backup = {
+        method: 'generateSimpleQuestions',
+        error: error.message
+      };
+    }
+    
+    res.json({
+      status: 'completed',
+      topicId: topicId,
+      notesCount: notes.length,
+      contentLength: combinedContent.length,
+      results: results
+    });
+    
+  } catch (error) {
+    console.error('Test generation error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: error.message
+    });
+  }
+});
+
+// Simple health check for Ollama
+app.get('/api/ollama/health', async (req, res) => {
+  try {
+    const healthy = await ollama.isHealthy();
+    if (healthy) {
+      res.json({ status: 'healthy', message: 'Ollama is running' });
+    } else {
+      res.status(503).json({ status: 'unhealthy', message: 'Ollama not responding' });
+    }
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'error', 
+      message: 'Failed to check Ollama health',
+      error: error.message 
+    });
   }
 });
 

@@ -1,4 +1,4 @@
-// src/server/services/database.js
+// src/server/services/database.js - FIXED VERSION for MCQ
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
@@ -62,6 +62,10 @@ class DatabaseService {
         question TEXT NOT NULL,
         answer TEXT NOT NULL,
         difficulty TEXT DEFAULT 'medium',
+        type TEXT DEFAULT 'text',
+        options TEXT,
+        correct_index INTEGER,
+        explanation TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (topic_id) REFERENCES topics (id)
       )`,
@@ -75,6 +79,23 @@ class DatabaseService {
         FOREIGN KEY (question_id) REFERENCES questions (id)
       )`
     ];
+
+    // Add new columns to existing questions table if they don't exist
+    const alterTableQueries = [
+      `ALTER TABLE questions ADD COLUMN type TEXT DEFAULT 'text'`,
+      `ALTER TABLE questions ADD COLUMN options TEXT`,
+      `ALTER TABLE questions ADD COLUMN correct_index INTEGER`,
+      `ALTER TABLE questions ADD COLUMN explanation TEXT`
+    ];
+
+    alterTableQueries.forEach(sql => {
+      this.db.run(sql, (err) => {
+        // Ignore errors for already existing columns
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('Error altering table:', err);
+        }
+      });
+    });
 
     tables.forEach(sql => {
       this.db.run(sql, (err) => {
@@ -166,13 +187,32 @@ class DatabaseService {
     });
   }
 
-  // Question operations
+  // Enhanced Question operations with proper MCQ support
   async getQuestions(topicId) {
     return new Promise((resolve, reject) => {
       const sql = 'SELECT * FROM questions WHERE topic_id = ? ORDER BY created_at DESC';
       this.db.all(sql, [topicId], (err, rows) => {
         if (err) reject(err);
-        else resolve(rows);
+        else {
+          // Parse options and ensure correct_index is a number
+          const questions = rows.map(row => {
+            const question = {
+              ...row,
+              options: row.options ? JSON.parse(row.options) : null,
+              correct_index: row.correct_index !== null ? parseInt(row.correct_index) : null
+            };
+            
+            console.log('Retrieved question from DB:', {
+              id: question.id,
+              type: question.type,
+              correct_index: question.correct_index,
+              options: question.options
+            });
+            
+            return question;
+          });
+          resolve(questions);
+        }
       });
     });
   }
@@ -182,29 +222,87 @@ class DatabaseService {
       const sql = 'SELECT * FROM questions WHERE topic_id = ? ORDER BY RANDOM() LIMIT ?';
       this.db.all(sql, [topicId, count], (err, rows) => {
         if (err) reject(err);
-        else resolve(rows);
+        else {
+          // Parse options and ensure correct_index is a number
+          const questions = rows.map(row => ({
+            ...row,
+            options: row.options ? JSON.parse(row.options) : null,
+            correct_index: row.correct_index !== null ? parseInt(row.correct_index) : null
+          }));
+          resolve(questions);
+        }
       });
     });
   }
 
-  async createQuestion(topicId, question, answer, difficulty = 'medium') {
+  async createQuestion(topicId, questionData) {
     return new Promise((resolve, reject) => {
       const id = uuidv4();
-      const sql = 'INSERT INTO questions (id, topic_id, question, answer, difficulty) VALUES (?, ?, ?, ?, ?)';
+      const {
+        question,
+        answer,
+        difficulty = 'medium',
+        type = 'text',
+        options = null,
+        correctIndex = null,
+        explanation = null
+      } = questionData;
+
+      console.log('Creating question in DB:', {
+        id,
+        topicId,
+        question: question.substring(0, 50) + '...',
+        type,
+        correctIndex,
+        optionsCount: options ? options.length : 0
+      });
+
+      const sql = `INSERT INTO questions 
+        (id, topic_id, question, answer, difficulty, type, options, correct_index, explanation) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
       
-      this.db.run(sql, [id, topicId, question, answer, difficulty], function(err) {
-        if (err) reject(err);
-        else {
+      const optionsJson = options ? JSON.stringify(options) : null;
+      
+      this.db.run(sql, [
+        id, 
+        topicId, 
+        question, 
+        answer, 
+        difficulty, 
+        type, 
+        optionsJson, 
+        correctIndex, 
+        explanation
+      ], function(err) {
+        if (err) {
+          console.error('Error creating question:', err);
+          reject(err);
+        } else {
+          console.log('Question created successfully:', id);
           resolve({ 
             id, 
             topic_id: topicId, 
             question, 
             answer, 
             difficulty,
+            type,
+            options,
+            correct_index: correctIndex,
+            explanation,
             created_at: new Date().toISOString() 
           });
         }
       });
+    });
+  }
+
+  // Backward compatibility method for old API calls
+  async createQuestionLegacy(topicId, question, answer, difficulty = 'medium') {
+    return this.createQuestion(topicId, {
+      question,
+      answer,
+      difficulty,
+      type: 'text'
     });
   }
 
@@ -235,7 +333,9 @@ class DatabaseService {
         SELECT 
           COUNT(DISTINCT q.id) as total_questions,
           COUNT(DISTINCT ua.id) as total_attempts,
-          AVG(CASE WHEN ua.is_correct = 1 THEN 1.0 ELSE 0.0 END) as accuracy_rate
+          AVG(CASE WHEN ua.is_correct = 1 THEN 1.0 ELSE 0.0 END) as accuracy_rate,
+          COUNT(DISTINCT CASE WHEN q.type = 'multiple_choice' THEN q.id END) as mcq_count,
+          COUNT(DISTINCT CASE WHEN q.type = 'text' THEN q.id END) as text_count
         FROM questions q
         LEFT JOIN user_attempts ua ON q.id = ua.question_id
         WHERE q.topic_id = ?
