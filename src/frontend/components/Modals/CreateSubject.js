@@ -1,4 +1,4 @@
-// src/frontend/components/Modals/CreateSubject.js
+// src/frontend/components/Modals/CreateSubject.js - SIMPLIFIED VERSION
 window.CreateSubjectModal = {
     template: `
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -35,6 +35,21 @@ window.CreateSubjectModal = {
                         placeholder="Brief description of what you'll study in this subject"
                     ></textarea>
                 </div>
+
+                <!-- Category Selection (only show if categories are available) -->
+                <div v-if="categoriesAvailable && categories.length > 0">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Category (Optional)</label>
+                    <select
+                        v-model="selectedCategoryId"
+                        class="form-input w-full px-4 py-3 rounded-lg focus:outline-none"
+                    >
+                        <option value="">Choose a category...</option>
+                        <option v-for="category in categories" :key="category.id" :value="category.id">
+                            {{ category.name }}
+                        </option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Categories help AI generate better questions for your subject</p>
+                </div>
                 
                 <div class="flex space-x-3 pt-4">
                     <button
@@ -63,30 +78,58 @@ window.CreateSubjectModal = {
         const store = window.store;
         const creating = Vue.ref(false);
         const nameInput = Vue.ref(null);
+        const categories = Vue.ref([]);
+        const categoriesAvailable = Vue.ref(false);
+        const selectedCategoryId = Vue.ref('');
+
+        // Try to load categories when modal opens
+        const loadCategories = async () => {
+            try {
+                if (window.api.getSubjectCategories) {
+                    const cats = await window.api.getSubjectCategories();
+                    categories.value = cats || [];
+                    categoriesAvailable.value = cats && cats.length > 0;
+                    console.log('Categories loaded:', cats?.length || 0);
+                }
+            } catch (error) {
+                console.warn('Categories not available:', error);
+                categoriesAvailable.value = false;
+            }
+        };
 
         const handleSubmit = async () => {
             if (!store.state.newSubject.name.trim()) return;
 
             creating.value = true;
             try {
+                console.log('Creating subject with data:', {
+                    name: store.state.newSubject.name,
+                    description: store.state.newSubject.description,
+                    categoryId: selectedCategoryId.value || null
+                });
+
                 const subject = await window.api.createSubject(
                     store.state.newSubject.name,
-                    store.state.newSubject.description
+                    store.state.newSubject.description,
+                    selectedCategoryId.value || null
                 );
+                
+                console.log('Subject created successfully:', subject);
                 
                 store.addSubject(subject);
                 store.hideCreateSubjectModal();
                 store.showNotification('Subject created successfully!', 'success');
             } catch (error) {
                 console.error('Error creating subject:', error);
-                store.showNotification('Failed to create subject', 'error');
+                store.showNotification('Failed to create subject: ' + error.message, 'error');
             } finally {
                 creating.value = false;
             }
         };
 
-        // Focus input when modal opens
-        Vue.onMounted(() => {
+        // Load categories when component mounts
+        Vue.onMounted(async () => {
+            await loadCategories();
             Vue.nextTick(() => {
                 nameInput.value?.focus();
             });
@@ -96,6 +139,9 @@ window.CreateSubjectModal = {
             store,
             creating,
             nameInput,
+            categories,
+            categoriesAvailable,
+            selectedCategoryId,
             handleSubmit
         };
     }

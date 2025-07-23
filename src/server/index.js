@@ -66,12 +66,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Get all subjects
+// Get all subjects (backward compatible)
 app.get('/api/subjects', async (req, res) => {
   try {
-    const subjects = await db.getSubjects();
+    const subjects = await db.getSubjects(); // This now handles both cases
     res.json(subjects);
   } catch (error) {
+    console.error('Error getting subjects:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -86,13 +87,19 @@ app.get('/api/subjects/:subjectId/topics', async (req, res) => {
   }
 });
 
-// Create new subject
+// Create new subject (backward compatible)
 app.post('/api/subjects', async (req, res) => {
   try {
-    const { name, description } = req.body;
-    const subject = await db.createSubject(name, description);
+    const { name, description, categoryId } = req.body;
+    
+    console.log('Creating subject:', { name, description, categoryId });
+    
+    const subject = await db.createSubject(name, description || '', categoryId || null);
+    
+    console.log('Subject created successfully:', subject);
     res.json(subject);
   } catch (error) {
+    console.error('Error creating subject:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -157,13 +164,21 @@ app.get('/api/topics/:topicId/notes', async (req, res) => {
   }
 });
 
-// Generate questions for a topic - FIXED VERSION
+// Enhanced question generation with category-aware AI
 app.post('/api/topics/:topicId/generate-questions', async (req, res) => {
   try {
     const { count = 5, difficulty = 'medium' } = req.body;
     const topicId = req.params.topicId;
     
     console.log(`Generating ${count} questions for topic ${topicId} with difficulty ${difficulty}`);
+    
+    // Get enhanced topic information with category
+    const topicInfo = await db.getTopicWithSubjectCategory(topicId);
+    if (!topicInfo) {
+      return res.status(404).json({ error: 'Topic not found' });
+    }
+    
+    console.log(`Topic: ${topicInfo.name}, Subject: ${topicInfo.subject_name}, Category: ${topicInfo.category_name || 'None'}`);
     
     // Get notes for this topic
     const notes = await db.getNotes(topicId);
@@ -172,29 +187,44 @@ app.post('/api/topics/:topicId/generate-questions', async (req, res) => {
       return res.status(400).json({ error: 'No notes found for this topic' });
     }
 
-    console.log(`Found ${notes.length} notes for topic ${topicId}`);
+    console.log(`Found ${notes.length} notes for topic ${topicInfo.name}`);
 
     // Combine all notes content
     const combinedContent = notes.map(note => note.content).join('\n\n');
     
-    // Generate questions using enhanced Ollama service
-    const generatedQuestions = await ollama.generateQuestions(combinedContent, count, difficulty);
+    // Create enhanced subject and topic objects for AI
+    const enhancedSubject = {
+      id: topicInfo.subject_id,
+      name: topicInfo.subject_name,
+      category_id: topicInfo.category_id,
+      category_name: topicInfo.category_name,
+      domain_type: topicInfo.domain_type,
+      ai_instructions: topicInfo.ai_instructions
+    };
+    
+    const enhancedTopic = {
+      id: topicInfo.id,
+      name: topicInfo.name,
+      description: topicInfo.description
+    };
+    
+    // Generate questions using enhanced Ollama service with category context
+    const generatedQuestions = await ollama.generateQuestions(
+      combinedContent, 
+      count, 
+      difficulty, 
+      enhancedSubject,  // Enhanced subject with category info
+      enhancedTopic     // Topic info
+    );
     
     console.log(`AI generated ${generatedQuestions.length} questions`);
     
-    // Save questions to database with proper structure
+    // Save questions to database
     const savedQuestions = [];
     for (let i = 0; i < generatedQuestions.length; i++) {
       const q = generatedQuestions[i];
       
       try {
-        console.log(`Saving question ${i + 1}:`, {
-          question: q.question?.substring(0, 50) + '...',
-          type: q.type,
-          correctIndex: q.correctIndex,
-          optionsCount: q.options?.length
-        });
-        
         const questionData = {
           question: q.question,
           answer: q.answer,
@@ -212,7 +242,6 @@ app.post('/api/topics/:topicId/generate-questions', async (req, res) => {
         
       } catch (error) {
         console.error(`Error saving question ${i + 1}:`, error);
-        // Continue with other questions even if one fails
       }
     }
 
@@ -302,6 +331,88 @@ app.get('/api/topics/:topicId/stats', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Get subject categories (new endpoint, safe if table doesn't exist)
+app.get('/api/subject-categories', async (req, res) => {
+  try {
+    // Check if method exists (categories system is set up)
+    if (typeof db.getSubjectCategories === 'function') {
+      const categories = await db.getSubjectCategories();
+      res.json(categories);
+    } else {
+      // Return empty array if categories not implemented yet
+      res.json([]);
+    }
+  } catch (error) {
+    console.warn('Categories not available:', error);
+    res.json([]); // Return empty array instead of error
+  }
+});
+
+// Get subjects with category information
+app.get('/api/subjects', async (req, res) => {
+  try {
+    const subjects = await db.getSubjectsWithCategories();
+    res.json(subjects);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create new subject with category
+app.post('/api/subjects', async (req, res) => {
+  try {
+    const { name, description, categoryId } = req.body;
+    const subject = await db.createSubject(name, description, categoryId);
+    
+    // Return subject with category info
+    const subjectWithCategory = await db.getSubjectByIdWithCategory(subject.id);
+    res.json(subjectWithCategory);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Auto-classify existing subjects (migration endpoint)
+app.post('/api/subjects/auto-classify', async (req, res) => {
+  try {
+    await db.autoClassifySubjects();
+    const subjects = await db.getSubjectsWithCategories();
+    res.json({ 
+      success: true, 
+      message: 'Subjects auto-classified successfully',
+      subjects 
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update subject category
+app.put('/api/subjects/:subjectId/category', async (req, res) => {
+  try {
+    const { categoryId } = req.body;
+    const subjectId = req.params.subjectId;
+    
+    await db.updateSubjectCategory(subjectId, categoryId);
+    const updatedSubject = await db.getSubjectByIdWithCategory(subjectId);
+    
+    res.json(updatedSubject);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get subjects by category
+app.get('/api/categories/:categoryId/subjects', async (req, res) => {
+  try {
+    const subjects = await db.getSubjectsByCategory(req.params.categoryId);
+    res.json(subjects);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 // Validate question endpoint (for testing AI generation)
 app.post('/api/questions/validate', async (req, res) => {
@@ -639,6 +750,47 @@ app.post('/api/test-generation/:topicId', async (req, res) => {
       status: 'error',
       error: error.message
     });
+  }
+});
+
+// Enhanced Ollama service endpoint with domain detection
+app.get('/api/test-domain-detection/:topicId', async (req, res) => {
+  try {
+    const topicId = req.params.topicId;
+    const topicInfo = await db.getTopicWithSubjectCategory(topicId);
+    
+    if (!topicInfo) {
+      return res.status(404).json({ error: 'Topic not found' });
+    }
+    
+    const notes = await db.getNotes(topicId);
+    const content = notes.map(note => note.content).join('\n\n');
+    
+    const enhancedSubject = {
+      id: topicInfo.subject_id,
+      name: topicInfo.subject_name,
+      category_name: topicInfo.category_name,
+      domain_type: topicInfo.domain_type
+    };
+    
+    const enhancedTopic = {
+      id: topicInfo.id,
+      name: topicInfo.name
+    };
+    
+    // Test domain detection
+    const detectedDomain = ollama.detectDomain(content, enhancedSubject, enhancedTopic);
+    
+    res.json({
+      topic: topicInfo,
+      contentLength: content.length,
+      detectedDomain: detectedDomain,
+      categoryFromDB: topicInfo.category_name,
+      domainFromDB: topicInfo.domain_type
+    });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

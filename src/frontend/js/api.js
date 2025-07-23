@@ -109,10 +109,15 @@ class ApiService {
     /**
      * Create a new subject
      */
-    async createSubject(name, description = '') {
+    // Update the createSubject method to handle both old and new formats
+    async createSubject(name, description = '', categoryId = null) {
         return this.request('/subjects', {
             method: 'POST',
-            body: JSON.stringify({ name, description }),
+            body: JSON.stringify({ 
+            name, 
+            description,
+            categoryId  // Add categoryId support
+            }),
         });
     }
 
@@ -133,6 +138,16 @@ class ApiService {
         return this.request(`/subjects/${id}`, {
             method: 'DELETE',
         });
+    }
+
+    // Add method to get subject categories
+    async getSubjectCategories() {
+        try {
+            return this.request('/subject-categories');
+        } catch (error) {
+            console.warn('Subject categories not available:', error);
+            return []; // Return empty array if categories not set up yet
+        }
     }
 
     // ===== TOPIC METHODS =====
