@@ -1,5 +1,8 @@
-// src/server/services/ollama.js - CORRECTED VERSION
+// src/server/services/ollama.js - UPDATED WITH DOMAIN AWARENESS
 const { Ollama } = require('ollama');
+const ContentScopeAnalyzer = require('./ai/analyzers/scope');
+const DomainPromptGenerator = require('./ai/prompts');
+const DomainValidatorManager = require('./ai/validators');
 
 class OllamaService {
   constructor() {
@@ -7,6 +10,11 @@ class OllamaService {
       host: 'http://localhost:11434'
     });
     this.defaultModel = 'llama3.2:3b';
+    
+    // Initialize modular components
+    this.scopeAnalyzer = new ContentScopeAnalyzer(this.ollama);
+    this.promptGenerator = new DomainPromptGenerator();
+    this.validatorManager = new DomainValidatorManager();
   }
 
   async listModels() {
@@ -30,38 +38,35 @@ class OllamaService {
   }
 
   /**
-   * Generate MCQ questions with domain awareness
+   * Enhanced domain-aware question generation
    */
   async generateQuestions(content, count = 5, difficulty = 'medium', subject = null, topic = null) {
     try {
-      console.log(`🤖 Generating ${count} MCQ questions with difficulty: ${difficulty}`);
+      console.log(`🤖 Generating ${count} ${difficulty} questions`);
       console.log(`📚 Subject: ${subject?.name || 'Unknown'}, Topic: ${topic?.name || 'Unknown'}`);
       
       // Check if content is sufficient
-      if (!content || content.trim().length < 100) {
-        console.error('❌ Content too short for question generation');
+      if (!this.scopeAnalyzer.isContentSufficient(content)) {
+        console.error('❌ Content insufficient for question generation');
         return [];
       }
 
-      // Truncate content to avoid token limits
-      const truncatedContent = content.substring(0, 2000);
+      // STEP 1: Analyze content scope and detect domain
+      const contentScope = await this.analyzeContentWithDomainDetection(content, subject, topic);
+      console.log(`🎯 Domain: ${contentScope.subjectDomain}, Level: ${contentScope.educationalLevel}`);
       
-      // Use multiple attempts for reliability
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        console.log(`🔄 Attempt ${attempt} of 3`);
-        
-        const questions = await this.generateMCQAttempt(truncatedContent, count, difficulty, subject, topic);
-        
-        if (questions.length > 0) {
-          console.log(`✅ Successfully generated ${questions.length} questions on attempt ${attempt}`);
-          return questions;
-        }
-        
-        console.log(`⚠️ Attempt ${attempt} failed, trying again...`);
-        await this.delay(1000);
+      // STEP 2: Generate domain-specific questions
+      const questions = await this.generateDomainSpecificQuestions(content, count, difficulty, contentScope);
+      
+      // STEP 3: Validate questions
+      const validatedQuestions = await this.validateQuestions(questions, contentScope);
+      
+      if (validatedQuestions.length > 0) {
+        console.log(`✅ Generated ${validatedQuestions.length} validated questions`);
+        return validatedQuestions;
       }
       
-      console.error('❌ All attempts failed');
+      console.error('❌ No valid questions generated');
       return [];
       
     } catch (error) {
@@ -70,425 +75,312 @@ class OllamaService {
     }
   }
 
-  async generateMCQAttempt(content, count, difficulty, subject, topic) {
+  /**
+   * Analyze content with domain detection
+   */
+  async analyzeContentWithDomainDetection(content, subject, topic) {
     try {
-      // Create domain-aware prompt
-      const prompt = this.createDomainAwareMCQPrompt(content, count, difficulty, subject, topic);
+      // Get basic scope analysis
+      const basicScope = await this.scopeAnalyzer.analyzeScope(content, subject, topic);
       
-      const response = await this.ollama.generate({
-        model: this.defaultModel,
-        prompt: prompt,
-        stream: false,
-        options: {
-          temperature: 0.7,
-          top_p: 0.9,
-          num_predict: 1500,
-          stop: ["END_QUESTIONS"]
-        }
+      // Enhanced domain detection
+      const detectedDomain = this.detectDomain(content, subject, topic);
+      
+      // Merge analyses
+      const enhancedScope = {
+        ...basicScope,
+        subjectDomain: detectedDomain,
+      };
+      
+      console.log('📊 Content Analysis:', {
+        domain: enhancedScope.subjectDomain,
+        level: enhancedScope.educationalLevel,
+        concepts: enhancedScope.conceptsTaught?.slice(0, 3),
+        operations: enhancedScope.operationsShown
       });
-
-      if (!response.response || response.response.trim().length === 0) {
-        console.log('❌ Empty response from Ollama');
-        return [];
-      }
-
-      console.log('📝 Raw Ollama response length:', response.response.length);
-      return this.parseMCQResponse(response.response, count);
+      
+      return enhancedScope;
       
     } catch (error) {
-      console.error('❌ Error in generateMCQAttempt:', error);
+      console.error('❌ Error in content analysis:', error);
+      return this.getDefaultScope(subject, topic);
+    }
+  }
+
+  /**
+   * Simple domain detection
+   */
+  detectDomain(content, subject, topic) {
+    const contentLower = content.toLowerCase();
+    const subjectName = (subject?.name || '').toLowerCase();
+    const topicName = (topic?.name || '').toLowerCase();
+    const allText = `${contentLower} ${subjectName} ${topicName}`;
+    
+    // Check for mathematics indicators
+    if (this.isMathematics(allText)) {
+      console.log('🔢 Detected: Mathematics');
+      return 'mathematics';
+    }
+    
+    // Check for literature indicators
+    if (this.isLiterature(allText)) {
+      console.log('📚 Detected: Literature');
+      return 'literature';
+    }
+    
+    // Check for computing indicators
+    if (this.isComputing(allText)) {
+      console.log('💻 Detected: Computing');
+      return 'computing';
+    }
+    
+    // Check for chemistry indicators
+    if (this.isChemistry(allText)) {
+      console.log('🧪 Detected: Chemistry');
+      return 'chemistry';
+    }
+    
+    // Check for physics indicators
+    if (this.isPhysics(allText)) {
+      console.log('⚡ Detected: Physics');
+      return 'physics';
+    }
+    
+    // Check for history indicators
+    if (this.isHistory(allText)) {
+      console.log('🏛️ Detected: History');
+      return 'history';
+    }
+    
+    // Check for biology indicators
+    if (this.isBiology(allText)) {
+      console.log('🧬 Detected: Biology');
+      return 'biology';
+    }
+    
+    console.log('📖 Detected: General');
+    return 'general';
+  }
+
+  // Domain detection helper methods
+  isMathematics(text) {
+    const mathKeywords = ['math', 'addition', 'subtraction', 'multiplication', 'division', 'equation', 'algebra', 'calculate', 'solve'];
+    const mathPatterns = /[\+\-\*\/×÷=]|\d+\s*[\+\-\*\/×÷]\s*\d+/;
+    return this.containsKeywords(text, mathKeywords, 1) || mathPatterns.test(text);
+  }
+
+  isLiterature(text) {
+    const litKeywords = ['literature', 'character', 'plot', 'theme', 'symbolism', 'shakespeare', 'dickens', 'poetry', 'novel', 'stanza'];
+    return this.containsKeywords(text, litKeywords, 1) || /".*"/.test(text);
+  }
+
+  isComputing(text) {
+    const compKeywords = ['programming', 'code', 'algorithm', 'function', 'variable', 'computer', 'software'];
+    const codePatterns = /def |function |class |import|for |while |if |else|return/;
+    return this.containsKeywords(text, compKeywords, 1) || codePatterns.test(text);
+  }
+
+  isChemistry(text) {
+    const chemKeywords = ['chemistry', 'chemical', 'reaction', 'element', 'compound', 'acid', 'base', 'molecule'];
+    const chemPatterns = /H2O|CO2|NaCl|[A-Z][a-z]?\d*|→|->/;
+    return this.containsKeywords(text, chemKeywords, 1) || chemPatterns.test(text);
+  }
+
+  isPhysics(text) {
+    const physicsKeywords = ['physics', 'force', 'energy', 'motion', 'velocity', 'acceleration', 'mass'];
+    const physicsPatterns = /F\s*=|E\s*=|v\s*=|a\s*=/;
+    return this.containsKeywords(text, physicsKeywords, 1) || physicsPatterns.test(text);
+  }
+
+  isHistory(text) {
+    const historyKeywords = ['history', 'war', 'battle', 'revolution', 'century', 'historical'];
+    const datePatterns = /\b(1\d{3}|20\d{2})\b/;
+    return this.containsKeywords(text, historyKeywords, 1) || datePatterns.test(text);
+  }
+
+  isBiology(text) {
+    const bioKeywords = ['biology', 'cell', 'organism', 'species', 'evolution', 'dna', 'gene', 'photosynthesis'];
+    return this.containsKeywords(text, bioKeywords, 1);
+  }
+
+  containsKeywords(text, keywords, minCount) {
+    const found = keywords.filter(keyword => text.includes(keyword));
+    return found.length >= minCount;
+  }
+
+  /**
+   * Generate domain-specific questions
+   */
+  async generateDomainSpecificQuestions(content, count, difficulty, contentScope) {
+    try {
+      // Use domain-specific prompt generator
+      const prompt = this.promptGenerator.createScopedPrompt(content, count, difficulty, contentScope);
+      
+      console.log(`🎯 Using ${contentScope.subjectDomain} domain prompts`);
+      
+      // Generate with domain-specific parameters
+      const params = this.getDomainGenerationParams(contentScope.subjectDomain);
+      
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        console.log(`🔄 Generation attempt ${attempt} of 3`);
+        
+        const response = await this.ollama.generate({
+          model: this.defaultModel,
+          prompt: prompt,
+          stream: false,
+          options: {
+            temperature: params.temperature,
+            top_p: params.top_p,
+            num_predict: params.num_predict,
+            stop: ["END_QUESTIONS", "SCOPE_VIOLATION:", "ARITHMETIC_ERROR:"]
+          }
+        });
+
+        if (!response.response || response.response.trim().length === 0) {
+          console.log('❌ Empty response from Ollama');
+          continue;
+        }
+
+        // Check for violations
+        if (response.response.includes('SCOPE_VIOLATION') || response.response.includes('ARITHMETIC_ERROR')) {
+          console.log('🚫 AI reported violation, adjusting...');
+          continue;
+        }
+
+        const questions = this.parseMCQResponse(response.response, count);
+        
+        if (questions.length > 0) {
+          console.log(`📝 Generated ${questions.length} questions on attempt ${attempt}`);
+          return questions;
+        }
+        
+        console.log(`⚠️ Attempt ${attempt} failed, trying again...`);
+        await this.delay(1000);
+      }
+      
+      console.error('❌ All generation attempts failed');
+      return [];
+      
+    } catch (error) {
+      console.error('❌ Error in domain generation:', error);
       return [];
     }
   }
 
-  createDomainAwareMCQPrompt(content, count, difficulty, subject, topic) {
-    // Detect domain and get instructions
-    const domainContext = this.detectDomain(content, subject, topic);
-    
-    const difficultyInstructions = {
-      easy: domainContext.easyInstructions,
-      medium: domainContext.mediumInstructions,
-      hard: domainContext.hardInstructions
+  /**
+   * Get domain-specific generation parameters
+   */
+  getDomainGenerationParams(domain) {
+    const domainParams = {
+      mathematics: {
+        temperature: 0.2,  // Very low for accuracy
+        top_p: 0.8,
+        num_predict: 1200
+      },
+      literature: {
+        temperature: 0.6,  // Higher for creativity
+        top_p: 0.9,
+        num_predict: 1800
+      },
+      computing: {
+        temperature: 0.3,  // Low for code accuracy
+        top_p: 0.85,
+        num_predict: 1600
+      },
+      chemistry: {
+        temperature: 0.3,  // Low for formula accuracy
+        top_p: 0.85,
+        num_predict: 1400
+      },
+      physics: {
+        temperature: 0.4,  // Moderate for problem-solving
+        top_p: 0.9,
+        num_predict: 1500
+      },
+      history: {
+        temperature: 0.5,  // Balanced for analysis
+        top_p: 0.9,
+        num_predict: 1600
+      },
+      biology: {
+        temperature: 0.4,  // Moderate for scientific accuracy
+        top_p: 0.9,
+        num_predict: 1400
+      }
     };
 
-    return `You are an expert ${domainContext.domain} teacher creating practice questions for students learning ${topic?.name || 'this topic'}. 
+    // Default parameters
+    const defaultParams = {
+      temperature: 0.5,
+      top_p: 0.9,
+      num_predict: 1500
+    };
 
-STUDY MATERIAL:
-${content}
-
-IMPORTANT INSTRUCTIONS:
-- You are NOT creating reading comprehension questions about what the material "contains" or "teaches"
-- You are creating ${domainContext.domain} practice questions that test understanding of the CONCEPTS, PROCEDURES, and APPLICATIONS
-- ${difficultyInstructions[difficulty]}
-- Create questions that require students to APPLY the knowledge, not just recall what the text says
-- Focus on the actual ${domainContext.domain} content, formulas, procedures, and problem-solving
-
-${domainContext.specificInstructions}
-
-Create exactly ${count} multiple choice questions that test actual ${domainContext.domain} knowledge:
-
-QUESTION 1:
-[Your ${domainContext.domain} question here - NOT about what the book teaches]
-A) [Specific ${domainContext.domain} answer]
-B) [Specific ${domainContext.domain} answer]
-C) [Specific ${domainContext.domain} answer]  
-D) [Specific ${domainContext.domain} answer]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Explain the ${domainContext.domain} concept/procedure/reasoning]
-
-Continue with ${count} questions total:`;
+    return domainParams[domain] || defaultParams;
   }
 
-  detectDomain(content, subject, topic) {
-    const contentLower = content.toLowerCase();
-    const subjectName = subject?.name?.toLowerCase() || '';
+  /**
+   * Validate generated questions
+   */
+  async validateQuestions(questions, contentScope) {
+    const validQuestions = [];
     
-    // PRIORITY 1: Check if subject has category information
-    if (subject?.category_id || subject?.category_name) {
-      const categoryDomain = this.getDomainFromCategory(subject);
-      if (categoryDomain) {
-        console.log(`🎯 Using category-based domain: ${categoryDomain.domain}`);
-        return categoryDomain;
+    console.log(`🔍 Validating ${questions.length} questions for ${contentScope.subjectDomain} domain`);
+    
+    for (const question of questions) {
+      const validation = this.validatorManager.validateQuestion(question, contentScope);
+      
+      if (validation.isValid) {
+        validQuestions.push(question);
+        console.log(`✅ Question validated:`, question.question.substring(0, 50) + '...');
+      } else {
+        console.log(`🚫 Question rejected:`, validation.errors.join(', '));
+        if (validation.warnings.length > 0) {
+          console.log(`⚠️  Warnings:`, validation.warnings.join(', '));
+        }
       }
     }
     
-    // PRIORITY 2: Auto-detect from content
-    console.log('🔍 Auto-detecting domain from content...');
-    
-    if (this.isMathematics(contentLower, subjectName)) {
-      return this.getMathematicsDomain();
-    }
-    if (this.isChemistry(contentLower, subjectName)) {
-      return this.getChemistryDomain();
-    }
-    if (this.isPhysics(contentLower, subjectName)) {
-      return this.getPhysicsDomain();
-    }
-    if (this.isBiology(contentLower, subjectName)) {
-      return this.getBiologyDomain();
-    }
-    if (this.isHistory(contentLower, subjectName)) {
-      return this.getHistoryDomain();
-    }
-    if (this.isLiterature(contentLower, subjectName)) {
-      return this.getLiteratureDomain();
-    }
-    if (this.isGeography(contentLower, subjectName)) {
-      return this.getGeographyDomain();
-    }
-    if (this.isLanguageLearning(contentLower, subjectName)) {
-      return this.getLanguageLearningDomain();
-    }
-    
-    console.log('⚠️ No specific domain detected, using general academic approach');
-    return this.getDefaultDomain();
+    return validQuestions;
   }
 
-  getDomainFromCategory(subject) {
-    const categoryId = subject.category_id;
-    const categoryName = subject.category_name?.toLowerCase();
-    
-    const categoryMapping = {
-      'mathematics': this.getMathematicsDomain(),
-      'natural-sciences': this.getScienceDomain(subject),
-      'literature': this.getLiteratureDomain(),
-      'history': this.getHistoryDomain(),
-      'languages': this.getLanguageLearningDomain(),
-      'arts': this.getArtHistoryDomain(),
-      'computer-science': this.getComputerScienceDomain(),
-      'business': this.getBusinessDomain(),
-      'health-medicine': this.getHealthMedicineDomain(),
-      'other': this.getDefaultDomain()
-    };
-    
-    if (categoryId && categoryMapping[categoryId]) {
-      return categoryMapping[categoryId];
-    }
-    
-    return null;
-  }
-
-  // Domain Detection Methods
-  isMathematics(content, subject) {
-    const mathKeywords = ['addition', 'subtraction', 'multiplication', 'division', 'equation', 'algebra', 'calculate', 'solve'];
-    return this.containsKeywords(content + ' ' + subject, mathKeywords, 2) || /[\+\-\*\/\=]/.test(content);
-  }
-
-  isChemistry(content, subject) {
-    const chemKeywords = ['chemical', 'reaction', 'element', 'compound', 'acid', 'base', 'molecule', 'atom'];
-    return this.containsKeywords(content + ' ' + subject, chemKeywords, 2);
-  }
-
-  isPhysics(content, subject) {
-    const physicsKeywords = ['force', 'energy', 'motion', 'velocity', 'acceleration', 'mass', 'physics'];
-    return this.containsKeywords(content + ' ' + subject, physicsKeywords, 2);
-  }
-
-  isBiology(content, subject) {
-    const bioKeywords = ['cell', 'organism', 'dna', 'gene', 'biology', 'species', 'evolution'];
-    return this.containsKeywords(content + ' ' + subject, bioKeywords, 2);
-  }
-
-  isHistory(content, subject) {
-    const historyKeywords = ['war', 'battle', 'revolution', 'century', 'historical', 'history'];
-    return this.containsKeywords(content + ' ' + subject, historyKeywords, 2) || /\b(1\d{3}|20\d{2})\b/.test(content);
-  }
-
-  isLiterature(content, subject) {
-    const litKeywords = ['character', 'plot', 'theme', 'literature', 'novel', 'poetry', 'author'];
-    return this.containsKeywords(content + ' ' + subject, litKeywords, 2);
-  }
-
-  isGeography(content, subject) {
-    const geoKeywords = ['country', 'capital', 'continent', 'geography', 'climate', 'population'];
-    return this.containsKeywords(content + ' ' + subject, geoKeywords, 2);
-  }
-
-  isLanguageLearning(content, subject) {
-    const langKeywords = ['grammar', 'vocabulary', 'spanish', 'french', 'german', 'language'];
-    return this.containsKeywords(content + ' ' + subject, langKeywords, 2);
-  }
-
-  containsKeywords(text, keywords, minCount) {
-    if (!text) return false;
-    const lowerText = text.toLowerCase();
-    const found = keywords.filter(keyword => lowerText.includes(keyword));
-    return found.length >= minCount;
-  }
-
-  // Domain Objects
-  getMathematicsDomain() {
+  /**
+   * Get default scope when analysis fails
+   */
+  getDefaultScope(subject, topic) {
     return {
-      domain: 'Mathematics',
-      easyInstructions: 'Create basic calculation and concept identification questions',
-      mediumInstructions: 'Create multi-step problems and application questions',
-      hardInstructions: 'Create complex word problems and advanced concept questions',
-      specificInstructions: `
-MATHEMATICS QUESTION REQUIREMENTS:
-- Ask questions that require CALCULATIONS or mathematical reasoning
-- Include numerical problems, equations, and mathematical procedures
-- Example: "What is 15 + 27?" NOT "What does this chapter teach about addition?"
-- Example: "If x = 5, what is 3x + 2?" NOT "What mathematical operations are covered?"
-- Include word problems that require mathematical thinking`
+      educationalLevel: 'middle_school',
+      subjectDomain: 'general',
+      conceptsTaught: [topic?.name || 'general concepts'],
+      operationsShown: ['basic operations'],
+      complexityLevel: 'basic',
+      numberRange: 'double_digit',
+      prerequisites: ['basic knowledge'],
+      subjectInfo: {
+        id: subject?.id,
+        name: subject?.name,
+        categoryId: subject?.category_id,
+        categoryName: subject?.category_name
+      },
+      topicInfo: {
+        id: topic?.id,
+        name: topic?.name,
+        description: topic?.description
+      }
     };
   }
 
-  getChemistryDomain() {
-    return {
-      domain: 'Chemistry',
-      easyInstructions: 'Create questions about chemical formulas, basic reactions, and element properties',
-      mediumInstructions: 'Create questions about chemical equations, reaction mechanisms, and calculations',
-      hardInstructions: 'Create complex reaction problems, equilibrium questions, and advanced concepts',
-      specificInstructions: `
-CHEMISTRY QUESTION REQUIREMENTS:
-- Ask about ACTUAL chemical reactions, formulas, and processes
-- Test understanding of chemical principles and calculations
-- Example: "What is the product when HCl reacts with NaOH?" NOT "What does this text teach about acids?"
-- Example: "What is the molecular formula of water?" NOT "What compounds are mentioned?"
-- Include stoichiometry, balancing equations, and reaction predictions`
-    };
-  }
-
-  getPhysicsDomain() {
-    return {
-      domain: 'Physics',
-      easyInstructions: 'Create questions about basic physics concepts, units, and simple calculations',
-      mediumInstructions: 'Create problems involving physics formulas and real-world applications',
-      hardInstructions: 'Create complex physics problems requiring multiple concepts and advanced reasoning',
-      specificInstructions: `
-PHYSICS QUESTION REQUIREMENTS:
-- Ask about ACTUAL physics calculations, laws, and phenomena
-- Test understanding of physics principles and problem-solving
-- Example: "If F = ma and m = 10kg, a = 5m/s², what is F?" NOT "What does this text teach about force?"
-- Include formula applications, unit conversions, and concept explanations`
-    };
-  }
-
-  getBiologyDomain() {
-    return {
-      domain: 'Biology',
-      easyInstructions: 'Create questions about biological structures, functions, and basic processes',
-      mediumInstructions: 'Create questions about biological systems, interactions, and life processes',
-      hardInstructions: 'Create complex questions about biological mechanisms and advanced concepts',
-      specificInstructions: `
-BIOLOGY QUESTION REQUIREMENTS:
-- Ask about ACTUAL biological processes, structures, and functions
-- Test understanding of how living systems work
-- Example: "What is the function of mitochondria?" NOT "What does this text teach about cells?"
-- Example: "During photosynthesis, what gas is produced?" NOT "What biological processes are mentioned?"
-- Focus on biological concepts, organism functions, and life processes`
-    };
-  }
-
-  getHistoryDomain() {
-    return {
-      domain: 'History',
-      easyInstructions: 'Create questions about specific historical facts, dates, and key figures',
-      mediumInstructions: 'Create questions about historical causes, effects, and connections',
-      hardInstructions: 'Create analytical questions about historical significance and complex relationships',
-      specificInstructions: `
-HISTORY QUESTION REQUIREMENTS:
-- Ask about ACTUAL historical events, people, and consequences
-- Test knowledge of what happened, when, and why
-- Example: "When did World War II end?" NOT "What does this text teach about war?"
-- Example: "What caused the American Revolution?" NOT "What historical events are covered?"
-- Focus on specific historical facts, chronology, and cause-effect relationships`
-    };
-  }
-
-  getLiteratureDomain() {
-    return {
-      domain: 'Literature',
-      easyInstructions: 'Create questions about characters, plot events, basic literary devices, and direct quotations',
-      mediumInstructions: 'Create questions about themes, character motivations, literary techniques, and text analysis',
-      hardInstructions: 'Create questions requiring interpretation, symbolism analysis, and critical evaluation',
-      specificInstructions: `
-LITERATURE QUESTION REQUIREMENTS:
-- Ask about CHARACTERS, PLOT, THEMES, and LITERARY TECHNIQUES from the actual text
-- Test understanding of character development, motivations, and relationships
-- Example: "What does the green light symbolize in The Great Gatsby?" NOT "What themes does this book explore?"
-- Example: "Why does Hamlet hesitate to kill Claudius?" NOT "What is this play about?"
-- Focus on textual evidence, character analysis, and literary interpretation`
-    };
-  }
-
-  getGeographyDomain() {
-    return {
-      domain: 'Geography',
-      easyInstructions: 'Create questions about locations, physical features, countries, and basic geographical facts',
-      mediumInstructions: 'Create questions about climate patterns, geographical processes, and human-environment interactions',
-      hardInstructions: 'Create questions about complex geographical relationships, regional analysis, and geographical theories',
-      specificInstructions: `
-GEOGRAPHY QUESTION REQUIREMENTS:
-- Ask about SPECIFIC locations, physical features, and geographical processes
-- Test knowledge of countries, capitals, landmarks, and geographical phenomena
-- Example: "What is the capital of Kenya?" NOT "What does this text teach about Africa?"
-- Example: "Which mountain range separates Europe from Asia?"
-- Focus on spatial relationships, physical processes, and human geography`
-    };
-  }
-
-  getLanguageLearningDomain() {
-    return {
-      domain: 'Language Learning',
-      easyInstructions: 'Create questions about vocabulary, basic grammar, and simple translations',
-      mediumInstructions: 'Create questions about grammar rules, sentence structure, and language usage',
-      hardInstructions: 'Create questions about complex grammar, idiomatic expressions, and advanced language concepts',
-      specificInstructions: `
-LANGUAGE LEARNING QUESTION REQUIREMENTS:
-- Ask about VOCABULARY, GRAMMAR, and LANGUAGE USAGE from the material
-- Test understanding of grammar rules, verb conjugations, and sentence structure
-- Example: "What is the past tense of 'go'?" NOT "What does this lesson teach?"
-- Example: "How do you say 'hello' in Spanish?"
-- Focus on practical language skills and linguistic understanding`
-    };
-  }
-
-  getScienceDomain(subject) {
-    const subjectName = subject?.name?.toLowerCase() || '';
-    
-    if (subjectName.includes('chemistry')) {
-      return this.getChemistryDomain();
-    } else if (subjectName.includes('physics')) {
-      return this.getPhysicsDomain();
-    } else if (subjectName.includes('biology')) {
-      return this.getBiologyDomain();
-    }
-    
-    return {
-      domain: 'Natural Sciences',
-      easyInstructions: 'Create questions about basic scientific concepts, facts, and observations',
-      mediumInstructions: 'Create questions about scientific processes, experiments, and analysis',
-      hardInstructions: 'Create complex questions requiring scientific reasoning and problem-solving',
-      specificInstructions: `
-NATURAL SCIENCES QUESTION REQUIREMENTS:
-- Ask about ACTUAL scientific processes, experiments, and phenomena
-- Test understanding of scientific concepts and their applications
-- Include questions about scientific method, observations, and conclusions
-- Focus on how science works and scientific reasoning`
-    };
-  }
-
-  getArtHistoryDomain() {
-    return {
-      domain: 'Art History',
-      easyInstructions: 'Create questions about artists, artworks, art movements, and basic art terminology',
-      mediumInstructions: 'Create questions about artistic techniques, historical context, and art analysis',
-      hardInstructions: 'Create questions requiring interpretation of artistic meaning and complex art historical analysis',
-      specificInstructions: `
-ART HISTORY QUESTION REQUIREMENTS:
-- Ask about SPECIFIC artists, artworks, movements, and artistic techniques
-- Test knowledge of art history, artistic styles, and cultural context
-- Example: "Who painted 'Starry Night'?" NOT "What does this text teach about art?"
-- Focus on artistic knowledge, visual analysis, and cultural understanding`
-    };
-  }
-
-  getComputerScienceDomain() {
-    return {
-      domain: 'Computer Science',
-      easyInstructions: 'Create questions about basic programming concepts, terminology, and simple algorithms',
-      mediumInstructions: 'Create questions about programming logic, data structures, and algorithm analysis',
-      hardInstructions: 'Create complex programming problems, system design questions, and advanced CS concepts',
-      specificInstructions: `
-COMPUTER SCIENCE QUESTION REQUIREMENTS:
-- Ask about ACTUAL programming concepts, algorithms, and problem-solving
-- Test understanding of coding logic, data structures, and computational thinking
-- Example: "What does this code output?" NOT "What does this lesson teach about programming?"
-- Include code analysis, algorithm design, and computational problems`
-    };
-  }
-
-  getBusinessDomain() {
-    return {
-      domain: 'Business & Economics',
-      easyInstructions: 'Create questions about basic business concepts, terminology, and simple economic principles',
-      mediumInstructions: 'Create questions about business strategies, market analysis, and economic applications',
-      hardInstructions: 'Create complex business scenarios, strategic analysis, and advanced economic reasoning',
-      specificInstructions: `
-BUSINESS QUESTION REQUIREMENTS:
-- Ask about ACTUAL business strategies, economic principles, and market dynamics
-- Test understanding of business operations, financial concepts, and economic theory
-- Example: "What is the break-even point if fixed costs are $1000?" NOT "What does this text teach about business?"
-- Include business case analysis, financial calculations, and strategic thinking`
-    };
-  }
-
-  getHealthMedicineDomain() {
-    return {
-      domain: 'Health & Medicine',
-      easyInstructions: 'Create questions about basic anatomy, health facts, and medical terminology',
-      mediumInstructions: 'Create questions about body systems, health processes, and medical procedures',
-      hardInstructions: 'Create complex questions about medical diagnosis, treatment, and advanced health concepts',
-      specificInstructions: `
-HEALTH & MEDICINE QUESTION REQUIREMENTS:
-- Ask about ACTUAL medical facts, health processes, and clinical knowledge
-- Test understanding of anatomy, physiology, and medical procedures
-- Example: "What is the function of the liver?" NOT "What does this text teach about anatomy?"
-- Include diagnostic reasoning, treatment options, and health science concepts`
-    };
-  }
-
-  getDefaultDomain() {
-    return {
-      domain: 'Academic',
-      easyInstructions: 'Create questions about key concepts and basic understanding',
-      mediumInstructions: 'Create questions that require analysis and application of concepts',
-      hardInstructions: 'Create questions requiring synthesis and critical evaluation',
-      specificInstructions: `
-ACADEMIC QUESTION REQUIREMENTS:
-- Ask about the ACTUAL subject matter concepts and applications
-- Test understanding of the core ideas and how to apply them
-- Avoid meta-questions about what the text "teaches" or "contains"
-- Focus on the substantive content and practical applications`
-    };
-  }
-
-  // Response Parsing
+  // Keep existing parsing methods
   parseMCQResponse(response, expectedCount) {
     const questions = [];
     
     try {
+      // Check for violation markers
+      if (response.includes('SCOPE_VIOLATION') || response.includes('ARITHMETIC_ERROR')) {
+        console.log('🚫 AI reported violation');
+        return [];
+      }
+      
       const questionBlocks = response.split(/QUESTION\s+\d+:/i).filter(block => block.trim());
       
       for (let i = 0; i < questionBlocks.length && questions.length < expectedCount; i++) {
