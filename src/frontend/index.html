@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StudyAI - Intelligent Learning Platform</title>
+    <title>StudyAI - Intelligent Learning Platform (Simplified)</title>
     
     <!-- External Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -93,39 +93,55 @@
     <div id="app"></div>
 
     <!-- Application Scripts (Load in correct order) -->
-    <script src="./js/api.js"></script>
-    <script src="./js/store.js"></script>
+    <!-- Use simplified API and store -->
+    <script src="./js/api-simplified.js"></script>
+    <script src="./js/store-simplified.js"></script>
     <script src="./js/utils.js"></script>
     
-    <!-- Layout Components -->
-    <script src="./components/Layout/Sidebar.js"></script>
-    <script src="./components/Layout/Header.js"></script>
+    <!-- Layout Components (Simplified) -->
+    <script src="./components/Layout/Sidebar-simplified.js"></script>
+    <script src="./components/Layout/Header-simplified.js"></script>
     <script src="./components/Layout/Notifications.js"></script>
     
-    <!-- Dashboard Components -->
-    <script src="./components/Dashboard/Dashboard.js"></script>
+    <!-- Dashboard Components (Simplified) -->
+    <script src="./components/Dashboard/Dashboard-simplified.js"></script>
     
-    <!-- Subject Components -->
-    <script src="./components/Subjects/SubjectsList.js"></script>
-    <script src="./components/Subjects/SubjectCard.js"></script>
-    <script src="./components/Subjects/TopicsList.js"></script>
-    <script src="./components/Subjects/TopicCard.js"></script>
+    <!-- Subject Components (Simplified - Fixed Subjects) -->
+    <script src="./components/Subjects/FixedSubjectsList.js"></script>
+    <script src="./components/Subjects/TopicsList-simplified.js"></script>
     
-    <!-- Upload Components -->
-    <script src="./components/Upload/UploadForm.js"></script>
+    <!-- Upload Components (Simplified) -->
+    <script src="./components/Upload/UploadForm-simplified.js"></script>
     <script src="./components/Upload/FileDropzone.js"></script>
     
-    <!-- Practice Components -->
-    <script src="./components/Practice/PracticeSetup.js"></script>
-    <script src="./components/Practice/QuestionCard.js"></script>
+    <!-- Practice Components (Simplified) -->
+    <script src="./components/Practice/PracticeSetup-simplified.js"></script>
     <script src="./components/Practice/MCQQuestionCard.js"></script>
     
-    <!-- Modal Components -->
+    <!-- Modal Components (Topic Creation Only) -->
     <script src="./components/Modals/ModalBase.js"></script>
-    <script src="./components/Modals/CreateSubject.js"></script>
     <script src="./components/Modals/CreateTopic.js"></script>
     
-    <!-- Main Application (Must be last) -->
-    <script src="./js/main.js"></script>
+    <!-- Main Application (Simplified) -->
+    <script src="./js/main-simplified.js"></script>
+    
+    <!-- Development Tools (Remove in production) -->
+    <script>
+        // Development console helpers
+        if (window.location.hostname === 'localhost') {
+            console.log('🔧 Development mode detected');
+            console.log('📋 Available commands: studyAI.help()');
+            
+            // Hot reload helper for development
+            window.reloadComponents = () => {
+                location.reload();
+            };
+            
+            // Debug helper
+            window.debugStore = () => {
+                return window.store.getState();
+            };
+        }
+    </script>
 </body>
 </html>

@@ -1,12 +1,12 @@
-// src/frontend/components/Upload/UploadForm.js - FIXED VERSION with working file upload
-window.UploadFormComponent = {
+// components/Upload/UploadForm-simplified.js - Simplified Upload for Fixed Subjects
+window.UploadFormSimplifiedComponent = {
     template: `
     <div class="animate-fade-in space-y-6">
         <div class="text-center mb-8">
-            <h2 class="text-2xl md:text-3xl font-bold text-black mb-4">
-                <span class="mr-3">📤</span>Add Study Materials
+            <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">
+                <span class="mr-3">📤</span>Upload Study Materials
             </h2>
-            <p class="text-black/80 text-lg">Upload your notes, photos, PDFs, and documents for AI analysis!</p>
+            <p class="text-white/80 text-lg">Add your notes, photos, PDFs, and documents for AI analysis!</p>
         </div>
 
         <div class="max-w-2xl mx-auto">
@@ -36,27 +36,66 @@ window.UploadFormComponent = {
                             required
                         >
                             <option value="">Choose a subject...</option>
-                            <option v-for="subject in store.state.subjects" :key="subject.id" :value="subject">
+                            <option v-for="subject in subjects" :key="subject.id" :value="subject">
                                 {{ subject.name }}
                             </option>
                         </select>
                     </div>
 
-                    <!-- Topic Selection -->
+                    <!-- Topic Selection/Creation -->
                     <div v-if="selectedSubject">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             <i class="fas fa-file-alt mr-2 text-gray-500"></i>Topic
                         </label>
-                        <select
-                            v-model="selectedTopic"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
-                            required
-                        >
-                            <option value="">Choose a topic...</option>
-                            <option v-for="topic in availableTopics" :key="topic.id" :value="topic">
-                                {{ topic.name }}
-                            </option>
-                        </select>
+                        <div class="flex space-x-3">
+                            <select
+                                v-model="selectedTopic"
+                                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                                required
+                            >
+                                <option value="">Choose a topic...</option>
+                                <option v-for="topic in availableTopics" :key="topic.id" :value="topic">
+                                    {{ topic.name }}
+                                </option>
+                            </select>
+                            <button
+                                type="button"
+                                @click="showCreateTopic = true"
+                                class="px-4 py-3 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg font-medium transition-colors"
+                                title="Create new topic"
+                            >
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Quick Topic Creation -->
+                        <div v-if="showCreateTopic" class="mt-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div class="flex space-x-3">
+                                <input
+                                    v-model="newTopicName"
+                                    type="text"
+                                    placeholder="Topic name (e.g., Algebra Basics)"
+                                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                    @keyup.enter="createTopicQuick"
+                                />
+                                <button
+                                    type="button"
+                                    @click="createTopicQuick"
+                                    :disabled="!newTopicName.trim() || creatingTopic"
+                                    class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <i v-if="creatingTopic" class="fas fa-spinner fa-spin"></i>
+                                    <i v-else class="fas fa-check"></i>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="cancelCreateTopic"
+                                    class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors"
+                                >
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- File Upload Area -->
@@ -214,6 +253,14 @@ window.UploadFormComponent = {
         const uploadStatus = Vue.ref('');
         const uploadResult = Vue.ref(null);
         const fileInput = Vue.ref(null);
+        
+        // Quick topic creation
+        const showCreateTopic = Vue.ref(false);
+        const newTopicName = Vue.ref('');
+        const creatingTopic = Vue.ref(false);
+
+        // Get fixed subjects from store
+        const subjects = Vue.computed(() => store.state.subjects);
 
         const canUpload = Vue.computed(() => {
             return selectedFile.value && selectedSubject.value && selectedTopic.value && !isUploading.value;
@@ -222,6 +269,7 @@ window.UploadFormComponent = {
         const handleSubjectChange = async () => {
             selectedTopic.value = null;
             availableTopics.value = [];
+            showCreateTopic.value = false;
             
             if (selectedSubject.value) {
                 try {
@@ -231,6 +279,36 @@ window.UploadFormComponent = {
                     store.showNotification('Failed to load topics', 'error');
                 }
             }
+        };
+
+        const createTopicQuick = async () => {
+            if (!newTopicName.value.trim() || !selectedSubject.value) return;
+
+            creatingTopic.value = true;
+            try {
+                const topic = await window.api.createTopic(
+                    selectedSubject.value.id,
+                    newTopicName.value.trim(),
+                    ''
+                );
+                
+                availableTopics.value.push(topic);
+                selectedTopic.value = topic;
+                
+                showCreateTopic.value = false;
+                newTopicName.value = '';
+                
+                store.showNotification('Topic created successfully!', 'success');
+            } catch (error) {
+                store.showNotification('Failed to create topic', 'error');
+            } finally {
+                creatingTopic.value = false;
+            }
+        };
+
+        const cancelCreateTopic = () => {
+            showCreateTopic.value = false;
+            newTopicName.value = '';
         };
 
         const triggerFileInput = () => {
@@ -310,76 +388,55 @@ window.UploadFormComponent = {
             uploadStatus.value = 'Uploading file...';
 
             try {
-                const formData = new FormData();
-                formData.append('file', selectedFile.value);
-                formData.append('subjectId', selectedSubject.value.id);
-                formData.append('topicId', selectedTopic.value.id);
-
-                // Use XMLHttpRequest for progress tracking
-                const xhr = new XMLHttpRequest();
-                
-                // Track upload progress
-                xhr.upload.addEventListener('progress', (event) => {
-                    if (event.lengthComputable) {
-                        const percentComplete = (event.loaded / event.total) * 100;
-                        uploadProgress.value = percentComplete;
-                        
-                        if (percentComplete < 100) {
+                // Use the simplified upload endpoint
+                const result = await window.api.uploadFile(
+                    selectedFile.value,
+                    selectedTopic.value.id,
+                    (progress) => {
+                        uploadProgress.value = progress;
+                        if (progress < 100) {
                             uploadStatus.value = 'Uploading file...';
                         } else {
                             uploadStatus.value = 'Processing file...';
                         }
                     }
-                });
-
-                // Handle completion
-                xhr.addEventListener('load', () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        try {
-                            const result = JSON.parse(xhr.responseText);
-                            uploadResult.value = result;
-                            store.showNotification('File uploaded and processed successfully!', 'success');
-                            
-                            // Reset form
-                            selectedFile.value = null;
-                            if (fileInput.value) {
-                                fileInput.value.value = '';
-                            }
-                        } catch (error) {
-                            store.showNotification('Invalid response from server', 'error');
-                        }
-                    } else {
-                        store.showNotification(`Upload failed: ${xhr.status} ${xhr.statusText}`, 'error');
-                    }
-                    isUploading.value = false;
-                });
-
-                // Handle errors
-                xhr.addEventListener('error', () => {
-                    store.showNotification('Upload failed - network error', 'error');
-                    isUploading.value = false;
-                });
-
-                // Send the request
-                xhr.open('POST', 'http://localhost:3001/api/upload');
-                xhr.send(formData);
-
+                );
+                
+                uploadResult.value = result;
+                store.showNotification('File uploaded and processed successfully!', 'success');
+                
+                // Reset form
+                selectedFile.value = null;
+                if (fileInput.value) {
+                    fileInput.value.value = '';
+                }
             } catch (error) {
                 console.error('Upload error:', error);
                 store.showNotification('Upload failed. Please try again.', 'error');
+            } finally {
                 isUploading.value = false;
             }
         };
 
         const generateQuestionsNow = async () => {
-            if (!selectedTopic.value) return;
+            if (!selectedTopic.value || !selectedSubject.value) return;
 
             try {
                 store.setGenerating(true);
-                const questions = await window.api.generateQuestions(selectedTopic.value.id, 5, 'medium');
-                store.showNotification('Questions generated successfully!', 'success');
-                store.selectTopic(selectedTopic.value);
-                store.setCurrentView('practice');
+                const questions = await window.api.generateQuestions(
+                    selectedTopic.value.id, 
+                    5, 
+                    selectedSubject.value,
+                    selectedTopic.value
+                );
+                
+                if (questions.length > 0) {
+                    store.showNotification('Questions generated successfully!', 'success');
+                    store.selectTopic(selectedTopic.value);
+                    store.setCurrentView('practice');
+                } else {
+                    store.showNotification('No questions generated. Please try uploading more content.', 'warning');
+                }
             } catch (error) {
                 store.showNotification('Failed to generate questions', 'error');
             } finally {
@@ -416,20 +473,21 @@ window.UploadFormComponent = {
             return text.trim().split(/\s+/).length;
         };
 
-        // Load subjects on mount
-        Vue.onMounted(async () => {
-            if (store.state.subjects.length === 0) {
-                try {
-                    const subjects = await window.api.getSubjects();
-                    store.setSubjects(subjects);
-                } catch (error) {
-                    store.showNotification('Failed to load subjects', 'error');
+        // Auto-select subject/topic if coming from a specific context
+        Vue.onMounted(() => {
+            if (store.state.selectedSubject) {
+                selectedSubject.value = store.state.selectedSubject;
+                handleSubjectChange();
+                
+                if (store.state.selectedTopic) {
+                    selectedTopic.value = store.state.selectedTopic;
                 }
             }
         });
 
         return {
             store,
+            subjects,
             selectedSubject,
             selectedTopic,
             selectedFile,
@@ -440,8 +498,13 @@ window.UploadFormComponent = {
             uploadStatus,
             uploadResult,
             fileInput,
+            showCreateTopic,
+            newTopicName,
+            creatingTopic,
             canUpload,
             handleSubjectChange,
+            createTopicQuick,
+            cancelCreateTopic,
             triggerFileInput,
             handleFileChange,
             handleDrop,

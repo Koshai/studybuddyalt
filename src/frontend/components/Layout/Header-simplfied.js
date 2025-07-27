@@ -1,6 +1,5 @@
-// components/Layout/Header.js - FIXED VERSION with proper contrast
-
-window.HeaderComponent = {
+// components/Layout/Header-simplified.js - Simplified Header without Subject Creation
+window.HeaderSimplifiedComponent = {
     template: `
     <header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
         <div class="flex items-center justify-between">
@@ -32,7 +31,7 @@ window.HeaderComponent = {
                 <div v-if="store.state.loading || store.state.generating" class="flex items-center space-x-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
                     <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
                     <span class="text-sm font-medium text-blue-700">
-                        {{ store.state.generating ? 'Generating...' : 'Loading...' }}
+                        {{ store.state.generating ? 'Generating Questions...' : 'Loading...' }}
                     </span>
                 </div>
                 
@@ -52,8 +51,12 @@ window.HeaderComponent = {
                                 <i class="fas fa-upload mr-3 text-gray-500 w-4"></i>Import Data
                             </button>
                             <hr class="my-2 border-gray-200">
+                            <button @click="optimizeDatabase" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg flex items-center">
+                                <i class="fas fa-database mr-3 text-gray-500 w-4"></i>Optimize Database
+                            </button>
+                            <hr class="my-2 border-gray-200">
                             <button @click="resetData" class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center">
-                                <i class="fas fa-trash mr-3 text-red-500 w-4"></i>Reset Data
+                                <i class="fas fa-trash mr-3 text-red-500 w-4"></i>Reset All Data
                             </button>
                         </div>
                     </div>
@@ -89,23 +92,34 @@ window.HeaderComponent = {
                 case 'dashboard':
                     return {
                         title: 'Dashboard',
-                        description: 'Overview of your learning progress'
+                        description: 'Overview of your learning progress and quick actions'
                     };
                 case 'subjects':
                     if (store.state.selectedSubject) {
                         return {
-                            title: store.state.selectedSubject.name,
-                            description: store.state.selectedSubject.description || 'Manage topics for this subject'
+                            title: `${store.state.selectedSubject.name} Topics`,
+                            description: 'Manage your learning topics and study materials'
                         };
                     }
                     return {
-                        title: 'My Subjects',
-                        description: 'Organize your learning by subjects and topics'
+                        title: 'Study Subjects',
+                        description: 'Choose from 10 study areas to organize your learning'
+                    };
+                case 'topics':
+                    if (store.state.selectedSubject) {
+                        return {
+                            title: `${store.state.selectedSubject.name} Topics`,
+                            description: 'Create topics and upload study materials'
+                        };
+                    }
+                    return {
+                        title: 'Topics',
+                        description: 'Organize your study materials by topics'
                     };
                 case 'upload':
                     return {
-                        title: 'Upload Materials',
-                        description: 'Add new study materials and documents'
+                        title: 'Upload Study Materials',
+                        description: 'Add notes, PDFs, and documents for AI analysis'
                     };
                 case 'practice':
                     if (store.state.selectedTopic) {
@@ -137,7 +151,7 @@ window.HeaderComponent = {
                 });
             }
             
-            if (store.state.selectedSubject && store.state.currentView === 'subjects') {
+            if (store.state.selectedSubject && ['topics', 'subjects'].includes(store.state.currentView)) {
                 crumbs.push({
                     label: 'Subjects',
                     icon: 'fas fa-book',
@@ -166,7 +180,7 @@ window.HeaderComponent = {
                         label: store.state.selectedSubject.name,
                         action: () => {
                             store.state.selectedTopic = null;
-                            store.setCurrentView('subjects');
+                            store.setCurrentView('topics');
                         }
                     });
                 }
@@ -185,9 +199,11 @@ window.HeaderComponent = {
             }
         };
 
-        const exportData = () => {
+        const exportData = async () => {
             try {
-                const data = store.exportData();
+                store.setLoading(true);
+                const data = await window.api.exportData();
+                
                 const blob = new Blob([JSON.stringify(data, null, 2)], { 
                     type: 'application/json' 
                 });
@@ -200,9 +216,12 @@ window.HeaderComponent = {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 
-                store.showNotification('Data exported successfully', 'success');
+                store.showNotification(`Data exported successfully! Topics: ${data.topics?.length || 0}, Questions: ${data.questions?.length || 0}`, 'success');
             } catch (error) {
+                console.error('Export error:', error);
                 store.showNotification('Failed to export data', 'error');
+            } finally {
+                store.setLoading(false);
             }
         };
 
@@ -210,23 +229,37 @@ window.HeaderComponent = {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.json';
-            input.onchange = (event) => {
+            input.onchange = async (event) => {
                 const file = event.target.files[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onload = (e) => {
+                    reader.onload = async (e) => {
                         try {
+                            store.setLoading(true);
                             const data = JSON.parse(e.target.result);
-                            if (store.importData(data)) {
-                                // Refresh current view
-                                const currentView = store.state.currentView;
-                                store.setCurrentView('dashboard');
-                                Vue.nextTick(() => {
-                                    store.setCurrentView(currentView);
-                                });
+                            
+                            // Validate data structure
+                            if (!data.version || !data.topics) {
+                                throw new Error('Invalid backup file format');
                             }
+                            
+                            // Import via API
+                            await window.api.importData(data);
+                            
+                            store.showNotification(`Data imported successfully! Topics: ${data.topics?.length || 0}, Questions: ${data.questions?.length || 0}`, 'success');
+                            
+                            // Refresh current view
+                            const currentView = store.state.currentView;
+                            store.setCurrentView('dashboard');
+                            setTimeout(() => {
+                                store.setCurrentView(currentView);
+                            }, 100);
+                            
                         } catch (error) {
-                            store.showNotification('Invalid file format', 'error');
+                            console.error('Import error:', error);
+                            store.showNotification('Failed to import data: ' + error.message, 'error');
+                        } finally {
+                            store.setLoading(false);
                         }
                     };
                     reader.readAsText(file);
@@ -235,10 +268,59 @@ window.HeaderComponent = {
             input.click();
         };
 
+        const optimizeDatabase = async () => {
+            if (!confirm('Optimize database? This will clean up old data and improve performance.')) {
+                return;
+            }
+
+            try {
+                store.setLoading(true);
+                await window.api.optimizeDatabase();
+                store.showNotification('Database optimized successfully!', 'success');
+            } catch (error) {
+                console.error('Optimization error:', error);
+                store.showNotification('Failed to optimize database', 'error');
+            } finally {
+                store.setLoading(false);
+            }
+        };
+
         const resetData = () => {
-            if (confirm('Are you sure you want to reset all data? This action cannot be undone.')) {
+            if (!confirm('⚠️ WARNING: This will delete ALL your topics, questions, notes, and practice history.\n\nThis action cannot be undone. Are you absolutely sure?')) {
+                return;
+            }
+
+            // Double confirmation for safety
+            const confirmText = prompt('Type "DELETE ALL DATA" to confirm:');
+            if (confirmText !== 'DELETE ALL DATA') {
+                store.showNotification('Reset cancelled - confirmation text did not match', 'info');
+                return;
+            }
+
+            try {
+                store.setLoading(true);
                 store.resetState();
-                store.showNotification('All data has been reset', 'success');
+                
+                // Also reset the simplified store state
+                store.clearSelection();
+                store.state.topics = [];
+                store.state.questions = [];
+                store.state.notes = [];
+                store.state.score = { correct: 0, total: 0 };
+                store.state.statistics = {
+                    totalTopics: 0,
+                    totalQuestions: 0,
+                    totalNotes: 0,
+                    overallAccuracy: 0
+                };
+                
+                store.showNotification('All data has been reset. You can start fresh!', 'success');
+                store.setCurrentView('dashboard');
+            } catch (error) {
+                console.error('Reset error:', error);
+                store.showNotification('Failed to reset data', 'error');
+            } finally {
+                store.setLoading(false);
             }
         };
 
@@ -250,6 +332,7 @@ window.HeaderComponent = {
             navigateTo,
             exportData,
             showImportDialog,
+            optimizeDatabase,
             resetData
         };
     }

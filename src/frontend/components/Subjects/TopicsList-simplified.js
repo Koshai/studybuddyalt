@@ -1,5 +1,5 @@
-// components/Subjects/TopicsList.js - REDESIGNED with better organization
-window.TopicsListComponent = {
+// components/Subjects/TopicsList-simplified.js - Simplified Topics Management
+window.TopicsListSimplifiedComponent = {
     template: `
     <div class="animate-fade-in space-y-8">
         <!-- Header with Navigation -->
@@ -12,14 +12,14 @@ window.TopicsListComponent = {
             </button>
             <div class="flex-1">
                 <div class="flex items-center space-x-4 mb-2">
-                    <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg">
-                        {{ store.state.selectedSubject?.name?.charAt(0).toUpperCase() || 'S' }}
+                    <div :class="['w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg', store.state.selectedSubject?.color || 'bg-gray-500']">
+                        <i :class="store.state.selectedSubject?.icon || 'fas fa-book'"></i>
                     </div>
                     <div>
                         <h2 class="text-2xl md:text-3xl font-bold text-white">
                             {{ store.state.selectedSubject?.name || 'Subject' }} Topics
                         </h2>
-                        <p class="text-white/80">{{ store.state.selectedSubject?.description || 'Explore specific topics and practice questions' }}</p>
+                        <p class="text-white/80">{{ store.state.selectedSubject?.description || 'Manage your learning topics' }}</p>
                     </div>
                 </div>
             </div>
@@ -38,11 +38,11 @@ window.TopicsListComponent = {
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="store.state.topics.length === 0" class="text-center py-16">
+        <div v-else-if="topics.length === 0" class="text-center py-16">
             <div class="bg-white/10 backdrop-blur-sm rounded-3xl p-12 max-w-lg mx-auto">
                 <div class="text-6xl mb-6">📖</div>
-                <h3 class="text-2xl font-bold text-white mb-4">Ready to Dive Deeper?</h3>
-                <p class="text-white/80 text-lg mb-8">Create your first topic in {{ store.state.selectedSubject?.name }} to organize your study materials and generate focused questions.</p>
+                <h3 class="text-2xl font-bold text-white mb-4">Create Your First Topic!</h3>
+                <p class="text-white/80 text-lg mb-8">Start organizing your {{ store.state.selectedSubject?.name }} studies by creating a topic. You can then upload materials and generate practice questions.</p>
                 <button
                     @click="store.showCreateTopicModal()"
                     class="bg-gradient-to-r from-accent-500 to-primary-500 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:shadow-lg transition-all duration-300"
@@ -52,12 +52,12 @@ window.TopicsListComponent = {
             </div>
         </div>
 
-        <!-- Topics Layout -->
+        <!-- Topics Grid -->
         <div v-else class="space-y-8">
             <!-- Quick Stats for this Subject -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-                    <div class="text-2xl font-bold text-white">{{ store.state.topics.length }}</div>
+                    <div class="text-2xl font-bold text-white">{{ topics.length }}</div>
                     <div class="text-white/70 text-sm">Topics</div>
                 </div>
                 <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
@@ -74,10 +74,10 @@ window.TopicsListComponent = {
                 </div>
             </div>
 
-            <!-- Topics Grid -->
+            <!-- Topics List -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div
-                    v-for="topic in store.state.topics"
+                    v-for="topic in topics"
                     :key="topic.id"
                     class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300"
                 >
@@ -112,13 +112,13 @@ window.TopicsListComponent = {
                                 ]"
                             >
                                 <i class="fas fa-brain mr-2"></i>
-                                {{ canPractice(topic) ? 'Start Practice' : 'No Questions' }}
+                                {{ canPractice(topic) ? 'Practice' : 'No Questions' }}
                             </button>
                             <button
                                 @click="uploadMaterials(topic)"
                                 class="flex-1 bg-accent-500 hover:bg-accent-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center"
                             >
-                                <i class="fas fa-upload mr-2"></i>Upload Files
+                                <i class="fas fa-upload mr-2"></i>Upload
                             </button>
                         </div>
                     </div>
@@ -133,8 +133,8 @@ window.TopicsListComponent = {
                             <span class="text-xs text-gray-500">{{ (topicNotes[topic.id] || []).length }} files</span>
                         </div>
                         
-                        <!-- Materials List -->
-                        <div v-if="(topicNotes[topic.id] || []).length === 0" class="text-center py-8">
+                        <!-- Materials Status -->
+                        <div v-if="(topicNotes[topic.id] || []).length === 0" class="text-center py-6">
                             <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                                 <i class="fas fa-file-upload text-gray-400"></i>
                             </div>
@@ -147,11 +147,11 @@ window.TopicsListComponent = {
                             </button>
                         </div>
                         
-                        <div v-else class="space-y-3">
+                        <div v-else class="space-y-2">
                             <div
-                                v-for="note in (topicNotes[topic.id] || []).slice(0, 3)"
+                                v-for="note in (topicNotes[topic.id] || []).slice(0, 2)"
                                 :key="note.id"
-                                class="group p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                                class="p-3 bg-gray-50 rounded-lg"
                             >
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center space-x-3">
@@ -160,21 +160,21 @@ window.TopicsListComponent = {
                                         </div>
                                         <div>
                                             <h5 class="font-medium text-gray-900 text-sm">{{ getFileName(note.file_name) }}</h5>
-                                            <p class="text-xs text-gray-500">{{ formatDate(note.created_at) }}</p>
+                                            <p class="text-xs text-gray-500">{{ getWordCount(note.content) }} words</p>
                                         </div>
                                     </div>
-                                    <div class="text-xs text-gray-400">
-                                        {{ getWordCount(note.content) }} words
-                                    </div>
-                                </div>
-                                <!-- Content preview -->
-                                <div class="mt-2 text-xs text-gray-600 bg-white p-2 rounded border">
-                                    {{ truncateText(note.content, 100) }}
+                                    <button 
+                                        @click="generateFromNote(topic, note)"
+                                        class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors"
+                                        title="Generate questions from this material"
+                                    >
+                                        <i class="fas fa-magic mr-1"></i>Generate
+                                    </button>
                                 </div>
                             </div>
                             
-                            <!-- Show more files link -->
-                            <div v-if="(topicNotes[topic.id] || []).length > 3" class="pt-2 border-t border-gray-200">
+                            <!-- Show more link -->
+                            <div v-if="(topicNotes[topic.id] || []).length > 2" class="pt-2 border-t border-gray-200">
                                 <button
                                     @click="viewAllNotes(topic)"
                                     class="text-sm text-primary-600 hover:text-primary-700 font-medium"
@@ -183,66 +183,22 @@ window.TopicsListComponent = {
                                 </button>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Questions Preview -->
-                    <div class="p-6 pt-0">
-                        <div class="flex items-center justify-between mb-4">
-                            <h4 class="font-semibold text-gray-900 flex items-center">
-                                <i class="fas fa-question-circle mr-2 text-gray-500"></i>
-                                Practice Questions
-                            </h4>
+                        <!-- Generate Questions Button -->
+                        <div class="mt-4 pt-4 border-t border-gray-200">
                             <button
                                 @click="generateQuestions(topic)"
                                 :disabled="!canGenerateQuestions(topic)"
                                 :class="[
-                                    'text-xs px-3 py-1 rounded-full font-medium transition-colors',
+                                    'w-full py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center',
                                     canGenerateQuestions(topic)
-                                        ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                                        ? 'bg-purple-500 hover:bg-purple-600 text-white'
                                         : 'bg-gray-100 text-gray-500 cursor-not-allowed'
                                 ]"
                             >
-                                <i class="fas fa-magic mr-1"></i>
-                                {{ canGenerateQuestions(topic) ? 'Generate' : 'Add Files First' }}
+                                <i class="fas fa-magic mr-2"></i>
+                                {{ canGenerateQuestions(topic) ? 'Generate Questions' : 'Add Files First' }}
                             </button>
-                        </div>
-                        
-                        <!-- Questions List -->
-                        <div v-if="(topicQuestions[topic.id] || []).length === 0" class="text-center py-6">
-                            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                                <i class="fas fa-brain text-gray-400"></i>
-                            </div>
-                            <p class="text-sm text-gray-500 mb-2">No questions generated yet</p>
-                            <p class="text-xs text-gray-400">Upload study materials first, then generate AI questions</p>
-                        </div>
-                        
-                        <div v-else class="space-y-2">
-                            <div
-                                v-for="question in (topicQuestions[topic.id] || []).slice(0, 2)"
-                                :key="question.id"
-                                class="p-3 bg-purple-50 rounded-lg border border-purple-100"
-                            >
-                                <p class="text-sm text-gray-800 font-medium mb-1">{{ truncateText(question.question, 80) }}</p>
-                                <div class="flex items-center justify-between">
-                                    <span :class="[
-                                        'text-xs px-2 py-1 rounded-full',
-                                        getDifficultyColor(question.difficulty)
-                                    ]">
-                                        {{ question.difficulty || 'medium' }}
-                                    </span>
-                                    <span class="text-xs text-gray-500">{{ formatDate(question.created_at) }}</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Practice button -->
-                            <div class="pt-2 border-t border-purple-200">
-                                <button
-                                    @click="startPractice(topic)"
-                                    class="w-full text-sm text-purple-700 hover:text-purple-800 font-medium py-2"
-                                >
-                                    Practice all {{ (topicQuestions[topic.id] || []).length }} questions →
-                                </button>
-                            </div>
                         </div>
                     </div>
 
@@ -253,15 +209,14 @@ window.TopicsListComponent = {
                                 <i class="fas fa-calendar mr-1"></i>
                                 Created {{ formatDate(topic.created_at) }}
                             </span>
-                            <div class="flex items-center space-x-4">
-                                <span class="flex items-center">
-                                    <i class="fas fa-chart-line mr-1"></i>
-                                    {{ topicAccuracy[topic.id] || 0 }}% accuracy
-                                </span>
-                                <span class="flex items-center">
-                                    <div class="w-2 h-2 bg-accent-500 rounded-full mr-1"></div>
-                                    Ready
-                                </span>
+                            <div class="flex items-center space-x-3">
+                                <button
+                                    @click="deleteTopic(topic)"
+                                    class="text-red-400 hover:text-red-600 transition-colors"
+                                    title="Delete topic"
+                                >
+                                    <i class="fas fa-trash text-sm"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -274,11 +229,10 @@ window.TopicsListComponent = {
     setup() {
         const store = window.store;
         const isLoading = Vue.ref(false);
+        const topics = Vue.ref([]);
         const topicNotes = Vue.ref({});
-        const topicQuestions = Vue.ref({});
         const questionCounts = Vue.ref({});
         const noteCounts = Vue.ref({});
-        const topicAccuracy = Vue.ref({});
 
         const totalQuestions = Vue.computed(() => {
             return Object.values(questionCounts.value).reduce((sum, count) => sum + count, 0);
@@ -289,74 +243,46 @@ window.TopicsListComponent = {
         });
 
         const averageAccuracy = Vue.computed(() => {
-            const accuracies = Object.values(topicAccuracy.value).filter(acc => acc > 0);
-            if (accuracies.length === 0) return 0;
-            return Math.round(accuracies.reduce((sum, acc) => sum + acc, 0) / accuracies.length);
+            // Placeholder calculation - you can enhance this based on practice session data
+            return Math.floor(Math.random() * 40) + 60; // 60-100%
         });
-
-        const loadTopicData = async () => {
-            for (const topic of store.state.topics) {
-                try {
-                    // Load questions for this topic
-                    const questions = await window.api.getQuestions(topic.id);
-                    topicQuestions.value[topic.id] = questions;
-                    questionCounts.value[topic.id] = questions.length;
-
-                    // Load notes for this topic
-                    try {
-                        const notes = await window.api.getNotes(topic.id);
-                        topicNotes.value[topic.id] = notes;
-                        noteCounts.value[topic.id] = notes.length;
-                        console.log(`Loaded ${notes.length} notes for topic ${topic.name}:`, notes);
-                    } catch (noteError) {
-                        console.warn(`Notes API failed for topic ${topic.id}, trying fallback:`, noteError);
-                        // Fallback: try direct API call for notes
-                        try {
-                            const response = await fetch(`http://localhost:3001/api/topics/${topic.id}/notes`);
-                            if (response.ok) {
-                                const notes = await response.json();
-                                topicNotes.value[topic.id] = notes;
-                                noteCounts.value[topic.id] = notes.length;
-                                console.log(`Fallback loaded ${notes.length} notes for topic ${topic.name}`);
-                            } else {
-                                console.warn(`Fallback API call failed with status: ${response.status}`);
-                                topicNotes.value[topic.id] = [];
-                                noteCounts.value[topic.id] = 0;
-                            }
-                        } catch (fallbackError) {
-                            console.warn('Fallback notes loading failed:', fallbackError);
-                            topicNotes.value[topic.id] = [];
-                            noteCounts.value[topic.id] = 0;
-                        }
-                    }
-
-                    // Calculate topic accuracy (placeholder)
-                    topicAccuracy.value[topic.id] = Math.floor(Math.random() * 40) + 60; // 60-100%
-
-                } catch (error) {
-                    console.warn(`Failed to load data for topic ${topic.id}:`, error);
-                    topicQuestions.value[topic.id] = [];
-                    topicNotes.value[topic.id] = [];
-                    questionCounts.value[topic.id] = 0;
-                    noteCounts.value[topic.id] = 0;
-                    topicAccuracy.value[topic.id] = 0;
-                }
-            }
-        };
 
         const loadTopics = async () => {
             if (!store.state.selectedSubject) return;
 
             isLoading.value = true;
             try {
-                const topics = await window.api.getTopics(store.state.selectedSubject.id);
-                store.setTopics(topics);
+                console.log('Loading topics for subject:', store.state.selectedSubject.id);
+                const loadedTopics = await window.api.getTopics(store.state.selectedSubject.id);
+                topics.value = loadedTopics;
+                
+                // Load data for each topic
                 await loadTopicData();
             } catch (error) {
                 console.error('Failed to load topics:', error);
                 store.showNotification('Failed to load topics', 'error');
             } finally {
                 isLoading.value = false;
+            }
+        };
+
+        const loadTopicData = async () => {
+            for (const topic of topics.value) {
+                try {
+                    // Load questions for this topic
+                    const questions = await window.api.getQuestions(topic.id);
+                    questionCounts.value[topic.id] = questions.length;
+
+                    // Load notes for this topic
+                    const notes = await window.api.getNotes(topic.id);
+                    topicNotes.value[topic.id] = notes;
+                    noteCounts.value[topic.id] = notes.length;
+                } catch (error) {
+                    console.warn(`Failed to load data for topic ${topic.id}:`, error);
+                    questionCounts.value[topic.id] = 0;
+                    topicNotes.value[topic.id] = [];
+                    noteCounts.value[topic.id] = 0;
+                }
             }
         };
 
@@ -367,24 +293,7 @@ window.TopicsListComponent = {
 
         const startPractice = (topic) => {
             store.selectTopic(topic);
-            // Load questions for this topic before going to practice
-            loadQuestionsForPractice(topic);
-        };
-
-        const loadQuestionsForPractice = async (topic) => {
-            try {
-                const questions = await window.api.getQuestions(topic.id);
-                if (questions.length > 0) {
-                    store.setQuestions(questions);
-                    store.setCurrentView('practice');
-                    store.showNotification(`Loaded ${questions.length} questions for practice!`, 'success');
-                } else {
-                    store.showNotification('No questions available. Generate some first!', 'info');
-                }
-            } catch (error) {
-                console.error('Failed to load questions for practice:', error);
-                store.showNotification('Failed to load questions', 'error');
-            }
+            store.setCurrentView('practice');
         };
 
         const uploadMaterials = (topic) => {
@@ -397,14 +306,64 @@ window.TopicsListComponent = {
 
             store.setGenerating(true);
             try {
-                const questions = await window.api.generateQuestions(topic.id, 5, 'medium');
-                topicQuestions.value[topic.id] = [...(topicQuestions.value[topic.id] || []), ...questions];
-                questionCounts.value[topic.id] = topicQuestions.value[topic.id].length;
-                store.showNotification('Questions generated successfully!', 'success');
+                // Get subject info for better AI prompts
+                const subjectCategory = store.state.selectedSubject;
+                const questions = await window.api.generateQuestions(
+                    topic.id, 
+                    5, 
+                    subjectCategory,
+                    topic
+                );
+                
+                if (questions.length > 0) {
+                    questionCounts.value[topic.id] = (questionCounts.value[topic.id] || 0) + questions.length;
+                    store.showNotification(`Generated ${questions.length} questions!`, 'success');
+                } else {
+                    store.showNotification('No questions generated. Please check your study materials.', 'warning');
+                }
             } catch (error) {
-                store.showNotification('Failed to generate questions. Add study materials first.', 'error');
+                store.showNotification('Failed to generate questions', 'error');
             } finally {
                 store.setGenerating(false);
+            }
+        };
+
+        const generateFromNote = async (topic, note) => {
+            store.setGenerating(true);
+            try {
+                const subjectCategory = store.state.selectedSubject;
+                const questions = await window.api.generateQuestions(
+                    topic.id, 
+                    3, 
+                    subjectCategory,
+                    topic
+                );
+                
+                if (questions.length > 0) {
+                    questionCounts.value[topic.id] = (questionCounts.value[topic.id] || 0) + questions.length;
+                    store.showNotification(`Generated ${questions.length} questions from ${getFileName(note.file_name)}!`, 'success');
+                }
+            } catch (error) {
+                store.showNotification('Failed to generate questions', 'error');
+            } finally {
+                store.setGenerating(false);
+            }
+        };
+
+        const deleteTopic = async (topic) => {
+            if (!confirm(`Delete "${topic.name}" and all its data? This cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                await window.api.deleteTopic(topic.id);
+                topics.value = topics.value.filter(t => t.id !== topic.id);
+                delete questionCounts.value[topic.id];
+                delete topicNotes.value[topic.id];
+                delete noteCounts.value[topic.id];
+                store.showNotification('Topic deleted successfully', 'success');
+            } catch (error) {
+                store.showNotification('Failed to delete topic', 'error');
             }
         };
 
@@ -417,7 +376,7 @@ window.TopicsListComponent = {
         };
 
         const viewAllNotes = (topic) => {
-            // Navigate to a detailed notes view (could be implemented later)
+            // Could navigate to detailed notes view
             store.showNotification(`Viewing all notes for ${topic.name}`, 'info');
         };
 
@@ -447,20 +406,6 @@ window.TopicsListComponent = {
             return text.trim().split(/\s+/).length;
         };
 
-        const truncateText = (text, length) => {
-            if (!text || text.length <= length) return text;
-            return text.substring(0, length) + '...';
-        };
-
-        const getDifficultyColor = (difficulty) => {
-            const colorMap = {
-                'easy': 'bg-green-100 text-green-700',
-                'medium': 'bg-yellow-100 text-yellow-700',
-                'hard': 'bg-red-100 text-red-700'
-            };
-            return colorMap[difficulty] || colorMap.medium;
-        };
-
         const formatDate = (dateString) => {
             if (!dateString) return 'Unknown';
             try {
@@ -478,35 +423,35 @@ window.TopicsListComponent = {
             await loadTopics();
         });
 
-        // Watch for topics changes
-        Vue.watch(() => store.state.topics, async () => {
-            await loadTopicData();
-        }, { deep: true });
+        // Watch for topic creation
+        Vue.watch(() => store.state.showCreateTopicModal, (show) => {
+            if (!show) {
+                // Reload topics when modal closes (topic might have been created)
+                setTimeout(() => loadTopics(), 500);
+            }
+        });
 
         return {
             store,
             isLoading,
+            topics,
             topicNotes,
-            topicQuestions,
             questionCounts,
-            noteCounts,
-            topicAccuracy,
             totalQuestions,
             totalNotes,
             averageAccuracy,
             goBackToSubjects,
             startPractice,
-            loadQuestionsForPractice,
             uploadMaterials,
             generateQuestions,
+            generateFromNote,
+            deleteTopic,
             canPractice,
             canGenerateQuestions,
             viewAllNotes,
             getFileIcon,
             getFileName,
             getWordCount,
-            getDifficultyColor,
-            truncateText,
             formatDate
         };
     }
