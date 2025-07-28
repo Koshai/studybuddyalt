@@ -409,29 +409,34 @@ class SimplifiedDatabaseService {
   }
 
   /**
-   * Create note for a topic
-   */
-  async createNote(topicId, content, fileName = null) {
+     * Create note for a topic - FIXED VERSION
+     */
+    async createNote(topicId, content, fileName = null) {
     return new Promise((resolve, reject) => {
-      const id = uuidv4();
-      const wordCount = content.trim().split(/\s+/).length;
-      const sql = 'INSERT INTO notes (id, topic_id, content, file_name, word_count) VALUES (?, ?, ?, ?, ?)';
-      
-      this.db.run(sql, [id, topicId, content, fileName, wordCount], function(err) {
-        if (err) reject(err);
-        else {
-          resolve({ 
+        const id = uuidv4();
+        const wordCount = content.trim().split(/\s+/).length;
+        
+        // Fixed SQL - removed subject_id column reference
+        const sql = 'INSERT INTO notes (id, topic_id, content, file_name, word_count) VALUES (?, ?, ?, ?, ?)';
+        
+        this.db.run(sql, [id, topicId, content, fileName, wordCount], function(err) {
+        if (err) {
+            console.error('❌ Database error creating note:', err);
+            reject(err);
+        } else {
+            console.log(`✅ Note created with ID: ${id}`);
+            resolve({ 
             id, 
             topic_id: topicId, 
             content, 
             file_name: fileName,
             word_count: wordCount,
             created_at: new Date().toISOString() 
-          });
+            });
         }
-      });
+        });
     });
-  }
+}
 
   /**
    * Update note
