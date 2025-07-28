@@ -40,52 +40,14 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
   fileFilter: (req, file, cb) => {
-    console.log(`🔍 File upload attempt: ${file.originalname} (${file.mimetype})`);
-    
-    // Allowed file extensions
-    const allowedExtensions = /\.(jpeg|jpg|png|gif|pdf|doc|docx|txt)$/i;
-    
-    // Allowed MIME types
-    const allowedMimeTypes = [
-      // Images
-      'image/jpeg',
-      'image/jpg', 
-      'image/png',
-      'image/gif',
-      'image/webp',
-      
-      // Documents
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      
-      // Text files
-      'text/plain',
-      'text/txt',
-      'application/txt',
-      'text/csv'
-    ];
-    
-    const extname = allowedExtensions.test(file.originalname);
-    const mimetype = allowedMimeTypes.includes(file.mimetype);
-    
-    console.log(`📋 File validation:`);
-    console.log(`   File: ${file.originalname}`);
-    console.log(`   MIME type: ${file.mimetype}`);
-    console.log(`   Extension valid: ${extname}`);
-    console.log(`   MIME type valid: ${mimetype}`);
+    const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|txt/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
     
     if (mimetype && extname) {
-      console.log(`✅ File accepted: ${file.originalname}`);
       return cb(null, true);
     } else {
-      console.log(`❌ File rejected: ${file.originalname}`);
-      console.log(`   Supported extensions: .jpg, .jpeg, .png, .gif, .pdf, .doc, .docx, .txt`);
-      console.log(`   Supported MIME types: ${allowedMimeTypes.join(', ')}`);
-      
-      const error = new Error(`File type not supported. Supported formats: images (jpg, png, gif), PDFs, Word documents (.doc, .docx), and text files (.txt)`);
-      error.code = 'INVALID_FILE_TYPE';
-      cb(error);
+      cb(new Error('Only image, PDF, and document files are allowed'));
     }
   }
 });

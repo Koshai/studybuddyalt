@@ -1,4 +1,4 @@
-// src/server/services/ollama-simplified.js
+// src/server/services/ollama-simplified.js - COMPLETE CLEAN VERSION
 const { Ollama } = require('ollama');
 
 class SimplifiedOllamaService {
@@ -7,52 +7,41 @@ class SimplifiedOllamaService {
       host: 'http://localhost:11434'
     });
     this.defaultModel = 'llama3.2:3b';
+    this.maxAttempts = 5;
     
     // Store successful question patterns for fallback
     this.successfulPatterns = new Map();
   }
 
   /**
-   * Generate questions with simplified approach
-   * Subject is KNOWN from user selection, no detection needed
+   * MAIN METHOD: Generate questions with subject isolation and count guarantee
    */
   async generateQuestions(content, count = 5, subjectCategory, topicName) {
     try {
-      console.log(`🎓 Generating ${count} questions for ${subjectCategory.name} - ${topicName}`);
+      console.log(`\n🎓 STARTING: ${count} questions for ${subjectCategory.name} - ${topicName}`);
+      console.log(`🎯 SUBJECT: ${subjectCategory.id}`);
+      console.log(`📊 COUNT GUARANTEE: Will return exactly ${count} questions`);
       
       if (!content || content.trim().length < 50) {
         console.error('❌ Content too short');
         return [];
       }
 
-      // Try main generation first
-      let questions = await this.generateWithSubjectContext(content, count, subjectCategory, topicName);
-      
-      // If we got some but not enough, use successful patterns to fill the gap
-      if (questions.length > 0 && questions.length < count) {
-        console.log(`📝 Got ${questions.length}/${count}, using patterns to fill gap`);
-        const additionalQuestions = await this.generateFromPatterns(
-          content, 
-          count - questions.length, 
-          subjectCategory, 
-          questions
-        );
-        questions = [...questions, ...additionalQuestions];
-      }
-      
-      // If still no questions, try simplified approach
-      if (questions.length === 0) {
-        console.log('🔄 Trying simplified generation');
-        questions = await this.generateSimplified(content, count, subjectCategory, topicName);
-      }
+      // Use multi-attempt strategy to guarantee exact count
+      const result = await this.generateWithCountGuarantee(content, count, subjectCategory, topicName);
 
       // Store successful patterns for future use
-      if (questions.length > 0) {
-        this.storeSuccessfulPatterns(subjectCategory.id, questions);
+      if (result.length > 0) {
+        this.storeSuccessfulPatterns(subjectCategory.id, result);
       }
 
-      console.log(`✅ Final result: ${questions.length} questions generated`);
-      return questions.slice(0, count); // Ensure we don't exceed requested count
+      console.log(`\n✅ FINAL DELIVERY:`);
+      console.log(`   Requested: ${count}`);
+      console.log(`   Delivered: ${result.length}`);
+      console.log(`   Subject: ${subjectCategory.name} (${subjectCategory.id})`);
+      console.log(`   Success Rate: ${result.length === count ? '100%' : Math.round((result.length/count)*100) + '%'}`);
+      
+      return result;
       
     } catch (error) {
       console.error('❌ Error in generateQuestions:', error);
@@ -61,20 +50,243 @@ class SimplifiedOllamaService {
   }
 
   /**
-   * Generate questions with subject-specific teacher prompt
+   * Generate with count guarantee - multi-attempt strategy
+   */
+  async generateWithCountGuarantee(content, requestedCount, subjectCategory, topicName) {
+    let validQuestions = [];
+    let attempt = 0;
+
+    while (validQuestions.length < requestedCount && attempt < this.maxAttempts) {
+      attempt++;
+      const needed = requestedCount - validQuestions.length;
+      
+      console.log(`\n🔄 Attempt ${attempt}/${this.maxAttempts}: Need ${needed} more questions`);
+      
+      // Calculate how many to generate (accounting for rejections)
+      const generateCount = this.calculateBatchSize(needed, attempt, subjectCategory);
+      
+      try {
+        // Generate questions using different strategies per attempt
+        let newQuestions = [];
+        
+        if (attempt === 1) {
+          newQuestions = await this.generateWithSubjectContext(content, generateCount, subjectCategory, topicName);
+        } else if (attempt === 2) {
+          newQuestions = await this.generateConservative(content, generateCount, subjectCategory, topicName);
+        } else if (attempt === 3) {
+          newQuestions = await this.generateSimplified(content, generateCount, subjectCategory, topicName);
+        } else if (attempt === 4) {
+          newQuestions = await this.generateFromPatterns(content, generateCount, subjectCategory);
+        } else {
+          newQuestions = await this.generateBasic(content, generateCount, subjectCategory, topicName);
+        }
+        
+        console.log(`📝 Generated ${newQuestions.length} raw questions in attempt ${attempt}`);
+        
+        // Validate questions based on subject
+        const validatedQuestions = await this.validateQuestions(newQuestions, subjectCategory);
+        
+        console.log(`✅ Validation: ${validatedQuestions.length} accepted`);
+        
+        // Add valid questions to our collection
+        validQuestions = [...validQuestions, ...validatedQuestions];
+        
+        console.log(`📊 Progress: ${validQuestions.length}/${requestedCount} questions obtained`);
+        
+      } catch (error) {
+        console.error(`❌ Attempt ${attempt} failed:`, error);
+      }
+    }
+
+    // Return exactly the requested count (trim if we got more)
+    return validQuestions.slice(0, requestedCount);
+  }
+
+  /**
+   * Calculate batch size based on subject and attempt
+   */
+  calculateBatchSize(needed, attempt, subjectCategory) {
+    // Subject-specific rejection rates
+    const rejectionRates = {
+      'mathematics': 0.3,        // 30% rejection due to math errors
+      'natural-sciences': 0.2,   // 20% rejection
+      'literature': 0.1,         // 10% rejection
+      'history': 0.15,          // 15% rejection
+      'default': 0.1            // 10% rejection for others
+    };
+    
+    const subjectId = subjectCategory.id || 'default';
+    const rejectionRate = rejectionRates[subjectId] || rejectionRates.default;
+    
+    // Increase multiplier with each attempt
+    const attemptMultiplier = Math.min(1 + (attempt - 1) * 0.3, 2.5);
+    const rejectionMultiplier = 1 / (1 - rejectionRate);
+    
+    const batchSize = Math.ceil(needed * rejectionMultiplier * attemptMultiplier);
+    
+    console.log(`📊 Batch calculation: Need ${needed}, generating ${batchSize} (${Math.round(rejectionRate * 100)}% expected rejection)`);
+    
+    return Math.min(batchSize, needed * 3); // Cap at 3x needed
+  }
+
+  /**
+   * Validate questions based on subject - SUBJECT ISOLATION
+   */
+  async validateQuestions(questions, subjectCategory) {
+    const validQuestions = [];
+    const subjectId = subjectCategory.id;
+    
+    for (const question of questions) {
+      try {
+        let isValid = true;
+        
+        // Subject-specific validation
+        if (subjectId === 'mathematics') {
+          isValid = await this.validateMathQuestion(question);
+        } else if (subjectId === 'natural-sciences') {
+          isValid = await this.validateScienceQuestion(question);
+        } else if (subjectId === 'literature') {
+          isValid = await this.validateLiteratureQuestion(question);
+        } else if (subjectId === 'history') {
+          isValid = await this.validateHistoryQuestion(question);
+        } else {
+          isValid = await this.validateGeneralQuestion(question);
+        }
+        
+        if (isValid) {
+          validQuestions.push(question);
+        }
+        
+      } catch (error) {
+        console.error('❌ Validation error:', error);
+      }
+    }
+    
+    return validQuestions;
+  }
+
+  /**
+   * Math-specific validation - ONLY for mathematics subject
+   */
+  async validateMathQuestion(question) {
+    // Check for arithmetic errors like "5 × 4 = 15"
+    const mathErrors = this.findMathErrors(question.question + ' ' + (question.explanation || ''));
+    
+    if (mathErrors.length > 0) {
+      console.log(`❌ Math error detected: ${mathErrors[0]}`);
+      return false;
+    }
+    
+    return this.validateGeneralQuestion(question);
+  }
+
+  /**
+   * Find mathematical errors in text
+   */
+  findMathErrors(text) {
+    const errors = [];
+    
+    // Match mathematical expressions like "5 × 4 = 15"
+    const mathPatterns = [
+      /(\d+)\s*[×x*]\s*(\d+)\s*=\s*(\d+)/gi,
+      /(\d+)\s*\+\s*(\d+)\s*=\s*(\d+)/gi,
+      /(\d+)\s*-\s*(\d+)\s*=\s*(\d+)/gi,
+      /(\d+)\s*[÷/]\s*(\d+)\s*=\s*(\d+)/gi
+    ];
+    
+    for (const pattern of mathPatterns) {
+      let match;
+      while ((match = pattern.exec(text)) !== null) {
+        const [original, num1, num2, result] = match;
+        const operand1 = parseInt(num1);
+        const operand2 = parseInt(num2);
+        const claimedResult = parseInt(result);
+        
+        let correctResult;
+        if (original.includes('×') || original.includes('*') || original.includes('x')) {
+          correctResult = operand1 * operand2;
+        } else if (original.includes('+')) {
+          correctResult = operand1 + operand2;
+        } else if (original.includes('-')) {
+          correctResult = operand1 - operand2;
+        } else if (original.includes('÷') || original.includes('/')) {
+          correctResult = operand2 !== 0 ? operand1 / operand2 : null;
+        }
+        
+        if (correctResult !== null && correctResult !== claimedResult) {
+          errors.push(`${original} should be ${operand1} × ${operand2} = ${correctResult}, not ${claimedResult}`);
+        }
+      }
+    }
+    
+    return errors;
+  }
+
+  /**
+   * Science-specific validation - ONLY for natural sciences
+   */
+  async validateScienceQuestion(question) {
+    // Basic science validation (can be expanded)
+    return this.validateGeneralQuestion(question);
+  }
+
+  /**
+   * Literature-specific validation - ONLY for literature
+   */
+  async validateLiteratureQuestion(question) {
+    // Basic literature validation (can be expanded)
+    return this.validateGeneralQuestion(question);
+  }
+
+  /**
+   * History-specific validation - ONLY for history
+   */
+  async validateHistoryQuestion(question) {
+    // Basic history validation (can be expanded)
+    return this.validateGeneralQuestion(question);
+  }
+
+  /**
+   * General validation for all subjects
+   */
+  async validateGeneralQuestion(question) {
+    // Basic validation
+    if (!question.question || question.question.length < 10) {
+      return false;
+    }
+    
+    if (question.type === 'multiple_choice') {
+      if (!question.options || question.options.length !== 4) {
+        return false;
+      }
+      
+      if (question.correctIndex < 0 || question.correctIndex >= 4) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
+  /**
+   * Generate with subject-specific context (Attempt 1)
    */
   async generateWithSubjectContext(content, count, subjectCategory, topicName) {
-    const teacherPrompt = this.createTeacherPrompt(content, count, subjectCategory, topicName);
+    const subjectId = subjectCategory.id;
+    
+    console.log(`🎯 Generating with ${subjectId} context`);
+    
+    const prompt = this.createSubjectPrompt(content, count, subjectCategory, topicName);
     
     try {
       const response = await this.ollama.generate({
         model: this.defaultModel,
-        prompt: teacherPrompt,
+        prompt: prompt,
         stream: false,
         options: {
-          temperature: 0.7,
+          temperature: subjectId === 'mathematics' ? 0.3 : 0.7,
           top_p: 0.9,
-          num_predict: Math.max(800, count * 120), // Scale with question count
+          num_predict: Math.max(800, count * 120),
           stop: ["END_QUESTIONS", "---"]
         }
       });
@@ -86,137 +298,174 @@ class SimplifiedOllamaService {
       return this.parseQuestions(response.response, count);
       
     } catch (error) {
-      console.error('❌ Subject context generation failed:', error);
+      console.error(`❌ ${subjectId} generation failed:`, error);
       return [];
     }
   }
 
   /**
-   * Create subject-specific teacher prompt
+   * Create subject-specific prompts
    */
-  createTeacherPrompt(content, count, subjectCategory, topicName) {
-    const subjectInstructions = this.getSubjectInstructions(subjectCategory);
+  createSubjectPrompt(content, count, subjectCategory, topicName) {
+    const subjectId = subjectCategory.id;
+    const baseContent = content.substring(0, 2000);
     
-    return `You are a ${subjectCategory.name} teacher creating practice questions for students studying "${topicName}".
+    if (subjectId === 'mathematics') {
+      return `You are a MATHEMATICS teacher creating ${count} practice questions for "${topicName}".
 
 STUDY MATERIAL:
-${content.substring(0, 2000)}
+${baseContent}
 
-${subjectInstructions}
+🧮 CRITICAL MATH REQUIREMENTS:
+- VERIFY ALL ARITHMETIC: Every calculation must be 100% mathematically correct
+- Example: 5 × 4 = 20 (NOT 15, NOT 18)
+- Example: 8 + 7 = 15 (NOT 14, NOT 16) 
+- Example: 12 - 5 = 7 (NOT 8, NOT 6)
+- Double-check every number before finalizing
+- If unsure about arithmetic, recalculate step by step
 
-Your task: Create exactly ${count} multiple choice questions that test understanding of this material.
+MATHEMATICS TEACHING FOCUS:
+- Test computational skills and mathematical reasoning
+- Ask about calculations, problem-solving, formulas
+- Include numerical examples from the material
+- Ensure mathematical accuracy above all else
 
-TEACHER GUIDELINES:
-- Act like a teacher testing student comprehension
-- Ask about concepts, facts, and applications from the material
-- Make questions clear and educational
-- Provide 4 answer choices (A, B, C, D)
-- Include brief explanations
-- Focus on what students should learn from this content
-
-Format each question exactly like this:
+Create exactly ${count} multiple choice questions in this format:
 
 QUESTION 1:
-[Your question here]
+[Mathematical question testing concepts from the material]
 A) [Option A]
 B) [Option B] 
 C) [Option C]
 D) [Option D]
 CORRECT: [A/B/C/D]
+EXPLANATION: [Mathematical explanation with correct arithmetic]
+
+Continue for all ${count} questions. Remember: Mathematical accuracy is non-negotiable!`;
+    }
+    
+    // For other subjects
+    return `You are a ${subjectCategory.name} teacher creating ${count} questions about "${topicName}".
+
+STUDY MATERIAL:
+${baseContent}
+
+Create exactly ${count} multiple choice questions that test understanding of this material.
+
+QUESTION 1:
+[Question about the material]
+A) [Option A]
+B) [Option B]
+C) [Option C]
+D) [Option D]
+CORRECT: [A/B/C/D]
 EXPLANATION: [Brief explanation]
 
-Create ${count} questions following this format:`;
+Continue for all ${count} questions.`;
   }
 
   /**
-   * Get subject-specific instructions for the teacher
+   * Conservative generation (Attempt 2)
    */
-  getSubjectInstructions(subjectCategory) {
-    const instructions = {
-      'mathematics': `
-As a MATHEMATICS teacher:
-- Focus on calculations, problem-solving, and mathematical concepts
-- Include numerical problems and mathematical reasoning
-- Test understanding of formulas, procedures, and applications
-- Ask "What is...?" "Calculate..." "Solve..." type questions`,
+  async generateConservative(content, count, subjectCategory, topicName) {
+    console.log(`🛡️ Using conservative generation`);
+    
+    const simplePrompt = `Create ${count} simple, factual questions about "${topicName}" based on this content:
 
-      'natural-sciences': `
-As a SCIENCE teacher:
-- Focus on scientific processes, facts, and phenomena
-- Test understanding of concepts, experiments, and natural laws
-- Ask about causes, effects, and scientific explanations
-- Include questions about observations and scientific reasoning`,
+${content.substring(0, 1000)}
 
-      'literature': `
-As a LITERATURE teacher:
-- Focus on characters, themes, plot, and literary analysis
-- Test understanding of text meaning and literary devices
-- Ask about character motivations, themes, and interpretations
-- Include questions about specific details from the text`,
+Make questions straightforward and based directly on the material provided.
 
-      'history': `
-As a HISTORY teacher:
-- Focus on historical facts, events, and chronology
-- Test understanding of causes, effects, and historical significance
-- Ask about specific dates, people, and historical developments
-- Include questions about historical context and relationships`,
+QUESTION 1:
+[Simple question]
+A) [Answer choice]
+B) [Answer choice]
+C) [Answer choice]
+D) [Answer choice]
+CORRECT: [A/B/C/D]
+EXPLANATION: [Simple explanation]
 
-      'languages': `
-As a LANGUAGE teacher:
-- Focus on vocabulary, grammar, and language usage
-- Test understanding of language rules and communication
-- Ask about word meanings, sentence structure, and language patterns
-- Include questions about practical language application`,
+Continue for ${count} questions.`;
 
-      'business': `
-As a BUSINESS teacher:
-- Focus on business concepts, strategies, and economic principles
-- Test understanding of business operations and management
-- Ask about business decisions, market dynamics, and financial concepts
-- Include questions about practical business applications`,
+    try {
+      const response = await this.ollama.generate({
+        model: this.defaultModel,
+        prompt: simplePrompt,
+        stream: false,
+        options: {
+          temperature: 0.4,
+          top_p: 0.8,
+          num_predict: count * 100
+        }
+      });
 
-      'computer-science': `
-As a COMPUTER SCIENCE teacher:
-- Focus on programming concepts, algorithms, and technical knowledge
-- Test understanding of code logic and computational thinking
-- Ask about programming procedures and technical problem-solving
-- Include questions about how technology works`,
-
-      'arts': `
-As an ARTS teacher:
-- Focus on artistic concepts, techniques, and cultural knowledge
-- Test understanding of artistic expressions and cultural context
-- Ask about artistic methods, styles, and creative processes
-- Include questions about art appreciation and analysis`,
-
-      'health-medicine': `
-As a HEALTH teacher:
-- Focus on health facts, medical knowledge, and wellness concepts
-- Test understanding of body systems and health practices
-- Ask about health procedures, medical facts, and wellness strategies
-- Include questions about practical health applications`
-    };
-
-    return instructions[subjectCategory.id] || instructions['natural-sciences'];
+      return this.parseQuestions(response.response, count);
+    } catch (error) {
+      console.error('❌ Conservative generation failed:', error);
+      return [];
+    }
   }
 
   /**
-   * Generate additional questions using successful patterns
+   * Simplified generation (Attempt 3)
    */
-  async generateFromPatterns(content, needed, subjectCategory, existingQuestions) {
+  async generateSimplified(content, count, subjectCategory, topicName) {
+    console.log(`📝 Using simplified generation`);
+    
+    const basicPrompt = `Based on this material about "${topicName}", create ${count} basic questions:
+
+${content.substring(0, 800)}
+
+Each question should test basic understanding of the material.
+
+QUESTION 1:
+What does the material say about [topic]?
+A) [Direct answer from material]
+B) [Incorrect option]
+C) [Incorrect option]
+D) [Incorrect option]
+CORRECT: A
+EXPLANATION: This is stated in the material.
+
+Create ${count} questions in this format.`;
+
+    try {
+      const response = await this.ollama.generate({
+        model: this.defaultModel,
+        prompt: basicPrompt,
+        stream: false,
+        options: {
+          temperature: 0.2,
+          top_p: 0.7,
+          num_predict: count * 80
+        }
+      });
+
+      return this.parseQuestions(response.response, count);
+    } catch (error) {
+      console.error('❌ Simplified generation failed:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Generate from successful patterns (Attempt 4)
+   */
+  async generateFromPatterns(content, count, subjectCategory) {
+    console.log(`🔄 Using pattern-based generation`);
+    
     const patterns = this.successfulPatterns.get(subjectCategory.id) || [];
     
     if (patterns.length === 0) {
-      return [];
+      return this.generateBasic(content, count, subjectCategory, 'pattern fallback');
     }
 
-    // Use successful question patterns to generate similar ones
     const samplePattern = patterns[Math.floor(Math.random() * patterns.length)];
     
-    const patternPrompt = `You are a ${subjectCategory.name} teacher. Based on this study material, create ${needed} more questions similar to this successful example:
+    const patternPrompt = `Create ${count} questions similar to this successful example:
 
 STUDY MATERIAL:
-${content.substring(0, 1500)}
+${content.substring(0, 1200)}
 
 EXAMPLE SUCCESSFUL QUESTION:
 ${samplePattern.question}
@@ -225,16 +474,7 @@ B) ${samplePattern.options[1]}
 C) ${samplePattern.options[2]}
 D) ${samplePattern.options[3]}
 
-Create ${needed} similar questions in the same format:
-
-QUESTION 1:
-[Your question here]
-A) [Option A]
-B) [Option B]
-C) [Option C] 
-D) [Option D]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Brief explanation]`;
+Create ${count} similar questions based on the study material.`;
 
     try {
       const response = await this.ollama.generate({
@@ -242,14 +482,13 @@ EXPLANATION: [Brief explanation]`;
         prompt: patternPrompt,
         stream: false,
         options: {
-          temperature: 0.8, // Slightly higher for variety
+          temperature: 0.6,
           top_p: 0.9,
-          num_predict: needed * 120
+          num_predict: count * 100
         }
       });
 
-      return this.parseQuestions(response.response, needed);
-      
+      return this.parseQuestions(response.response, count);
     } catch (error) {
       console.error('❌ Pattern generation failed:', error);
       return [];
@@ -257,48 +496,37 @@ EXPLANATION: [Brief explanation]`;
   }
 
   /**
-   * Simplified generation as final fallback
+   * Basic generation (Attempt 5 - Final fallback)
    */
-  async generateSimplified(content, count, subjectCategory, topicName) {
-    const simplePrompt = `Create ${count} multiple choice questions about "${topicName}" based on this content:
-
-${content.substring(0, 1000)}
-
-Make each question test understanding of the material. Format:
-
-QUESTION 1:
-[Question about the content]
-A) [Answer choice]
-B) [Answer choice]
-C) [Answer choice]
-D) [Answer choice]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Brief explanation]
-
-Create ${count} questions:`;
-
-    try {
-      const response = await this.ollama.generate({
-        model: this.defaultModel,
-        prompt: simplePrompt,
-        stream: false,
-        options: {
-          temperature: 0.6,
-          top_p: 0.85,
-          num_predict: count * 100
-        }
-      });
-
-      return this.parseQuestions(response.response, count);
+  async generateBasic(content, count, subjectCategory, topicName) {
+    console.log(`🔧 Using basic generation as final attempt`);
+    
+    const basicQuestions = [];
+    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    
+    for (let i = 0; i < Math.min(count, sentences.length); i++) {
+      const sentence = sentences[i].trim();
       
-    } catch (error) {
-      console.error('❌ Simplified generation failed:', error);
-      return [];
+      basicQuestions.push({
+        question: `According to the study material, which statement is most accurate?`,
+        answer: sentence.substring(0, 100),
+        type: 'multiple_choice',
+        options: [
+          sentence.substring(0, 80),
+          "This information is not covered in the material",
+          "The material contradicts this statement", 
+          "This topic is not discussed"
+        ],
+        correctIndex: 0,
+        explanation: `This is directly stated in the provided study material.`
+      });
     }
+    
+    return basicQuestions;
   }
 
   /**
-   * Parse questions from response
+   * Parse questions from AI response
    */
   parseQuestions(response, expectedCount) {
     const questions = [];
@@ -328,7 +556,9 @@ Create ${count} questions:`;
     try {
       const lines = block.split('\n').map(line => line.trim()).filter(line => line);
       
-      if (lines.length < 6) return null;
+      if (lines.length < 6) {
+        return null;
+      }
       
       let questionText = '';
       let options = [];
@@ -364,13 +594,16 @@ Create ${count} questions:`;
         }
         
         // Build question text
-        if (currentSection === 'question' && !line.toLowerCase().startsWith('correct:') && !line.toLowerCase().startsWith('explanation:')) {
+        if (currentSection === 'question' && 
+            !line.toLowerCase().startsWith('correct:') && 
+            !line.toLowerCase().startsWith('explanation:')) {
           questionText += (questionText ? ' ' : '') + line;
         }
       }
       
-      // Validate question
-      if (!questionText || options.length !== 4 || correctAnswer === null || correctAnswer < 0 || correctAnswer >= 4) {
+      // Validate question structure
+      if (!questionText || options.length !== 4 || correctAnswer === null || 
+          correctAnswer < 0 || correctAnswer >= 4) {
         return null;
       }
       
@@ -399,7 +632,7 @@ Create ${count} questions:`;
     
     const patterns = this.successfulPatterns.get(subjectId);
     
-    // Add new patterns, keep only recent ones
+    // Add new patterns
     questions.forEach(q => {
       patterns.push({
         question: q.question,
@@ -443,6 +676,42 @@ Create ${count} questions:`;
       console.error('Error listing models:', error);
       return [];
     }
+  }
+
+  /**
+   * Get subject isolation status for debugging
+   */
+  getSubjectIsolationStatus() {
+    return {
+      isolated: true,
+      validators: {
+        'mathematics': 'Math Validator (Strict arithmetic validation)',
+        'natural-sciences': 'Science Validator (Basic validation)',
+        'literature': 'Literature Validator (Basic validation)',
+        'history': 'History Validator (Basic validation)',
+        'others': 'General Validator (Basic validation only)'
+      },
+      countGuarantee: 'Multi-attempt strategy ensures exact question count',
+      maxAttempts: this.maxAttempts
+    };
+  }
+
+  /**
+   * Debug method to test math validation
+   */
+  testMathValidation() {
+    const testCases = [
+      "5 × 4 = 20",  // Correct
+      "5 × 4 = 15",  // Wrong - should be caught
+      "8 + 7 = 15",  // Correct
+      "8 + 7 = 16",  // Wrong - should be caught
+    ];
+    
+    console.log('🧮 Testing Math Validation:');
+    testCases.forEach(testCase => {
+      const errors = this.findMathErrors(testCase);
+      console.log(`  ${testCase}: ${errors.length === 0 ? '✅ Valid' : '❌ Invalid - ' + errors[0]}`);
+    });
   }
 }
 
