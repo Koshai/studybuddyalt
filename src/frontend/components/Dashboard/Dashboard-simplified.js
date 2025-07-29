@@ -61,7 +61,8 @@ window.SimplifiedDashboardComponent = {
                         <!-- Subject Stats -->
                         <div class="mt-3 pt-3 border-t border-gray-200">
                             <div class="flex justify-between text-xs text-gray-500">
-                                <span>{{ getSubjectTopicCount(subject.id) }} topics</span>
+                                <!--<span>{{ getSubjectTopicCount(subject.id) }} topics</span>-->
+                                <span></span>
                                 <span class="text-accent-600 font-medium">→</span>
                             </div>
                         </div>
@@ -214,50 +215,59 @@ window.SimplifiedDashboardComponent = {
             store.setLoading(true);
             console.log('🔄 Loading dashboard data...');
             
-            // Load statistics with better error handling
-            try {
+            // Load statistics
             const dashboardStats = await window.api.getDashboardStats();
-            console.log('📊 Dashboard stats received:', dashboardStats);
-            
             stats.value = {
-                totalTopics: dashboardStats.total_topics || 0,
-                totalQuestions: dashboardStats.total_questions || 0,
-                totalNotes: dashboardStats.total_notes || 0,
-                overallAccuracy: dashboardStats.overall_accuracy || 0
+            totalTopics: dashboardStats.total_topics || 0,
+            totalQuestions: dashboardStats.total_questions || 0,
+            totalNotes: dashboardStats.total_notes || 0,
+            overallAccuracy: dashboardStats.overall_accuracy || 0
             };
-            
-            console.log('📊 Processed stats:', stats.value);
-            } catch (error) {
-            console.error('❌ Failed to load dashboard stats:', error);
-            // Set default values
-            stats.value = {
-                totalTopics: 0,
-                totalQuestions: 0,
-                totalNotes: 0,
-                overallAccuracy: 0
-            };
-            }
 
-            // Load subject-wise topic counts with better debugging
+            console.log('📊 Dashboard stats loaded:', stats.value);
+
+            // CRITICAL FIX: Load subject-wise topic counts with proper error handling
             try {
-            console.log('🔄 Loading subject stats...');
-            const subjectStats = await window.api.getSubjectStats();
-            console.log('📊 Subject stats received:', subjectStats);
+            console.log('🔄 Loading subject stats for individual cards...');
+            const subjectStatsResponse = await window.api.getSubjectStats();
+            console.log('📊 Subject stats API response:', subjectStatsResponse);
             
-            // Reset the counts object
+            // Clear existing counts
             subjectTopicCounts.value = {};
             
-            subjectStats.forEach(stat => {
-                if (stat.subject && stat.subject.id) {
-                subjectTopicCounts.value[stat.subject.id] = stat.topic_count;
-                console.log(`📊 Subject ${stat.subject.name}: ${stat.topic_count} topics`);
+            // Process each subject stat
+            if (Array.isArray(subjectStatsResponse)) {
+                subjectStatsResponse.forEach((stat, index) => {
+                console.log(`📊 Processing stat ${index}:`, stat);
+                
+                if (stat && stat.subject && stat.subject.id) {
+                    const subjectId = stat.subject.id;
+                    const topicCount = stat.topic_count || 0;
+                    
+                    subjectTopicCounts.value[subjectId] = topicCount;
+                    console.log(`✅ Set ${subjectId}: ${topicCount} topics`);
+                } else {
+                    console.warn(`⚠️ Invalid stat structure at index ${index}:`, stat);
                 }
+                });
+            } else {
+                console.error('❌ Subject stats response is not an array:', subjectStatsResponse);
+            }
+            
+            console.log('📊 Final subjectTopicCounts:', subjectTopicCounts.value);
+            
+            // Verify against store subjects
+            console.log('🔍 Verifying against store subjects:');
+            store.state.subjects.forEach(subject => {
+                const count = subjectTopicCounts.value[subject.id] || 0;
+                console.log(`  ${subject.name} (${subject.id}): ${count} topics`);
             });
             
-            console.log('📊 Final topic counts:', subjectTopicCounts.value);
             } catch (error) {
             console.error('❌ Failed to load subject stats:', error);
-            // Initialize empty counts for all subjects
+            
+            // Initialize with zeros instead of leaving undefined
+            subjectTopicCounts.value = {};
             store.state.subjects.forEach(subject => {
                 subjectTopicCounts.value[subject.id] = 0;
             });

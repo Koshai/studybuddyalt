@@ -499,9 +499,66 @@ app.get('/api/dashboard/stats', async (req, res) => {
 
 app.get('/api/subjects/stats', async (req, res) => {
   try {
+    console.log('📊 Getting subject stats...');
     const stats = await db.getSubjectStats();
+    console.log(`✅ Subject stats loaded: ${stats.length} subjects`);
+    
+    // Log each subject for debugging
+    stats.forEach(stat => {
+      console.log(`  - ${stat.subject.name}: ${stat.topic_count} topics`);
+    });
+    
     res.json(stats);
   } catch (error) {
+    console.error('❌ Subject stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/debug/subjects-with-counts', async (req, res) => {
+  try {
+    console.log('🔍 Debug: Getting subjects with topic counts...');
+    
+    // Get all subjects (fixed list)
+    const subjects = await db.getSubjects();
+    
+    // Get topic counts for each subject
+    const subjectsWithCounts = [];
+    
+    for (const subject of subjects) {
+      try {
+        const topics = await db.getTopics(subject.id);
+        const topicCount = topics.length;
+        
+        console.log(`📊 Subject: ${subject.name} (${subject.id}) = ${topicCount} topics`);
+        
+        subjectsWithCounts.push({
+          subject: subject,
+          topic_count: topicCount,
+          topics: topics.map(t => ({ id: t.id, name: t.name }))
+        });
+      } catch (error) {
+        console.error(`❌ Error getting topics for ${subject.id}:`, error);
+        subjectsWithCounts.push({
+          subject: subject,
+          topic_count: 0,
+          topics: [],
+          error: error.message
+        });
+      }
+    }
+    
+    res.json({
+      subjects: subjectsWithCounts,
+      summary: subjectsWithCounts.map(s => ({
+        name: s.subject.name,
+        id: s.subject.id,
+        count: s.topic_count
+      }))
+    });
+    
+  } catch (error) {
+    console.error('❌ Debug subjects endpoint error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -717,20 +774,6 @@ app.get('/api/dashboard/stats', async (req, res) => {
       overall_accuracy: 0,
       total_practice_sessions: 0
     });
-  }
-});
-
-// Enhanced subject stats with better error handling
-app.get('/api/subjects/stats', async (req, res) => {
-  try {
-    console.log('📊 Loading subject stats...');
-    const stats = await db.getSubjectStats();
-    console.log('✅ Subject stats loaded:', stats.length, 'subjects');
-    res.json(stats);
-  } catch (error) {
-    console.error('❌ Subject stats error:', error);
-    // Return empty array instead of error
-    res.json([]);
   }
 });
 
