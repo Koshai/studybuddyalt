@@ -204,7 +204,33 @@ class SimplifiedApiService {
    * Get dashboard statistics
    */
   async getDashboardStats() {
-    return this.request('/dashboard/stats');
+    try {
+      console.log('🔄 Fetching dashboard stats...');
+      const response = await this.request('/dashboard/stats');
+      console.log('✅ Dashboard stats received:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Dashboard stats API error:', error);
+      
+      // Try alternative endpoint or return fallback
+      try {
+        const fallback = await this.request('/debug/tables');
+        console.log('📋 Database debug info:', fallback);
+      } catch (debugError) {
+        console.error('❌ Even debug endpoint failed:', debugError);
+      }
+      
+      // Return default stats to prevent crashes
+      return {
+        total_topics: 0,
+        total_questions: 0,
+        total_notes: 0,
+        overall_accuracy: 0,
+        total_practice_sessions: 0,
+        active_subjects: 0,
+        error: error.message
+      };
+    }
   }
 
   /**

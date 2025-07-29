@@ -141,7 +141,9 @@ window.FixedSubjectsListComponent = {
 
         // Get topic count for a subject
         const getSubjectTopicCount = (subjectId) => {
-            return subjectTopicCounts.value[subjectId] || 0;
+            const count = subjectTopicCounts.value[subjectId] || 0;
+            console.log(`🔍 Topic count for ${subjectId}:`, count);
+            return count;
         };
 
         // Navigate to subject topics

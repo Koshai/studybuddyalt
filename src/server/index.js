@@ -445,10 +445,55 @@ app.get('/api/topics/:topicId/stats', async (req, res) => {
 // ===== STATISTICS =====
 app.get('/api/dashboard/stats', async (req, res) => {
   try {
+    console.log('📊 Dashboard stats request received');
+    
+    // Debug: Check if database is initialized
+    if (!db || !db.db) {
+      console.error('❌ Database not initialized');
+      return res.status(500).json({ 
+        error: 'Database not initialized',
+        debug: {
+          dbExists: !!db,
+          dbConnectionExists: !!(db && db.db)
+        }
+      });
+    }
+
+    // Debug: Test basic database connectivity
+    const testQuery = 'SELECT name FROM sqlite_master WHERE type="table"';
+    const tables = await new Promise((resolve, reject) => {
+      db.db.all(testQuery, (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
+    });
+    
+    console.log('📋 Available tables:', tables.map(t => t.name));
+
+    // Get dashboard stats with detailed error handling
     const stats = await db.getDashboardStats();
+    console.log('✅ Dashboard stats loaded:', stats);
+    
     res.json(stats);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('❌ Dashboard stats error:', error);
+    
+    // Return default stats instead of error to prevent frontend crashes
+    const defaultStats = {
+      total_topics: 0,
+      total_questions: 0,
+      total_notes: 0,
+      overall_accuracy: 0,
+      total_practice_sessions: 0,
+      active_subjects: 0,
+      error: error.message,
+      debug: {
+        errorType: error.name,
+        stack: error.stack.split('\n').slice(0, 3)
+      }
+    };
+    
+    res.json(defaultStats);
   }
 });
 
@@ -580,6 +625,39 @@ app.get('/api/debug/tables', async (req, res) => {
 app.get('/api/debug/dashboard-requests', (req, res) => {
   console.log('🔍 Dashboard debug endpoint hit');
   res.json({ message: 'Dashboard debug endpoint working' });
+});
+
+app.get('/api/debug/subject-data', async (req, res) => {
+  try {
+    console.log('🔍 Debug: Checking subject data...');
+    
+    // Get all topics
+    const allTopics = await db.getAllTopics();
+    console.log('📊 All topics:', allTopics.length);
+    
+    // Group by subject
+    const topicsBySubject = {};
+    allTopics.forEach(topic => {
+      if (!topicsBySubject[topic.subject_id]) {
+        topicsBySubject[topic.subject_id] = [];
+      }
+      topicsBySubject[topic.subject_id].push(topic);
+    });
+    
+    // Get subject stats
+    const subjectStats = await db.getSubjectStats();
+    
+    res.json({
+      allTopics: allTopics.length,
+      topicsBySubject,
+      subjectStats,
+      availableSubjects: db.FIXED_SUBJECTS.map(s => s.id)
+    });
+    
+  } catch (error) {
+    console.error('❌ Debug endpoint error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Get all notes endpoint (dashboard might be calling this)

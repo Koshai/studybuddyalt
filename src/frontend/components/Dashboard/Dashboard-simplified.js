@@ -210,36 +210,75 @@ window.SimplifiedDashboardComponent = {
 
         // Load dashboard data
         const loadDashboardData = async () => {
+        try {
+            store.setLoading(true);
+            console.log('🔄 Loading dashboard data...');
+            
+            // Load statistics with better error handling
             try {
-                store.setLoading(true);
-                
-                // Load statistics
-                const dashboardStats = await window.api.getDashboardStats();
-                stats.value = {
-                    totalTopics: dashboardStats.total_topics || 0,
-                    totalQuestions: dashboardStats.total_questions || 0,
-                    totalNotes: dashboardStats.total_notes || 0,
-                    overallAccuracy: dashboardStats.overall_accuracy || 0
-                };
-
-                // Load subject-wise topic counts
-                const subjectStats = await window.api.getSubjectStats();
-                subjectStats.forEach(stat => {
-                    subjectTopicCounts.value[stat.subject.id] = stat.topic_count;
-                });
-
-                // Load recent activity
-                const activity = await window.api.getRecentActivity(10);
-                recentActivity.value = activity;
-
-                console.log('Dashboard data loaded:', { stats: stats.value, activity: activity.length });
-
+            const dashboardStats = await window.api.getDashboardStats();
+            console.log('📊 Dashboard stats received:', dashboardStats);
+            
+            stats.value = {
+                totalTopics: dashboardStats.total_topics || 0,
+                totalQuestions: dashboardStats.total_questions || 0,
+                totalNotes: dashboardStats.total_notes || 0,
+                overallAccuracy: dashboardStats.overall_accuracy || 0
+            };
+            
+            console.log('📊 Processed stats:', stats.value);
             } catch (error) {
-                console.error('Failed to load dashboard data:', error);
-                store.showNotification('Failed to load dashboard data', 'error');
-            } finally {
-                store.setLoading(false);
+            console.error('❌ Failed to load dashboard stats:', error);
+            // Set default values
+            stats.value = {
+                totalTopics: 0,
+                totalQuestions: 0,
+                totalNotes: 0,
+                overallAccuracy: 0
+            };
             }
+
+            // Load subject-wise topic counts with better debugging
+            try {
+            console.log('🔄 Loading subject stats...');
+            const subjectStats = await window.api.getSubjectStats();
+            console.log('📊 Subject stats received:', subjectStats);
+            
+            // Reset the counts object
+            subjectTopicCounts.value = {};
+            
+            subjectStats.forEach(stat => {
+                if (stat.subject && stat.subject.id) {
+                subjectTopicCounts.value[stat.subject.id] = stat.topic_count;
+                console.log(`📊 Subject ${stat.subject.name}: ${stat.topic_count} topics`);
+                }
+            });
+            
+            console.log('📊 Final topic counts:', subjectTopicCounts.value);
+            } catch (error) {
+            console.error('❌ Failed to load subject stats:', error);
+            // Initialize empty counts for all subjects
+            store.state.subjects.forEach(subject => {
+                subjectTopicCounts.value[subject.id] = 0;
+            });
+            }
+
+            // Load recent activity
+            try {
+            const activity = await window.api.getRecentActivity(10);
+            recentActivity.value = activity;
+            console.log('📋 Recent activity loaded:', activity.length, 'items');
+            } catch (error) {
+            console.error('❌ Failed to load recent activity:', error);
+            recentActivity.value = [];
+            }
+
+        } catch (error) {
+            console.error('❌ Failed to load dashboard data:', error);
+            store.showNotification('Failed to load dashboard data: ' + error.message, 'error');
+        } finally {
+            store.setLoading(false);
+        }
         };
 
         // Get topic count for a subject

@@ -84,18 +84,26 @@ class SimplifiedDatabaseService {
   init() {
     const dbPath = path.join(__dirname, '../../data/study_ai_simplified.db');
     
+    console.log('🔍 Database initialization:');
+    console.log('  Path:', dbPath);
+    console.log('  Path exists:', require('fs').existsSync(dbPath));
+    
     // Create data directory if it doesn't exist
     const dataDir = path.dirname(dbPath);
     if (!require('fs').existsSync(dataDir)) {
+      console.log('📁 Creating data directory:', dataDir);
       require('fs').mkdirSync(dataDir, { recursive: true });
     }
 
     this.db = new sqlite3.Database(dbPath, (err) => {
       if (err) {
-        console.error('Error opening database:', err);
+        console.error('❌ Error opening database:', err);
       } else {
-        console.log('Connected to simplified SQLite database');
+        console.log('✅ Connected to simplified SQLite database at:', dbPath);
         this.createTables();
+        
+        // Test the connection immediately
+        this.testConnection();
       }
     });
   }
@@ -826,37 +834,50 @@ class SimplifiedDatabaseService {
    */
   async getDashboardStats() {
     return new Promise((resolve, reject) => {
-      const sql = `
-        SELECT 
-          COUNT(DISTINCT t.id) as total_topics,
-          COUNT(DISTINCT t.subject_id) as active_subjects,
-          COUNT(DISTINCT q.id) as total_questions,
-          COUNT(DISTINCT n.id) as total_notes,
-          COALESCE(AVG(ps.accuracy_rate), 0) as overall_accuracy,
-          COUNT(DISTINCT ps.id) as total_practice_sessions,
-          COALESCE(SUM(n.word_count), 0) as total_word_count,
-          COUNT(DISTINCT CASE WHEN q.type = 'multiple_choice' THEN q.id END) as total_mcq,
-          COUNT(DISTINCT CASE WHEN q.type = 'text' THEN q.id END) as total_text_questions
-        FROM topics t
-        LEFT JOIN questions q ON t.id = q.topic_id
-        LEFT JOIN notes n ON t.id = n.topic_id
-        LEFT JOIN practice_sessions ps ON t.id = ps.topic_id
-      `;
+      console.log('🔍 Getting dashboard stats...');
       
-      this.db.get(sql, (err, row) => {
-        if (err) reject(err);
-        else resolve({
-          total_topics: row.total_topics || 0,
-          active_subjects: row.active_subjects || 0,
-          total_questions: row.total_questions || 0,
-          total_notes: row.total_notes || 0,
-          overall_accuracy: Math.round(row.overall_accuracy || 0),
-          total_practice_sessions: row.total_practice_sessions || 0,
-          total_word_count: row.total_word_count || 0,
-          total_mcq: row.total_mcq || 0,
-          total_text_questions: row.total_text_questions || 0
+      // Use separate queries to isolate issues
+      const queries = {
+        topics: 'SELECT COUNT(*) as count FROM topics',
+        questions: 'SELECT COUNT(*) as count FROM questions', 
+        notes: 'SELECT COUNT(*) as count FROM notes',
+        sessions: 'SELECT COUNT(*) as count FROM practice_sessions',
+        accuracy: 'SELECT AVG(accuracy_rate) as avg FROM practice_sessions'
+      };
+      
+      const results = {};
+      let completed = 0;
+      const total = Object.keys(queries).length;
+      
+      for (const [key, sql] of Object.entries(queries)) {
+        this.db.get(sql, (err, row) => {
+          if (err) {
+            console.error(`❌ Error in ${key} query:`, err);
+            results[key] = 0; // Default to 0 on error
+          } else {
+            results[key] = row.count || row.avg || 0;
+            console.log(`✅ ${key}: ${results[key]}`);
+          }
+          
+          completed++;
+          if (completed === total) {
+            // Calculate unique subjects
+            this.db.get('SELECT COUNT(DISTINCT subject_id) as count FROM topics', (err, row) => {
+              const finalStats = {
+                total_topics: results.topics || 0,
+                total_questions: results.questions || 0,
+                total_notes: results.notes || 0,
+                total_practice_sessions: results.sessions || 0,
+                overall_accuracy: Math.round(results.accuracy || 0),
+                active_subjects: row ? (row.count || 0) : 0
+              };
+              
+              console.log('📊 Final dashboard stats:', finalStats);
+              resolve(finalStats);
+            });
+          }
         });
-      });
+      }
     });
   }
 
@@ -865,33 +886,44 @@ class SimplifiedDatabaseService {
    */
   async getSubjectStats() {
     return new Promise(async (resolve, reject) => {
-      const sql = `
-        SELECT 
-          t.subject_id,
-          COUNT(DISTINCT t.id) as topic_count,
-          COUNT(DISTINCT q.id) as question_count,
-          COUNT(DISTINCT n.id) as note_count,
-          COALESCE(AVG(ps.accuracy_rate), 0) as avg_accuracy,
-          COALESCE(SUM(n.word_count), 0) as total_word_count,
-          COUNT(DISTINCT ps.id) as practice_sessions_count,
-          MAX(ps.session_date) as last_practice_date
-        FROM topics t
-        LEFT JOIN questions q ON t.id = q.topic_id
-        LEFT JOIN notes n ON t.id = n.topic_id
-        LEFT JOIN practice_sessions ps ON t.id = ps.topic_id
-        GROUP BY t.subject_id
-      `;
+      console.log('📊 Getting subject stats...');
       
-      this.db.all(sql, async (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
+      try {
+        // First, get all topics grouped by subject
+        const sql = `
+          SELECT 
+            t.subject_id,
+            COUNT(DISTINCT t.id) as topic_count,
+            COUNT(DISTINCT q.id) as question_count,
+            COUNT(DISTINCT n.id) as note_count,
+            COALESCE(AVG(ps.accuracy_rate), 0) as avg_accuracy,
+            COALESCE(SUM(n.word_count), 0) as total_word_count,
+            COUNT(DISTINCT ps.id) as practice_sessions_count,
+            MAX(ps.session_date) as last_practice_date
+          FROM topics t
+          LEFT JOIN questions q ON t.id = q.topic_id
+          LEFT JOIN notes n ON t.id = n.topic_id
+          LEFT JOIN practice_sessions ps ON t.id = ps.topic_id
+          GROUP BY t.subject_id
+        `;
+        
+        this.db.all(sql, async (err, rows) => {
+          if (err) {
+            console.error('❌ Subject stats query error:', err);
+            reject(err);
+            return;
+          }
+
+          console.log('📋 Raw subject stats from DB:', rows);
+
           // Add subject information to stats
           const subjectStats = [];
+          
+          // Process existing data
           for (const row of rows) {
             const subject = await this.getSubjectById(row.subject_id);
             if (subject) {
-              subjectStats.push({
+              const stats = {
                 subject: subject,
                 topic_count: row.topic_count || 0,
                 question_count: row.question_count || 0,
@@ -900,13 +932,17 @@ class SimplifiedDatabaseService {
                 total_word_count: row.total_word_count || 0,
                 practice_sessions_count: row.practice_sessions_count || 0,
                 last_practice_date: row.last_practice_date
-              });
+              };
+              
+              console.log(`✅ Subject ${subject.name}: ${stats.topic_count} topics`);
+              subjectStats.push(stats);
             }
           }
           
-          // Add subjects with no data
+          // Add subjects with no data (very important!)
           for (const subject of this.FIXED_SUBJECTS) {
             if (!subjectStats.find(s => s.subject.id === subject.id)) {
+              console.log(`📝 Adding empty stats for ${subject.name}`);
               subjectStats.push({
                 subject: subject,
                 topic_count: 0,
@@ -920,9 +956,13 @@ class SimplifiedDatabaseService {
             }
           }
           
+          console.log(`📊 Final subject stats: ${subjectStats.length} subjects`);
           resolve(subjectStats);
-        }
-      });
+        });
+      } catch (error) {
+        console.error('❌ Subject stats error:', error);
+        reject(error);
+      }
     });
   }
 
@@ -1274,6 +1314,20 @@ class SimplifiedDatabaseService {
             user_answers: row.answers_count
           }
         });
+      });
+    });
+  }
+
+  async testConnection() {
+    return new Promise((resolve) => {
+      this.db.get('SELECT 1 as test', (err, row) => {
+        if (err) {
+          console.error('❌ Database connection test failed:', err);
+          resolve(false);
+        } else {
+          console.log('✅ Database connection test passed:', row);
+          resolve(true);
+        }
       });
     });
   }
