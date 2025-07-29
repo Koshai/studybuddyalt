@@ -130,39 +130,91 @@ class SimplifiedOllamaService {
   }
 
   /**
-   * Validate questions based on subject - SUBJECT ISOLATION
+   * Updated validateQuestions method for ollama-simplified.js
+   * Replace the existing validateQuestions method with this enhanced version
    */
   async validateQuestions(questions, subjectCategory) {
-    const validQuestions = [];
-    const subjectId = subjectCategory.id;
-    
-    for (const question of questions) {
-      try {
-        let isValid = true;
-        
-        // Subject-specific validation
-        if (subjectId === 'mathematics') {
-          isValid = await this.validateMathQuestion(question);
-        } else if (subjectId === 'natural-sciences') {
-          isValid = await this.validateScienceQuestion(question);
-        } else if (subjectId === 'literature') {
-          isValid = await this.validateLiteratureQuestion(question);
-        } else if (subjectId === 'history') {
-          isValid = await this.validateHistoryQuestion(question);
-        } else {
-          isValid = await this.validateGeneralQuestion(question);
-        }
-        
-        if (isValid) {
-          validQuestions.push(question);
-        }
-        
-      } catch (error) {
-        console.error('❌ Validation error:', error);
+      const validQuestions = [];
+      const subjectId = subjectCategory.id;
+      
+      console.log(`🔍 Validating ${questions.length} questions for subject: ${subjectId}`);
+      
+      for (let i = 0; i < questions.length; i++) {
+          const question = questions[i];
+          
+          try {
+              let isValid = true;
+              
+              // Enhanced subject-specific validation routing
+              switch (subjectId) {
+                  case 'mathematics':
+                      isValid = await this.validateMathQuestion(question);
+                      console.log(`📊 Math validation for Q${i + 1}: ${isValid ? '✅' : '❌'}`);
+                      break;
+                      
+                  case 'natural-sciences':
+                      isValid = await this.validateScienceQuestion(question);
+                      console.log(`🔬 Science validation for Q${i + 1}: ${isValid ? '✅' : '❌'}`);
+                      break;
+                      
+                  case 'literature':
+                      isValid = await this.validateLiteratureQuestion(question);
+                      console.log(`📚 Literature validation for Q${i + 1}: ${isValid ? '✅' : '❌'}`);
+                      break;
+                      
+                  case 'history':
+                      isValid = await this.validateHistoryQuestion(question);
+                      console.log(`🏛️ History validation for Q${i + 1}: ${isValid ? '✅' : '❌'}`);
+                      break;
+                      
+                  case 'computer-science':
+                      isValid = await this.validateComputerScienceQuestion(question);
+                      console.log(`💻 CS validation for Q${i + 1}: ${isValid ? '✅' : '❌'}`);
+                      break;
+                      
+                  case 'languages':
+                      isValid = await this.validateLanguageQuestion(question);
+                      console.log(`🗣️ Language validation for Q${i + 1}: ${isValid ? '✅' : '❌'}`);
+                      break;
+                      
+                  case 'business':
+                      isValid = await this.validateBusinessQuestion(question);
+                      console.log(`💼 Business validation for Q${i + 1}: ${isValid ? '✅' : '❌'}`);
+                      break;
+                      
+                  case 'arts':
+                      isValid = await this.validateArtsQuestion(question);
+                      console.log(`🎨 Arts validation for Q${i + 1}: ${isValid ? '✅' : '❌'}`);
+                      break;
+                      
+                  case 'health-medicine':
+                      isValid = await this.validateHealthQuestion(question);
+                      console.log(`⚕️ Health validation for Q${i + 1}: ${isValid ? '✅' : '❌'}`);
+                      break;
+                      
+                  case 'other':
+                  default:
+                      isValid = await this.validateGeneralQuestion(question);
+                      console.log(`📖 General validation for Q${i + 1}: ${isValid ? '✅' : '❌'}`);
+                      break;
+              }
+              
+              if (isValid) {
+                  validQuestions.push(question);
+                  console.log(`✅ Q${i + 1} passed ${subjectId} validation: "${question.question.substring(0, 50)}..."`);
+              } else {
+                  console.log(`❌ Q${i + 1} failed ${subjectId} validation: "${question.question.substring(0, 50)}..."`);
+              }
+              
+          } catch (error) {
+              console.error(`❌ Validation error for Q${i + 1}:`, error);
+          }
       }
-    }
-    
-    return validQuestions;
+      
+      const acceptanceRate = Math.round((validQuestions.length / questions.length) * 100);
+      console.log(`📊 ${subjectId} validation complete: ${validQuestions.length}/${questions.length} questions accepted (${acceptanceRate}%)`);
+      
+      return validQuestions;
   }
 
   /**
@@ -223,49 +275,485 @@ class SimplifiedOllamaService {
   }
 
   /**
-   * Science-specific validation - ONLY for natural sciences
+   * Science-specific validation - ENHANCED for natural sciences
    */
   async validateScienceQuestion(question) {
-    // Basic science validation (can be expanded)
-    return this.validateGeneralQuestion(question);
-  }
-
-  /**
-   * Literature-specific validation - ONLY for literature
-   */
-  async validateLiteratureQuestion(question) {
-    // Basic literature validation (can be expanded)
-    return this.validateGeneralQuestion(question);
-  }
-
-  /**
-   * History-specific validation - ONLY for history
-   */
-  async validateHistoryQuestion(question) {
-    // Basic history validation (can be expanded)
-    return this.validateGeneralQuestion(question);
-  }
-
-  /**
-   * General validation for all subjects
-   */
-  async validateGeneralQuestion(question) {
-    // Basic validation
-    if (!question.question || question.question.length < 10) {
-      return false;
-    }
-    
-    if (question.type === 'multiple_choice') {
-      if (!question.options || question.options.length !== 4) {
-        return false;
+      const questionText = question.question.toLowerCase();
+      const explanation = (question.explanation || '').toLowerCase();
+      const allText = questionText + ' ' + explanation;
+      
+      // Science-specific validation rules
+      const issues = [];
+      
+      // 1. Check for scientific accuracy indicators
+      const scientificTerms = [
+          'atom', 'molecule', 'element', 'compound', 'reaction', 'energy',
+          'force', 'motion', 'gravity', 'mass', 'volume', 'density',
+          'cell', 'organism', 'evolution', 'gene', 'species', 'ecosystem',
+          'planet', 'star', 'solar system', 'geology', 'climate'
+      ];
+      
+      const hasScientificTerms = scientificTerms.some(term => allText.includes(term));
+      
+      // 2. Check for common science misconceptions to avoid
+      const misconceptions = [
+          'heavier objects fall faster', // Gravity misconception
+          'evolution is just a theory', // Evolution misconception
+          'atoms are the smallest particles', // Particle physics misconception
+          'cold causes illness', // Disease misconception
+          'lightning never strikes twice' // Physics misconception
+      ];
+      
+      const hasMisconceptions = misconceptions.some(misc => allText.includes(misc));
+      if (hasMisconceptions) {
+          console.log('❌ Science question contains common misconception');
+          return false;
       }
       
-      if (question.correctIndex < 0 || question.correctIndex >= 4) {
-        return false;
+      // 3. Check for proper scientific units if numbers are mentioned
+      const hasNumbers = /\d+/.test(allText);
+      if (hasNumbers) {
+          const scientificUnits = [
+              'meters', 'kilograms', 'seconds', 'celsius', 'kelvin',
+              'joules', 'watts', 'newtons', 'pascals', 'volts',
+              'grams', 'liters', 'moles', 'degrees'
+          ];
+          
+          const hasUnits = scientificUnits.some(unit => allText.includes(unit));
+          if (!hasUnits && hasNumbers) {
+              console.log('⚠️ Science question has numbers but no units - acceptable but not ideal');
+          }
       }
-    }
-    
-    return true;
+      
+      // 4. Validate scientific reasoning in explanation
+      if (question.explanation) {
+          const hasScientificReasoning = [
+              'because', 'due to', 'caused by', 'results in', 'leads to',
+              'therefore', 'thus', 'consequently', 'as a result'
+          ].some(term => explanation.includes(term));
+          
+          if (!hasScientificReasoning && question.explanation.length > 20) {
+              console.log('⚠️ Science explanation lacks causal reasoning');
+          }
+      }
+      
+      return this.validateGeneralQuestion(question);
+  }
+
+  /**
+   * Literature-specific validation - ENHANCED for literature analysis
+   */
+  async validateLiteratureQuestion(question) {
+      const questionText = question.question.toLowerCase();
+      const explanation = (question.explanation || '').toLowerCase();
+      const allText = questionText + ' ' + explanation;
+      
+      // Literature-specific validation rules
+      
+      // 1. Check for literary analysis terms
+      const literaryTerms = [
+          'character', 'plot', 'theme', 'setting', 'symbolism', 'metaphor',
+          'irony', 'foreshadowing', 'conflict', 'protagonist', 'antagonist',
+          'narrator', 'point of view', 'tone', 'mood', 'style', 'genre',
+          'alliteration', 'simile', 'imagery', 'personification', 'rhyme'
+      ];
+      
+      const hasLiteraryTerms = literaryTerms.some(term => allText.includes(term));
+      
+      // 2. Check for proper literary analysis (not just plot summary)
+      const plotSummaryWords = [
+          'what happens', 'then he', 'then she', 'next he', 'next she',
+          'after that', 'in chapter', 'on page'
+      ];
+      
+      const isPlotSummary = plotSummaryWords.some(phrase => questionText.includes(phrase));
+      if (isPlotSummary) {
+          console.log('❌ Literature question appears to be plot summary rather than analysis');
+          return false;
+      }
+      
+      // 3. Check for textual evidence requirements
+      const requiresEvidence = [
+          'according to', 'in the text', 'the author states', 'the passage shows',
+          'as evidenced by', 'the text suggests', 'quote', 'passage'
+      ];
+      
+      const hasTextualEvidence = requiresEvidence.some(phrase => allText.includes(phrase));
+      
+      // 4. Validate for analytical thinking
+      const analyticalWords = [
+          'why', 'how', 'analyze', 'compare', 'contrast', 'evaluate',
+          'interpret', 'significance', 'meaning', 'purpose', 'effect'
+      ];
+      
+      const hasAnalyticalThinking = analyticalWords.some(word => questionText.includes(word));
+      
+      if (!hasAnalyticalThinking && questionText.length > 30) {
+          console.log('⚠️ Literature question may lack analytical depth');
+      }
+      
+      return this.validateGeneralQuestion(question);
+  }
+
+  /**
+   * History-specific validation - ENHANCED for historical analysis
+   */
+  async validateHistoryQuestion(question) {
+      const questionText = question.question.toLowerCase();
+      const explanation = (question.explanation || '').toLowerCase();
+      const allText = questionText + ' ' + explanation;
+      
+      // History-specific validation rules
+      
+      // 1. Check for historical thinking concepts
+      const historicalConcepts = [
+          'cause', 'effect', 'consequence', 'significance', 'change', 'continuity',
+          'perspective', 'bias', 'source', 'primary', 'secondary', 'evidence',
+          'chronology', 'timeline', 'period', 'era', 'decade', 'century'
+      ];
+      
+      const hasHistoricalConcepts = historicalConcepts.some(concept => allText.includes(concept));
+      
+      // 2. Check for date validation (if dates are mentioned)
+      const dateMatches = allText.match(/\b(19|20)\d{2}\b/g);
+      if (dateMatches && dateMatches.length > 1) {
+          const dates = dateMatches.map(d => parseInt(d)).sort((a, b) => a - b);
+          const span = dates[dates.length - 1] - dates[0];
+          
+          // Flag if dates span more than 200 years (might be mixing eras)
+          if (span > 200) {
+              console.log('⚠️ History question spans very long time period - verify accuracy');
+          }
+      }
+      
+      // 3. Avoid simple memorization questions
+      const memorizationPatterns = [
+          'what year did', 'when did', 'who was born', 'what date',
+          'which year was', 'in what year'
+      ];
+      
+      const isMemorization = memorizationPatterns.some(pattern => questionText.includes(pattern));
+      if (isMemorization) {
+          console.log('⚠️ History question focuses on memorization rather than analysis');
+          // Don't reject, but note it
+      }
+      
+      // 4. Check for historical analysis
+      const analysisWords = [
+          'why', 'how', 'impact', 'influence', 'led to', 'resulted in',
+          'caused by', 'significance', 'importance', 'role of'
+      ];
+      
+      const hasAnalysis = analysisWords.some(word => questionText.includes(word));
+      
+      // 5. Check for proper historical context
+      const contextWords = [
+          'during', 'period', 'era', 'time', 'context', 'background',
+          'situation', 'circumstances', 'conditions'
+      ];
+      
+      const hasContext = contextWords.some(word => allText.includes(word));
+      
+      return this.validateGeneralQuestion(question);
+  }
+
+  /**
+   * Computer Science-specific validation - NEW
+   */
+  async validateComputerScienceQuestion(question) {
+      const questionText = question.question.toLowerCase();
+      const explanation = (question.explanation || '').toLowerCase();
+      const allText = questionText + ' ' + explanation;
+      
+      // CS-specific validation rules
+      
+      // 1. Check for programming concepts
+      const programmingConcepts = [
+          'algorithm', 'function', 'variable', 'loop', 'condition', 'array',
+          'object', 'class', 'method', 'parameter', 'return', 'boolean',
+          'integer', 'string', 'syntax', 'debug', 'compile', 'execute'
+      ];
+      
+      const hasProgrammingConcepts = programmingConcepts.some(concept => allText.includes(concept));
+      
+      // 2. Check for valid code syntax (if code is present)
+      const codePatterns = [
+          /if\s*\(/, /for\s*\(/, /while\s*\(/, /function\s+\w+/, /def\s+\w+/,
+          /\bprint\s*\(/, /\breturn\s+/, /\bvar\s+\w+/, /\blet\s+\w+/
+      ];
+      
+      const hasCodeSyntax = codePatterns.some(pattern => pattern.test(allText));
+      
+      if (hasCodeSyntax) {
+          // Basic syntax validation for common errors
+          const syntaxErrors = [
+              /if\s*\([^)]*$/, // Unclosed if statement
+              /for\s*\([^)]*$/, // Unclosed for loop
+              /function\s+\w+\s*{[^}]*$/ // Unclosed function
+          ];
+          
+          const hasSyntaxErrors = syntaxErrors.some(pattern => pattern.test(allText));
+          if (hasSyntaxErrors) {
+              console.log('❌ Computer Science question contains syntax errors');
+              return false;
+          }
+      }
+      
+      // 3. Check for logical thinking
+      const logicalConcepts = [
+          'true', 'false', 'and', 'or', 'not', 'if', 'then', 'else',
+          'compare', 'equal', 'greater', 'less', 'logic', 'boolean'
+      ];
+      
+      const hasLogicalThinking = logicalConcepts.some(concept => allText.includes(concept));
+      
+      return this.validateGeneralQuestion(question);
+  }
+
+  /**
+   * Languages-specific validation - NEW for foreign languages
+   */
+  async validateLanguageQuestion(question) {
+      const questionText = question.question.toLowerCase();
+      const explanation = (question.explanation || '').toLowerCase();
+      const allText = questionText + ' ' + explanation;
+      
+      // Language learning validation rules
+      
+      // 1. Check for language learning concepts
+      const languageConcepts = [
+          'grammar', 'vocabulary', 'pronunciation', 'conjugation', 'tense',
+          'noun', 'verb', 'adjective', 'adverb', 'article', 'preposition',
+          'translate', 'meaning', 'definition', 'phrase', 'sentence',
+          'masculine', 'feminine', 'plural', 'singular', 'accent'
+      ];
+      
+      const hasLanguageConcepts = languageConcepts.some(concept => allText.includes(concept));
+      
+      // 2. Check for proper language instruction
+      const instructionWords = [
+          'translate', 'conjugate', 'complete', 'choose', 'correct',
+          'means', 'definition', 'pronunciation', 'spelling'
+      ];
+      
+      const hasInstruction = instructionWords.some(word => questionText.includes(word));
+      
+      // 3. Avoid questions that require audio (since we can't provide it)
+      const audioRequiredTerms = [
+          'listen to', 'hear', 'sound', 'pronunciation of', 'accent',
+          'spoken', 'audio', 'recording'
+      ];
+      
+      const requiresAudio = audioRequiredTerms.some(term => questionText.includes(term));
+      if (requiresAudio) {
+          console.log('❌ Language question requires audio which cannot be provided');
+          return false;
+      }
+      
+      return this.validateGeneralQuestion(question);
+  }
+
+  /**
+   * Business-specific validation - NEW
+   */
+  async validateBusinessQuestion(question) {
+      const questionText = question.question.toLowerCase();
+      const explanation = (question.explanation || '').toLowerCase();
+      const allText = questionText + ' ' + explanation;
+      
+      // Business validation rules
+      
+      // 1. Check for business concepts
+      const businessConcepts = [
+          'profit', 'revenue', 'cost', 'budget', 'investment', 'market',
+          'customer', 'strategy', 'competition', 'analysis', 'finance',
+          'accounting', 'management', 'leadership', 'marketing', 'sales',
+          'economics', 'supply', 'demand', 'price', 'value'
+      ];
+      
+      const hasBusinessConcepts = businessConcepts.some(concept => allText.includes(concept));
+      
+      // 2. Check for financial calculations (if numbers present)
+      const hasNumbers = /\d+/.test(allText);
+      if (hasNumbers) {
+          const financialTerms = [
+              'percent', '%', 'dollar', '$', 'cost', 'price', 'profit',
+              'revenue', 'budget', 'investment', 'roi', 'margin'
+          ];
+          
+          const hasFinancialTerms = financialTerms.some(term => allText.includes(term));
+          if (!hasFinancialTerms) {
+              console.log('⚠️ Business question has numbers but no financial context');
+          }
+      }
+      
+      // 3. Check for real-world application
+      const applicationWords = [
+          'example', 'case study', 'scenario', 'situation', 'company',
+          'business', 'organization', 'industry', 'market'
+      ];
+      
+      const hasApplication = applicationWords.some(word => allText.includes(word));
+      
+      return this.validateGeneralQuestion(question);
+  }
+
+  /**
+   * Additional validators for remaining subjects
+   */
+
+  /**
+   * Arts-specific validation
+   */
+  async validateArtsQuestion(question) {
+      const questionText = question.question.toLowerCase();
+      const explanation = (question.explanation || '').toLowerCase();
+      const allText = questionText + ' ' + explanation;
+      
+      // Arts-specific concepts
+      const artsConcepts = [
+          'color', 'composition', 'style', 'technique', 'medium', 'artist',
+          'painting', 'sculpture', 'music', 'rhythm', 'melody', 'harmony',
+          'theater', 'performance', 'design', 'aesthetic', 'beauty',
+          'form', 'texture', 'pattern', 'balance', 'contrast', 'movement'
+      ];
+      
+      const hasArtsConcepts = artsConcepts.some(concept => allText.includes(concept));
+      
+      // Check for art analysis rather than just identification
+      const analysisTerms = [
+          'why', 'how', 'technique', 'style', 'influence', 'movement',
+          'represents', 'symbolizes', 'expresses', 'conveys'
+      ];
+      
+      const hasAnalysis = analysisTerms.some(term => questionText.includes(term));
+      
+      // Avoid questions requiring visual elements we can't provide
+      const visualRequiredTerms = [
+          'look at the image', 'in the picture', 'what color is shown',
+          'observe the painting', 'see in the artwork'
+      ];
+      
+      const requiresVisual = visualRequiredTerms.some(term => questionText.includes(term));
+      if (requiresVisual) {
+          console.log('❌ Arts question requires visual elements which cannot be provided');
+          return false;
+      }
+      
+      return this.validateGeneralQuestion(question);
+  }
+
+  /**
+   * Health/Medicine-specific validation
+   */
+  async validateHealthQuestion(question) {
+      const questionText = question.question.toLowerCase();
+      const explanation = (question.explanation || '').toLowerCase();
+      const allText = questionText + ' ' + explanation;
+      
+      // Health/medical concepts
+      const healthConcepts = [
+          'anatomy', 'physiology', 'disease', 'symptom', 'treatment', 'diagnosis',
+          'health', 'wellness', 'nutrition', 'exercise', 'medicine', 'therapy',
+          'prevention', 'immune', 'infection', 'virus', 'bacteria', 'cell',
+          'organ', 'system', 'blood', 'heart', 'brain', 'muscle', 'bone'
+      ];
+      
+      const hasHealthConcepts = healthConcepts.some(concept => allText.includes(concept));
+      
+      // Avoid giving specific medical advice
+      const medicalAdviceTerms = [
+          'you should take', 'recommended dose', 'prescribe', 'diagnose with',
+          'treat your', 'cure for', 'stop taking', 'increase dosage'
+      ];
+      
+      const givesMedicalAdvice = medicalAdviceTerms.some(term => allText.includes(term));
+      if (givesMedicalAdvice) {
+          console.log('❌ Health question appears to give specific medical advice');
+          return false;
+      }
+      
+      // Check for educational vs diagnostic content
+      const educationalTerms = [
+          'function of', 'role of', 'process of', 'structure of',
+          'general', 'typically', 'usually', 'commonly'
+      ];
+      
+      const isEducational = educationalTerms.some(term => allText.includes(term));
+      
+      return this.validateGeneralQuestion(question);
+  }
+
+  /**
+   * Enhanced general validation with better error detection
+   */
+  async validateGeneralQuestion(question) {
+      const issues = [];
+      
+      // Basic validation
+      if (!question.question || question.question.length < 10) {
+          issues.push('Question text too short');
+      }
+      
+      if (!question.answer || question.answer.trim().length < 1) {
+          issues.push('Answer is missing');
+      }
+      
+      if (question.type === 'multiple_choice') {
+          if (!question.options || question.options.length !== 4) {
+              issues.push('Multiple choice questions must have exactly 4 options');
+          }
+          
+          if (question.correctIndex < 0 || question.correctIndex >= 4) {
+              issues.push('Correct index must be between 0 and 3');
+          }
+          
+          // Check for duplicate options
+          if (question.options && question.options.length === 4) {
+              const uniqueOptions = new Set(question.options.map(opt => opt.toLowerCase().trim()));
+              if (uniqueOptions.size < 4) {
+                  issues.push('Question has duplicate answer options');
+              }
+          }
+          
+          // Check if correct answer matches one of the options
+          if (question.options && question.correctIndex >= 0) {
+              const correctOption = question.options[question.correctIndex];
+              if (correctOption && question.answer && 
+                  !correctOption.toLowerCase().includes(question.answer.toLowerCase().substring(0, 20))) {
+                  console.log('⚠️ Correct answer may not match the selected option');
+              }
+          }
+      }
+      
+      // Check for question clarity
+      const questionText = question.question.toLowerCase();
+      
+      // Avoid questions that are too vague
+      const vaguePatterns = [
+          'which is correct', 'what is true', 'which statement',
+          'what can be said', 'which of these'
+      ];
+      
+      const isVague = vaguePatterns.some(pattern => questionText.includes(pattern)) &&
+                    questionText.length < 50;
+      
+      if (isVague) {
+          console.log('⚠️ Question may be too vague');
+      }
+      
+      // Check for proper grammar indicators
+      if (!questionText.includes('?') && !questionText.includes('which') && 
+          !questionText.includes('what') && !questionText.includes('how')) {
+          console.log('⚠️ Question may not be properly formatted as a question');
+      }
+      
+      if (issues.length > 0) {
+          console.log('❌ General validation failed:', issues);
+          return false;
+      }
+      
+      return true;
   }
 
   /**
@@ -304,149 +792,494 @@ class SimplifiedOllamaService {
   }
 
   /**
-   * Create subject-specific prompts
+   * Enhanced createSubjectPrompt method for ollama-simplified.js
+   * Replace the existing createSubjectPrompt method with this enhanced version
    */
   createSubjectPrompt(content, count, subjectCategory, topicName) {
-    const subjectId = subjectCategory.id;
-    const baseContent = content.substring(0, 2000);
-    
-    if (subjectId === 'mathematics') {
+      const subjectId = subjectCategory.id;
+      const baseContent = content.substring(0, 2000);
+      
+      switch (subjectId) {
+          case 'mathematics':
+              return this.createMathPrompt(baseContent, count, topicName);
+              
+          case 'natural-sciences':
+              return this.createSciencePrompt(baseContent, count, topicName);
+              
+          case 'literature':
+              return this.createLiteraturePrompt(baseContent, count, topicName);
+              
+          case 'history':
+              return this.createHistoryPrompt(baseContent, count, topicName);
+              
+          case 'computer-science':
+              return this.createComputerSciencePrompt(baseContent, count, topicName);
+              
+          case 'languages':
+              return this.createLanguagePrompt(baseContent, count, topicName);
+              
+          case 'business':
+              return this.createBusinessPrompt(baseContent, count, topicName);
+              
+          case 'arts':
+              return this.createArtsPrompt(baseContent, count, topicName);
+              
+          case 'health-medicine':
+              return this.createHealthPrompt(baseContent, count, topicName);
+              
+          case 'other':
+          default:
+              return this.createGeneralPrompt(baseContent, count, topicName, subjectCategory.name);
+      }
+  }
+
+  /**
+   * Math prompt (keep existing one - it's working)
+   */
+  createMathPrompt(content, count, topicName) {
       return `You are a MATHEMATICS teacher creating ${count} practice questions for "${topicName}".
 
-STUDY MATERIAL:
-${baseContent}
+  STUDY MATERIAL:
+  ${content}
 
-🧮 CRITICAL MATH REQUIREMENTS:
-- VERIFY ALL ARITHMETIC: Every calculation must be 100% mathematically correct
-- Example: 5 × 4 = 20 (NOT 15, NOT 18)
-- Example: 8 + 7 = 15 (NOT 14, NOT 16) 
-- Example: 12 - 5 = 7 (NOT 8, NOT 6)
-- Double-check every number before finalizing
-- If unsure about arithmetic, recalculate step by step
+  🧮 CRITICAL MATH REQUIREMENTS:
+  - VERIFY ALL ARITHMETIC: Every calculation must be 100% mathematically correct
+  - Example: 5 × 4 = 20 (NOT 15, NOT 18)
+  - Example: 8 + 7 = 15 (NOT 14, NOT 16) 
+  - Example: 12 - 5 = 7 (NOT 8, NOT 6)
+  - Double-check every number before finalizing
+  - If unsure about arithmetic, recalculate step by step
 
-MATHEMATICS TEACHING FOCUS:
-- Test computational skills and mathematical reasoning
-- Ask about calculations, problem-solving, formulas
-- Include numerical examples from the material
-- Ensure mathematical accuracy above all else
+  MATHEMATICS TEACHING FOCUS:
+  - Test computational skills and mathematical reasoning
+  - Ask about calculations, problem-solving, formulas
+  - Include numerical examples from the material
+  - Ensure mathematical accuracy above all else
 
-Create exactly ${count} multiple choice questions in this format:
+  Create exactly ${count} multiple choice questions in this format:
 
-QUESTION 1:
-[Mathematical question testing concepts from the material]
-A) [Option A]
-B) [Option B] 
-C) [Option C]
-D) [Option D]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Mathematical explanation with correct arithmetic]
+  QUESTION 1:
+  [Mathematical question testing concepts from the material]
+  A) [Option A]
+  B) [Option B] 
+  C) [Option C]
+  D) [Option D]
+  CORRECT: [A/B/C/D]
+  EXPLANATION: [Mathematical explanation with correct arithmetic]
 
-Continue for all ${count} questions. Remember: Mathematical accuracy is non-negotiable!`;
-    }
-    
-    // For other subjects
-    return `You are a ${subjectCategory.name} teacher creating ${count} questions about "${topicName}".
-
-STUDY MATERIAL:
-${baseContent}
-
-Create exactly ${count} multiple choice questions that test understanding of this material.
-
-QUESTION 1:
-[Question about the material]
-A) [Option A]
-B) [Option B]
-C) [Option C]
-D) [Option D]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Brief explanation]
-
-Continue for all ${count} questions.`;
+  Continue for all ${count} questions. Remember: Mathematical accuracy is non-negotiable!`;
   }
 
   /**
-   * Conservative generation (Attempt 2)
+   * Science prompt - ENHANCED
    */
-  async generateConservative(content, count, subjectCategory, topicName) {
-    console.log(`🛡️ Using conservative generation`);
-    
-    const simplePrompt = `Create ${count} simple, factual questions about "${topicName}" based on this content:
+  createSciencePrompt(content, count, topicName) {
+      return `You are a SCIENCE teacher creating ${count} educational questions for "${topicName}".
 
-${content.substring(0, 1000)}
+  STUDY MATERIAL:
+  ${content}
 
-Make questions straightforward and based directly on the material provided.
+  🔬 SCIENCE TEACHING REQUIREMENTS:
+  - Focus on scientific concepts, processes, and reasoning
+  - Test understanding of cause and effect relationships
+  - Include proper scientific terminology from the material
+  - Ensure scientific accuracy - no misconceptions
+  - Ask about HOW and WHY, not just WHAT
 
-QUESTION 1:
-[Simple question]
-A) [Answer choice]
-B) [Answer choice]
-C) [Answer choice]
-D) [Answer choice]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Simple explanation]
+  SCIENCE QUESTION GUIDELINES:
+  ✅ Test understanding of scientific processes
+  ✅ Ask about relationships between concepts
+  ✅ Include scientific reasoning and evidence
+  ✅ Use proper scientific vocabulary from material
+  ✅ Focus on concepts that can be learned from text
 
-Continue for ${count} questions.`;
+  ❌ Don't require lab equipment or experiments
+  ❌ Don't ask about specific measurements not in material
+  ❌ Don't include common scientific misconceptions
 
-    try {
-      const response = await this.ollama.generate({
-        model: this.defaultModel,
-        prompt: simplePrompt,
-        stream: false,
-        options: {
-          temperature: 0.4,
-          top_p: 0.8,
-          num_predict: count * 100
-        }
-      });
+  Create exactly ${count} multiple choice questions in this format:
 
-      return this.parseQuestions(response.response, count);
-    } catch (error) {
-      console.error('❌ Conservative generation failed:', error);
-      return [];
-    }
+  QUESTION 1:
+  [Science question testing understanding of concepts from the material]
+  A) [Scientific option A]
+  B) [Scientific option B]
+  C) [Scientific option C]
+  D) [Scientific option D]
+  CORRECT: [A/B/C/D]
+  EXPLANATION: [Scientific explanation with reasoning]
+
+  Continue for all ${count} questions. Focus on scientific understanding!`;
   }
 
   /**
-   * Simplified generation (Attempt 3)
+   * Literature prompt - ENHANCED
    */
-  async generateSimplified(content, count, subjectCategory, topicName) {
-    console.log(`📝 Using simplified generation`);
-    
-    const basicPrompt = `Based on this material about "${topicName}", create ${count} basic questions:
+  createLiteraturePrompt(content, count, topicName) {
+      return `You are a LITERATURE teacher creating ${count} analytical questions for "${topicName}".
 
-${content.substring(0, 800)}
+  STUDY MATERIAL:
+  ${content}
 
-Each question should test basic understanding of the material.
+  📚 LITERATURE ANALYSIS REQUIREMENTS:
+  - Focus on literary analysis, not plot summary
+  - Test understanding of themes, character development, literary devices
+  - Ask about author's purpose and writing techniques
+  - Include questions about textual evidence and interpretation
+  - Encourage critical thinking about literature
 
-QUESTION 1:
-What does the material say about [topic]?
-A) [Direct answer from material]
-B) [Incorrect option]
-C) [Incorrect option]
-D) [Incorrect option]
-CORRECT: A
-EXPLANATION: This is stated in the material.
+  LITERATURE QUESTION GUIDELINES:
+  ✅ Ask about themes, symbolism, character motivation
+  ✅ Test understanding of literary devices and techniques
+  ✅ Include questions about author's purpose and style
+  ✅ Focus on interpretation and analysis
+  ✅ Ask "why" and "how" questions about the text
 
-Create ${count} questions in this format.`;
+  ❌ Don't ask simple plot summary questions
+  ❌ Don't ask about events not covered in the material
+  ❌ Don't require knowledge of other works not mentioned
 
-    try {
-      const response = await this.ollama.generate({
-        model: this.defaultModel,
-        prompt: basicPrompt,
-        stream: false,
-        options: {
-          temperature: 0.2,
-          top_p: 0.7,
-          num_predict: count * 80
-        }
-      });
+  Create exactly ${count} multiple choice questions in this format:
 
-      return this.parseQuestions(response.response, count);
-    } catch (error) {
-      console.error('❌ Simplified generation failed:', error);
-      return [];
-    }
+  QUESTION 1:
+  [Literary analysis question based on the material]
+  A) [Analytical option A]
+  B) [Analytical option B]
+  C) [Analytical option C]
+  D) [Analytical option D]
+  CORRECT: [A/B/C/D]
+  EXPLANATION: [Literary analysis explanation with textual reasoning]
+
+  Continue for all ${count} questions. Focus on literary analysis and critical thinking!`;
   }
+
+  /**
+   * History prompt - ENHANCED
+   */
+  createHistoryPrompt(content, count, topicName) {
+      return `You are a HISTORY teacher creating ${count} analytical questions for "${topicName}".
+
+  STUDY MATERIAL:
+  ${content}
+
+  🏛️ HISTORY ANALYSIS REQUIREMENTS:
+  - Focus on historical analysis, causation, and significance
+  - Test understanding of cause and effect relationships
+  - Ask about historical context and perspectives
+  - Include questions about change and continuity over time
+  - Encourage critical thinking about historical events
+
+  HISTORY QUESTION GUIDELINES:
+  ✅ Ask about causes and effects of historical events
+  ✅ Test understanding of historical significance
+  ✅ Include questions about different perspectives
+  ✅ Focus on change and continuity over time
+  ✅ Ask about historical context and background
+
+  ❌ Don't ask simple memorization of dates
+  ❌ Don't require information not in the material
+  ❌ Don't ask about events without context
+
+  Create exactly ${count} multiple choice questions in this format:
+
+  QUESTION 1:
+  [Historical analysis question based on the material]
+  A) [Historical option A]
+  B) [Historical option B]
+  C) [Historical option C]
+  D) [Historical option D]
+  CORRECT: [A/B/C/D]
+  EXPLANATION: [Historical explanation with reasoning about causation/significance]
+
+  Continue for all ${count} questions. Focus on historical thinking and analysis!`;
+  }
+
+  /**
+   * Computer Science prompt - NEW
+   */
+  createComputerSciencePrompt(content, count, topicName) {
+      return `You are a COMPUTER SCIENCE teacher creating ${count} programming questions for "${topicName}".
+
+  STUDY MATERIAL:
+  ${content}
+
+  💻 COMPUTER SCIENCE REQUIREMENTS:
+  - Focus on programming concepts, algorithms, and computational thinking
+  - Test understanding of code logic and problem-solving
+  - Include questions about programming constructs from the material
+  - Ensure code accuracy - proper syntax and logic
+  - Ask about problem-solving approaches and efficiency
+
+  PROGRAMMING QUESTION GUIDELINES:
+  ✅ Test understanding of programming concepts and logic
+  ✅ Ask about algorithm efficiency and problem-solving
+  ✅ Include questions about code functionality
+  ✅ Focus on computational thinking skills
+  ✅ Test debugging and code analysis skills
+
+  ❌ Don't use programming languages not mentioned in material
+  ❌ Don't require advanced concepts not covered
+  ❌ Don't include syntax errors in code examples
+
+  Create exactly ${count} multiple choice questions in this format:
+
+  QUESTION 1:
+  [Programming/CS question based on the material]
+  A) [Programming option A]
+  B) [Programming option B]
+  C) [Programming option C]
+  D) [Programming option D]
+  CORRECT: [A/B/C/D]
+  EXPLANATION: [Technical explanation with reasoning about code/algorithms]
+
+  Continue for all ${count} questions. Focus on computational thinking!`;
+  }
+
+  /**
+   * Language Learning prompt - NEW
+   */
+  createLanguagePrompt(content, count, topicName) {
+      return `You are a LANGUAGE teacher creating ${count} educational questions for "${topicName}".
+
+  STUDY MATERIAL:
+  ${content}
+
+  🗣️ LANGUAGE LEARNING REQUIREMENTS:
+  - Focus on grammar, vocabulary, and language structure
+  - Test understanding of language rules and patterns
+  - Include questions about word meanings and usage
+  - Ensure linguistic accuracy
+  - Ask about language structure and communication
+
+  LANGUAGE QUESTION GUIDELINES:
+  ✅ Test grammar rules and sentence structure
+  ✅ Ask about vocabulary meanings and usage
+  ✅ Include questions about language patterns
+  ✅ Focus on communication and comprehension
+  ✅ Test translation and interpretation skills
+
+  ❌ Don't require audio or pronunciation
+  ❌ Don't use languages not mentioned in material
+  ❌ Don't include culturally specific references not covered
+
+  Create exactly ${count} multiple choice questions in this format:
+
+  QUESTION 1:
+  [Language learning question based on the material]
+  A) [Language option A]
+  B) [Language option B]
+  C) [Language option C]
+  D) [Language option D]
+  CORRECT: [A/B/C/D]
+  EXPLANATION: [Linguistic explanation with grammar/usage reasoning]
+
+  Continue for all ${count} questions. Focus on language understanding!`;
+  }
+
+  /**
+   * Business prompt - NEW
+   */
+  createBusinessPrompt(content, count, topicName) {
+      return `You are a BUSINESS teacher creating ${count} practical questions for "${topicName}".
+
+  STUDY MATERIAL:
+  ${content}
+
+  💼 BUSINESS EDUCATION REQUIREMENTS:
+  - Focus on business concepts, strategy, and real-world applications
+  - Test understanding of business principles and practices
+  - Include questions about decision-making and problem-solving
+  - Ensure practical relevance to business situations
+  - Ask about analysis and evaluation of business scenarios
+
+  BUSINESS QUESTION GUIDELINES:
+  ✅ Test understanding of business concepts and principles
+  ✅ Ask about strategic thinking and decision-making
+  ✅ Include questions about market analysis and competition
+  ✅ Focus on practical business applications
+  ✅ Test financial literacy and business calculations
+
+  ❌ Don't require specific company knowledge not in material
+  ❌ Don't include outdated business practices
+  ❌ Don't ask about personal financial advice
+
+  Create exactly ${count} multiple choice questions in this format:
+
+  QUESTION 1:
+  [Business question based on the material]
+  A) [Business option A]
+  B) [Business option B]
+  C) [Business option C]
+  D) [Business option D]
+  CORRECT: [A/B/C/D]
+  EXPLANATION: [Business reasoning with practical application]
+
+  Continue for all ${count} questions. Focus on business thinking and application!`;
+  }
+
+  /**
+   * Arts prompt - NEW
+   */
+  createArtsPrompt(content, count, topicName) {
+      return `You are an ARTS teacher creating ${count} educational questions for "${topicName}".
+
+  STUDY MATERIAL:
+  ${content}
+
+  🎨 ARTS EDUCATION REQUIREMENTS:
+  - Focus on artistic concepts, techniques, and cultural significance
+  - Test understanding of artistic movements and styles
+  - Include questions about creative processes and interpretation
+  - Ensure cultural and historical accuracy
+  - Ask about artistic analysis and appreciation
+
+  ARTS QUESTION GUIDELINES:
+  ✅ Test understanding of artistic techniques and styles
+  ✅ Ask about cultural and historical context of art
+  ✅ Include questions about artistic interpretation
+  ✅ Focus on creative processes and artistic thinking
+  ✅ Test knowledge of artistic movements and influences
+
+  ❌ Don't require viewing specific artworks not described
+  ❌ Don't include highly subjective aesthetic judgments
+  ❌ Don't ask about techniques requiring visual demonstration
+
+  Create exactly ${count} multiple choice questions in this format:
+
+  QUESTION 1:
+  [Arts question based on the material]
+  A) [Artistic option A]
+  B) [Artistic option B]
+  C) [Artistic option C]
+  D) [Artistic option D]
+  CORRECT: [A/B/C/D]
+  EXPLANATION: [Artistic explanation with cultural/technical reasoning]
+
+  Continue for all ${count} questions. Focus on artistic understanding and appreciation!`;
+  }
+
+  /**
+   * Health/Medicine prompt - NEW
+   */
+  createHealthPrompt(content, count, topicName) {
+      return `You are a HEALTH EDUCATION teacher creating ${count} educational questions for "${topicName}".
+
+  STUDY MATERIAL:
+  ${content}
+
+  ⚕️ HEALTH EDUCATION REQUIREMENTS:
+  - Focus on general health concepts and education
+  - Test understanding of body systems and health principles
+  - Include questions about wellness and prevention
+  - Ensure medical accuracy but avoid specific medical advice
+  - Ask about health literacy and understanding
+
+  HEALTH QUESTION GUIDELINES:
+  ✅ Test understanding of anatomy and physiology
+  ✅ Ask about health promotion and disease prevention
+  ✅ Include questions about nutrition and wellness
+  ✅ Focus on general health education
+  ✅ Test knowledge of health systems and processes
+
+  ❌ Don't provide specific medical diagnosis or treatment advice
+  ❌ Don't include drug dosages or specific medications
+  ❌ Don't ask about personal medical situations
+
+  Create exactly ${count} multiple choice questions in this format:
+
+  QUESTION 1:
+  [Health education question based on the material]
+  A) [Health option A]
+  B) [Health option B]
+  C) [Health option C]
+  D) [Health option D]
+  CORRECT: [A/B/C/D]
+  EXPLANATION: [Health education explanation with scientific reasoning]
+
+  Continue for all ${count} questions. Focus on health education and literacy!`;
+  }
+
+  /**
+   * General prompt - ENHANCED
+   */
+  createGeneralPrompt(content, count, topicName, subjectName) {
+      return `You are an educator creating ${count} educational questions for "${topicName}" in ${subjectName}.
+
+  STUDY MATERIAL:
+  ${content}
+
+  📖 GENERAL EDUCATION REQUIREMENTS:
+  - Focus on key concepts and understanding from the material
+  - Test comprehension and application of ideas
+  - Include questions that promote critical thinking
+  - Ensure accuracy and clarity
+  - Ask about important principles and relationships
+
+  EDUCATIONAL QUESTION GUIDELINES:
+  ✅ Test understanding of main concepts in the material
+  ✅ Ask about relationships between ideas
+  ✅ Include questions that require analysis and reasoning
+  ✅ Focus on practical application of knowledge
+  ✅ Test comprehension and critical thinking
+
+  ❌ Don't ask about information not covered in the material
+  ❌ Don't include overly technical terms without context
+  ❌ Don't make assumptions about prior knowledge
+
+  Create exactly ${count} multiple choice questions in this format:
+
+  QUESTION 1:
+  [Educational question based on the material]
+  A) [Option A]
+  B) [Option B]
+  C) [Option C]
+  D) [Option D]
+  CORRECT: [A/B/C/D]
+  EXPLANATION: [Clear explanation with reasoning]
+
+  Continue for all ${count} questions. Focus on understanding and application!`;
+  }
+
+    /**
+     * Simplified generation (Attempt 3)
+     */
+    async generateSimplified(content, count, subjectCategory, topicName) {
+      console.log(`📝 Using simplified generation`);
+      
+      const basicPrompt = `Based on this material about "${topicName}", create ${count} basic questions:
+
+  ${content.substring(0, 800)}
+
+  Each question should test basic understanding of the material.
+
+  QUESTION 1:
+  What does the material say about [topic]?
+  A) [Direct answer from material]
+  B) [Incorrect option]
+  C) [Incorrect option]
+  D) [Incorrect option]
+  CORRECT: A
+  EXPLANATION: This is stated in the material.
+
+  Create ${count} questions in this format.`;
+
+      try {
+        const response = await this.ollama.generate({
+          model: this.defaultModel,
+          prompt: basicPrompt,
+          stream: false,
+          options: {
+            temperature: 0.2,
+            top_p: 0.7,
+            num_predict: count * 80
+          }
+        });
+
+        return this.parseQuestions(response.response, count);
+      } catch (error) {
+        console.error('❌ Simplified generation failed:', error);
+        return [];
+      }
+    }
 
   /**
    * Generate from successful patterns (Attempt 4)
