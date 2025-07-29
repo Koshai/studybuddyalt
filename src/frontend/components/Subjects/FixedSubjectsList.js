@@ -4,29 +4,29 @@ window.FixedSubjectsListComponent = {
     <div class="animate-fade-in space-y-8">
         <!-- Header -->
         <div class="text-center mb-8">
-            <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">
+            <h2 class="text-2xl md:text-3xl font-bold text-black mb-4">
                 <span class="mr-3">📚</span>Choose Your Study Subject
             </h2>
-            <p class="text-white/80 text-lg">Select a subject area to organize your learning and create topics</p>
+            <p class="text-black/80 text-lg">Select a subject area to organize your learning and create topics</p>
         </div>
 
         <!-- Quick Stats -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-                <div class="text-2xl font-bold text-white">{{ stats.totalTopics }}</div>
-                <div class="text-white/70 text-sm">Your Topics</div>
+                <div class="text-2xl font-bold text-black">{{ stats.totalTopics }}</div>
+                <div class="text-black/70 text-sm">Your Topics</div>
             </div>
             <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-                <div class="text-2xl font-bold text-white">{{ stats.totalQuestions }}</div>
-                <div class="text-white/70 text-sm">Questions</div>
+                <div class="text-2xl font-bold text-black">{{ stats.totalQuestions }}</div>
+                <div class="text-black/70 text-sm">Questions</div>
             </div>
             <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-                <div class="text-2xl font-bold text-white">{{ stats.totalNotes }}</div>
-                <div class="text-white/70 text-sm">Study Files</div>
+                <div class="text-2xl font-bold text-black">{{ stats.totalNotes }}</div>
+                <div class="text-black/70 text-sm">Study Files</div>
             </div>
             <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-                <div class="text-2xl font-bold text-white">{{ stats.overallAccuracy }}%</div>
-                <div class="text-white/70 text-sm">Accuracy</div>
+                <div class="text-2xl font-bold text-black">{{ stats.overallAccuracy }}%</div>
+                <div class="text-black/70 text-sm">Accuracy</div>
             </div>
         </div>
 
@@ -73,20 +73,20 @@ window.FixedSubjectsListComponent = {
         <!-- Getting Started Help -->
         <div v-if="!hasAnyTopics" class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 text-center">
             <div class="text-4xl mb-4">🎯</div>
-            <h3 class="text-xl font-bold text-white mb-4">Ready to Start Learning?</h3>
-            <p class="text-white/80 mb-6">Choose a subject above to create your first topic and begin uploading study materials!</p>
+            <h3 class="text-xl font-bold text-black mb-4">Ready to Start Learning?</h3>
+            <p class="text-black/80 mb-6">Choose a subject above to create your first topic and begin uploading study materials!</p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
-                <div class="bg-white/20 rounded-lg p-4">
+                <div class="bg-grey/40 rounded-lg p-4">
                     <div class="text-2xl mb-2">📚</div>
-                    <p class="text-white text-sm">Choose Subject</p>
+                    <p class="text-black text-sm">Choose Subject</p>
                 </div>
-                <div class="bg-white/20 rounded-lg p-4">
+                <div class="bg-grey/40 rounded-lg p-4">
                     <div class="text-2xl mb-2">📝</div>
-                    <p class="text-white text-sm">Create Topics</p>
+                    <p class="text-black text-sm">Create Topics</p>
                 </div>
-                <div class="bg-white/20 rounded-lg p-4">
+                <div class="bg-grey/40 rounded-lg p-4">
                     <div class="text-2xl mb-2">🤖</div>
-                    <p class="text-white text-sm">Generate Questions</p>
+                    <p class="text-black text-sm">Generate Questions</p>
                 </div>
             </div>
         </div>

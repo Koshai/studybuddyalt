@@ -4,29 +4,29 @@ window.SimplifiedDashboardComponent = {
     <div class="animate-fade-in space-y-8">
         <!-- Welcome Header -->
         <div class="text-center mb-8">
-            <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">
+            <h2 class="text-2xl md:text-3xl font-bold text-black mb-4">
                 <span class="mr-3">🧠</span>Welcome to StudyAI
             </h2>
-            <p class="text-white/80 text-lg">Your intelligent learning companion - Choose subjects, create topics, and practice with AI-generated questions!</p>
+            <p class="text-black/80 text-lg">Your intelligent learning companion - Choose subjects, create topics, and practice with AI-generated questions!</p>
         </div>
 
         <!-- Quick Stats -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-                <div class="text-2xl font-bold text-white">{{ stats.totalTopics }}</div>
-                <div class="text-white/70 text-sm">Your Topics</div>
+                <div class="text-2xl font-bold text-black">{{ stats.totalTopics }}</div>
+                <div class="text-black/70 text-sm">Your Topics</div>
             </div>
             <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-                <div class="text-2xl font-bold text-white">{{ stats.totalQuestions }}</div>
-                <div class="text-white/70 text-sm">Questions</div>
+                <div class="text-2xl font-bold text-black">{{ stats.totalQuestions }}</div>
+                <div class="text-black/70 text-sm">Questions</div>
             </div>
             <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-                <div class="text-2xl font-bold text-white">{{ stats.totalNotes }}</div>
-                <div class="text-white/70 text-sm">Study Files</div>
+                <div class="text-2xl font-bold text-black">{{ stats.totalNotes }}</div>
+                <div class="text-black/70 text-sm">Study Files</div>
             </div>
             <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-                <div class="text-2xl font-bold text-white">{{ stats.overallAccuracy }}%</div>
-                <div class="text-white/70 text-sm">Accuracy</div>
+                <div class="text-2xl font-bold text-black">{{ stats.overallAccuracy }}%</div>
+                <div class="text-black/70 text-sm">Accuracy</div>
             </div>
         </div>
 

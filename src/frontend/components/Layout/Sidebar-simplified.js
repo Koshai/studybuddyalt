@@ -128,7 +128,7 @@ window.SidebarSimplifiedComponent = {
             </div>
 
             <!-- User Profile Section (when sidebar is open) -->
-            <div v-if="store.state.sidebarOpen" class="absolute bottom-4 left-4 right-4">
+            <div v-if="store.state.sidebarOpen" class="absolute bottom-4 left-5">
                 <div class="bg-gray-800 rounded-lg p-3 border border-gray-700">
                     <div class="flex items-center space-x-3">
                         <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center text-white font-medium text-sm">

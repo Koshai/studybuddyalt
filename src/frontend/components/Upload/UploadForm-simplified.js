@@ -3,10 +3,10 @@ window.UploadFormSimplifiedComponent = {
     template: `
     <div class="animate-fade-in space-y-6">
         <div class="text-center mb-8">
-            <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">
+            <h2 class="text-2xl md:text-3xl font-bold text-black mb-4">
                 <span class="mr-3">📤</span>Upload Study Materials
             </h2>
-            <p class="text-white/80 text-lg">Add your notes, photos, PDFs, and documents for AI analysis!</p>
+            <p class="text-black/80 text-lg">Add your notes, photos, PDFs, and documents for AI analysis!</p>
         </div>
 
         <div class="max-w-2xl mx-auto">

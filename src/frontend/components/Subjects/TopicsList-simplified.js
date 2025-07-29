@@ -12,14 +12,14 @@ window.TopicsListSimplifiedComponent = {
             </button>
             <div class="flex-1">
                 <div class="flex items-center space-x-4 mb-2">
-                    <div :class="['w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg', store.state.selectedSubject?.color || 'bg-gray-500']">
+                    <div :class="['w-16 h-16 rounded-xl flex items-center justify-center text-black font-bold text-2xl shadow-lg', store.state.selectedSubject?.color || 'bg-gray-500']">
                         <i :class="store.state.selectedSubject?.icon || 'fas fa-book'"></i>
                     </div>
                     <div>
-                        <h2 class="text-2xl md:text-3xl font-bold text-white">
+                        <h2 class="text-2xl md:text-3xl font-bold text-black">
                             {{ store.state.selectedSubject?.name || 'Subject' }} Topics
                         </h2>
-                        <p class="text-white/80">{{ store.state.selectedSubject?.description || 'Manage your learning topics' }}</p>
+                        <p class="text-black/80">{{ store.state.selectedSubject?.description || 'Manage your learning topics' }}</p>
                     </div>
                 </div>
             </div>
@@ -41,8 +41,8 @@ window.TopicsListSimplifiedComponent = {
         <div v-else-if="topics.length === 0" class="text-center py-16">
             <div class="bg-white/10 backdrop-blur-sm rounded-3xl p-12 max-w-lg mx-auto">
                 <div class="text-6xl mb-6">📖</div>
-                <h3 class="text-2xl font-bold text-white mb-4">Create Your First Topic!</h3>
-                <p class="text-white/80 text-lg mb-8">Start organizing your {{ store.state.selectedSubject?.name }} studies by creating a topic. You can then upload materials and generate practice questions.</p>
+                <h3 class="text-2xl font-bold text-black mb-4">Create Your First Topic!</h3>
+                <p class="text-black/80 text-lg mb-8">Start organizing your {{ store.state.selectedSubject?.name }} studies by creating a topic. You can then upload materials and generate practice questions.</p>
                 <button
                     @click="store.showCreateTopicModal()"
                     class="bg-gradient-to-r from-accent-500 to-primary-500 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:shadow-lg transition-all duration-300"
