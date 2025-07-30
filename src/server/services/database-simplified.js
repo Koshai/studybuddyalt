@@ -1332,6 +1332,657 @@ class SimplifiedDatabaseService {
     });
   }
 
+  // ===== USER-SPECIFIC TOPIC METHODS =====
+    
+    async getTopicsForUser(subjectId, userId) {
+        return new Promise((resolve, reject) => {
+            let sql, params;
+            
+            if (subjectId === 'all') {
+                sql = 'SELECT * FROM topics WHERE user_id = ? ORDER BY subject_id, created_at DESC';
+                params = [userId];
+            } else {
+                sql = 'SELECT * FROM topics WHERE subject_id = ? AND user_id = ? ORDER BY created_at DESC';
+                params = [subjectId, userId];
+            }
+            
+            this.db.all(sql, params, (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+    }
+
+    async createTopicForUser(subjectId, name, description = '', userId) {
+        const subject = await this.getSubjectById(subjectId);
+        if (!subject) {
+            throw new Error(`Invalid subject ID: ${subjectId}`);
+        }
+
+        return new Promise((resolve, reject) => {
+            const id = require('uuid').v4();
+            const sql = 'INSERT INTO topics (id, subject_id, name, description, user_id) VALUES (?, ?, ?, ?, ?)';
+            
+            this.db.run(sql, [id, subjectId, name, description, userId], function(err) {
+                if (err) reject(err);
+                else {
+                    resolve({ 
+                        id, 
+                        subject_id: subjectId, 
+                        name, 
+                        description,
+                        user_id: userId,
+                        created_at: new Date().toISOString() 
+                    });
+                }
+            });
+        });
+    }
+
+    async getTopicWithSubjectForUser(topicId, userId) {
+        return new Promise(async (resolve, reject) => {
+            const sql = 'SELECT * FROM topics WHERE id = ? AND user_id = ?';
+            this.db.get(sql, [topicId, userId], async (err, row) => {
+                if (err) {
+                    reject(err);
+                } else if (!row) {
+                    resolve(null);
+                } else {
+                    const subject = await this.getSubjectById(row.subject_id);
+                    resolve({
+                        ...row,
+                        subject: subject
+                    });
+                }
+            });
+        });
+    }
+
+    async deleteTopicForUser(topicId, userId) {
+        return new Promise((resolve, reject) => {
+            this.db.serialize(() => {
+                this.db.run('BEGIN TRANSACTION');
+                
+                // Verify topic belongs to user first
+                this.db.get('SELECT id FROM topics WHERE id = ? AND user_id = ?', [topicId, userId], (err, row) => {
+                    if (err || !row) {
+                        this.db.run('ROLLBACK');
+                        reject(new Error('Topic not found or access denied'));
+                        return;
+                    }
+                    
+                    // Delete user answers first
+                    this.db.run(`DELETE FROM user_answers WHERE question_id IN 
+                        (SELECT id FROM questions WHERE topic_id = ?)`, [topicId]);
+                    
+                    // Delete practice sessions
+                    this.db.run('DELETE FROM practice_sessions WHERE topic_id = ? AND user_id = ?', [topicId, userId]);
+                    
+                    // Delete questions
+                    this.db.run('DELETE FROM questions WHERE topic_id = ?', [topicId]);
+                    
+                    // Delete notes
+                    this.db.run('DELETE FROM notes WHERE topic_id = ?', [topicId]);
+                    
+                    // Delete topic
+                    this.db.run('DELETE FROM topics WHERE id = ? AND user_id = ?', [topicId, userId], function(err) {
+                        if (err) {
+                            this.db.run('ROLLBACK');
+                            reject(err);
+                        } else {
+                            this.db.run('COMMIT');
+                            resolve({ changes: this.changes });
+                        }
+                    });
+                });
+            });
+        });
+    }
+
+    async searchTopicsForUser(searchTerm, userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT * FROM topics 
+                WHERE (name LIKE ? OR description LIKE ?) AND user_id = ?
+                ORDER BY created_at DESC
+            `;
+            const searchPattern = `%${searchTerm}%`;
+            
+            this.db.all(sql, [searchPattern, searchPattern, userId], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+    }
+
+    // ===== USER-SPECIFIC NOTE METHODS =====
+    
+    async getNotesForUser(topicId, userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT n.* FROM notes n
+                JOIN topics t ON n.topic_id = t.id
+                WHERE n.topic_id = ? AND t.user_id = ?
+                ORDER BY n.created_at DESC
+            `;
+            
+            this.db.all(sql, [topicId, userId], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+    }
+
+    async createNoteForUser(topicId, content, fileName = null, userId) {
+        return new Promise((resolve, reject) => {
+            // First verify topic belongs to user
+            this.db.get('SELECT id FROM topics WHERE id = ? AND user_id = ?', [topicId, userId], (err, row) => {
+                if (err || !row) {
+                    reject(new Error('Topic not found or access denied'));
+                    return;
+                }
+                
+                const id = require('uuid').v4();
+                const wordCount = content.trim().split(/\s+/).length;
+                
+                const sql = 'INSERT INTO notes (id, topic_id, content, file_name, word_count) VALUES (?, ?, ?, ?, ?)';
+                
+                this.db.run(sql, [id, topicId, content, fileName, wordCount], function(err) {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve({ 
+                            id, 
+                            topic_id: topicId, 
+                            content, 
+                            file_name: fileName,
+                            word_count: wordCount,
+                            created_at: new Date().toISOString() 
+                        });
+                    }
+                });
+            });
+        });
+    }
+
+    async deleteNoteForUser(noteId, userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                DELETE FROM notes 
+                WHERE id = ? AND topic_id IN (
+                    SELECT id FROM topics WHERE user_id = ?
+                )
+            `;
+            
+            this.db.run(sql, [noteId, userId], function(err) {
+                if (err) reject(err);
+                else resolve({ changes: this.changes });
+            });
+        });
+    }
+
+    // ===== USER-SPECIFIC QUESTION METHODS =====
+    
+    async getQuestionsForUser(topicId, userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT q.* FROM questions q
+                JOIN topics t ON q.topic_id = t.id
+                WHERE q.topic_id = ? AND t.user_id = ?
+                ORDER BY q.created_at DESC
+            `;
+            
+            this.db.all(sql, [topicId, userId], (err, rows) => {
+                if (err) reject(err);
+                else {
+                    const questions = rows.map(row => ({
+                        ...row,
+                        options: row.options ? JSON.parse(row.options) : null,
+                        correct_index: row.correct_index !== null ? parseInt(row.correct_index) : null
+                    }));
+                    resolve(questions);
+                }
+            });
+        });
+    }
+
+    async createQuestionForUser(topicId, questionData, userId) {
+        return new Promise((resolve, reject) => {
+            // First verify topic belongs to user
+            this.db.get('SELECT id FROM topics WHERE id = ? AND user_id = ?', [topicId, userId], (err, row) => {
+                if (err || !row) {
+                    reject(new Error('Topic not found or access denied'));
+                    return;
+                }
+                
+                const id = require('uuid').v4();
+                const {
+                    question,
+                    answer,
+                    type = 'multiple_choice',
+                    options = null,
+                    correctIndex = null,
+                    explanation = null
+                } = questionData;
+
+                const sql = `INSERT INTO questions 
+                    (id, topic_id, question, answer, type, options, correct_index, explanation) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+                
+                const optionsJson = options ? JSON.stringify(options) : null;
+                
+                this.db.run(sql, [
+                    id, topicId, question, answer, type, optionsJson, correctIndex, explanation
+                ], function(err) {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve({ 
+                            id, 
+                            topic_id: topicId, 
+                            question, 
+                            answer, 
+                            type,
+                            options,
+                            correct_index: correctIndex,
+                            explanation,
+                            created_at: new Date().toISOString() 
+                        });
+                    }
+                });
+            });
+        });
+    }
+
+    async getRandomQuestionsForUser(topicId, count = 5, userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT q.* FROM questions q
+                JOIN topics t ON q.topic_id = t.id
+                WHERE q.topic_id = ? AND t.user_id = ?
+                ORDER BY RANDOM() LIMIT ?
+            `;
+            
+            this.db.all(sql, [topicId, userId, count], (err, rows) => {
+                if (err) reject(err);
+                else {
+                    const questions = rows.map(row => ({
+                        ...row,
+                        options: row.options ? JSON.parse(row.options) : null,
+                        correct_index: row.correct_index !== null ? parseInt(row.correct_index) : null
+                    }));
+                    resolve(questions);
+                }
+            });
+        });
+    }
+
+    async updateQuestionForUser(questionId, updates, userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                UPDATE questions SET 
+                question = COALESCE(?, question),
+                answer = COALESCE(?, answer),
+                type = COALESCE(?, type),
+                options = COALESCE(?, options),
+                correct_index = COALESCE(?, correct_index),
+                explanation = COALESCE(?, explanation)
+                WHERE id = ? AND topic_id IN (
+                    SELECT id FROM topics WHERE user_id = ?
+                )
+            `;
+            
+            const {
+                question, answer, type, options, correctIndex, explanation
+            } = updates;
+            
+            const optionsJson = options ? JSON.stringify(options) : null;
+            
+            this.db.run(sql, [
+                question, answer, type, optionsJson, correctIndex, explanation, questionId, userId
+            ], function(err) {
+                if (err) reject(err);
+                else resolve({ changes: this.changes });
+            });
+        });
+    }
+
+    async deleteQuestionForUser(questionId, userId) {
+        return new Promise((resolve, reject) => {
+            this.db.serialize(() => {
+                this.db.run('BEGIN TRANSACTION');
+                
+                // Delete user answers first
+                this.db.run('DELETE FROM user_answers WHERE question_id = ?', [questionId]);
+                
+                // Delete question (with user verification)
+                this.db.run(`
+                    DELETE FROM questions 
+                    WHERE id = ? AND topic_id IN (
+                        SELECT id FROM topics WHERE user_id = ?
+                    )
+                `, [questionId, userId], function(err) {
+                    if (err) {
+                        this.db.run('ROLLBACK');
+                        reject(err);
+                    } else {
+                        this.db.run('COMMIT');
+                        resolve({ changes: this.changes });
+                    }
+                });
+            });
+        });
+    }
+
+    // ===== USER-SPECIFIC PRACTICE SESSION METHODS =====
+    
+    async recordPracticeSessionForUser(topicId, questionsCount, correctAnswers, userId) {
+        return new Promise((resolve, reject) => {
+            // First verify topic belongs to user
+            this.db.get('SELECT id FROM topics WHERE id = ? AND user_id = ?', [topicId, userId], (err, row) => {
+                if (err || !row) {
+                    reject(new Error('Topic not found or access denied'));
+                    return;
+                }
+                
+                const id = require('uuid').v4();
+                const accuracyRate = questionsCount > 0 ? (correctAnswers / questionsCount) * 100 : 0;
+                
+                const sql = `INSERT INTO practice_sessions 
+                    (id, topic_id, user_id, questions_count, correct_answers, accuracy_rate) 
+                    VALUES (?, ?, ?, ?, ?, ?)`;
+                
+                this.db.run(sql, [id, topicId, userId, questionsCount, correctAnswers, accuracyRate], function(err) {
+                    if (err) reject(err);
+                    else {
+                        resolve({ 
+                            id, 
+                            topic_id: topicId,
+                            user_id: userId,
+                            questions_count: questionsCount,
+                            correct_answers: correctAnswers,
+                            accuracy_rate: accuracyRate,
+                            session_date: new Date().toISOString() 
+                        });
+                    }
+                });
+            });
+        });
+    }
+
+    async getTopicStatsForUser(topicId, userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT 
+                    COUNT(DISTINCT q.id) as total_questions,
+                    COUNT(DISTINCT n.id) as total_notes,
+                    COALESCE(AVG(ps.accuracy_rate), 0) as avg_accuracy_rate,
+                    COUNT(DISTINCT ps.id) as practice_sessions_count,
+                    MAX(ps.session_date) as last_practice_date,
+                    COALESCE(SUM(n.word_count), 0) as total_word_count
+                FROM topics t
+                LEFT JOIN questions q ON t.id = q.topic_id
+                LEFT JOIN notes n ON t.id = n.topic_id
+                LEFT JOIN practice_sessions ps ON t.id = ps.topic_id AND ps.user_id = t.user_id
+                WHERE t.id = ? AND t.user_id = ?
+            `;
+            
+            this.db.get(sql, [topicId, userId], (err, row) => {
+                if (err) reject(err);
+                else resolve({
+                    total_questions: row.total_questions || 0,
+                    total_notes: row.total_notes || 0,
+                    avg_accuracy_rate: Math.round(row.avg_accuracy_rate || 0),
+                    practice_sessions_count: row.practice_sessions_count || 0,
+                    last_practice_date: row.last_practice_date,
+                    total_word_count: row.total_word_count || 0
+                });
+            });
+        });
+    }
+
+    // ===== USER-SPECIFIC DASHBOARD METHODS =====
+    
+    async getDashboardStatsForUser(userId) {
+        return new Promise((resolve, reject) => {
+            const queries = {
+                topics: 'SELECT COUNT(*) as count FROM topics WHERE user_id = ?',
+                questions: 'SELECT COUNT(*) as count FROM questions WHERE topic_id IN (SELECT id FROM topics WHERE user_id = ?)',
+                notes: 'SELECT COUNT(*) as count FROM notes WHERE topic_id IN (SELECT id FROM topics WHERE user_id = ?)',
+                sessions: 'SELECT COUNT(*) as count FROM practice_sessions WHERE user_id = ?',
+                accuracy: 'SELECT AVG(accuracy_rate) as avg FROM practice_sessions WHERE user_id = ?'
+            };
+            
+            const results = {};
+            let completed = 0;
+            const total = Object.keys(queries).length;
+            
+            for (const [key, sql] of Object.entries(queries)) {
+                this.db.get(sql, [userId], (err, row) => {
+                    if (err) {
+                        console.error(`❌ Error in ${key} query for user ${userId}:`, err);
+                        results[key] = 0;
+                    } else {
+                        results[key] = row.count || row.avg || 0;
+                    }
+                    
+                    completed++;
+                    if (completed === total) {
+                        const finalStats = {
+                            total_topics: results.topics || 0,
+                            total_questions: results.questions || 0,
+                            total_notes: results.notes || 0,
+                            total_practice_sessions: results.sessions || 0,
+                            overall_accuracy: Math.round(results.accuracy || 0)
+                        };
+                        
+                        resolve(finalStats);
+                    }
+                });
+            }
+        });
+    }
+
+    async getSubjectStatsForUser(userId) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const sql = `
+                    SELECT 
+                        t.subject_id,
+                        COUNT(DISTINCT t.id) as topic_count,
+                        COUNT(DISTINCT q.id) as question_count,
+                        COUNT(DISTINCT n.id) as note_count,
+                        COALESCE(AVG(ps.accuracy_rate), 0) as avg_accuracy
+                    FROM topics t
+                    LEFT JOIN questions q ON t.id = q.topic_id
+                    LEFT JOIN notes n ON t.id = n.topic_id
+                    LEFT JOIN practice_sessions ps ON t.id = ps.topic_id AND ps.user_id = t.user_id
+                    WHERE t.user_id = ?
+                    GROUP BY t.subject_id
+                `;
+                
+                this.db.all(sql, [userId], async (err, rows) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+
+                    const subjectStats = [];
+                    
+                    // Process existing data
+                    for (const row of rows) {
+                        const subject = await this.getSubjectById(row.subject_id);
+                        if (subject) {
+                            subjectStats.push({
+                                subject: subject,
+                                topic_count: row.topic_count || 0,
+                                question_count: row.question_count || 0,
+                                note_count: row.note_count || 0,
+                                avg_accuracy: Math.round(row.avg_accuracy || 0)
+                            });
+                        }
+                    }
+                    
+                    // Add subjects with no data
+                    for (const subject of this.FIXED_SUBJECTS) {
+                        if (!subjectStats.find(s => s.subject.id === subject.id)) {
+                            subjectStats.push({
+                                subject: subject,
+                                topic_count: 0,
+                                question_count: 0,
+                                note_count: 0,
+                                avg_accuracy: 0
+                            });
+                        }
+                    }
+                    
+                    resolve(subjectStats);
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async getRecentActivityForUser(limit = 10, userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT 
+                    'question' as type,
+                    q.id,
+                    SUBSTR(q.question, 1, 100) as title,
+                    q.created_at,
+                    t.name as topic_name,
+                    t.subject_id
+                FROM questions q
+                JOIN topics t ON q.topic_id = t.id
+                WHERE t.user_id = ?
+                
+                UNION ALL
+                
+                SELECT 
+                    'note' as type,
+                    n.id,
+                    CASE 
+                        WHEN n.file_name IS NOT NULL THEN 'Uploaded: ' || n.file_name
+                        ELSE SUBSTR(n.content, 1, 100)
+                    END as title,
+                    n.created_at,
+                    t.name as topic_name,
+                    t.subject_id
+                FROM notes n
+                JOIN topics t ON n.topic_id = t.id
+                WHERE t.user_id = ?
+                
+                UNION ALL
+                
+                SELECT 
+                    'practice' as type,
+                    ps.id,
+                    'Practice Session - ' || ps.correct_answers || '/' || ps.questions_count || ' (' || ROUND(ps.accuracy_rate) || '%)' as title,
+                    ps.session_date as created_at,
+                    t.name as topic_name,
+                    t.subject_id
+                FROM practice_sessions ps
+                JOIN topics t ON ps.topic_id = t.id
+                WHERE ps.user_id = ?
+                
+                UNION ALL
+                
+                SELECT 
+                    'topic' as type,
+                    t.id,
+                    'New Topic: ' || t.name as title,
+                    t.created_at,
+                    t.name as topic_name,
+                    t.subject_id
+                FROM topics t
+                WHERE t.user_id = ?
+                
+                ORDER BY created_at DESC
+                LIMIT ?
+            `;
+            
+            this.db.all(sql, [userId, userId, userId, userId, limit], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+    }
+
+    async exportDataForUser(userId) {
+        try {
+            const [topics, notes, questions, sessions] = await Promise.all([
+                this.getTopicsForUser('all', userId),
+                this.getAllNotesForUser(userId),
+                this.getAllQuestionsForUser(userId),
+                this.getAllPracticeSessionsForUser(userId)
+            ]);
+
+            return {
+                subjects: this.FIXED_SUBJECTS,
+                topics,
+                notes,
+                questions,
+                practice_sessions: sessions,
+                user_id: userId,
+                export_date: new Date().toISOString(),
+                version: '2.0-with-auth'
+            };
+        } catch (error) {
+            throw new Error(`Export failed: ${error.message}`);
+        }
+    }
+
+    async getAllNotesForUser(userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT n.* FROM notes n
+                JOIN topics t ON n.topic_id = t.id
+                WHERE t.user_id = ?
+                ORDER BY n.created_at DESC
+            `;
+            
+            this.db.all(sql, [userId], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+    }
+
+    async getAllQuestionsForUser(userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT q.* FROM questions q
+                JOIN topics t ON q.topic_id = t.id
+                WHERE t.user_id = ?
+                ORDER BY q.created_at DESC
+            `;
+            
+            this.db.all(sql, [userId], (err, rows) => {
+                if (err) reject(err);
+                else {
+                    const questions = rows.map(row => ({
+                        ...row,
+                        options: row.options ? JSON.parse(row.options) : null,
+                        correct_index: row.correct_index !== null ? parseInt(row.correct_index) : null
+                    }));
+                    resolve(questions);
+                }
+            });
+        });
+    }
+
+    async getAllPracticeSessionsForUser(userId) {
+        return new Promise((resolve, reject) => {
+            const sql = 'SELECT * FROM practice_sessions WHERE user_id = ? ORDER BY session_date DESC';
+            this.db.all(sql, [userId], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+    }
+
   /**
    * Close database connection
    */
