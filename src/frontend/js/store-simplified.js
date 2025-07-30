@@ -1,4 +1,4 @@
-// src/frontend/js/store-simplified.js - Simplified State Management
+// src/frontend/js/store-simplified.js - Simplified State Management WITH AUTHENTICATION
 
 class SimplifiedStore {
   constructor() {
@@ -7,6 +7,19 @@ class SimplifiedStore {
       currentView: 'dashboard',
       sidebarOpen: true,
       loading: false,
+      
+      // Authentication State
+      user: null,
+      isAuthenticated: false,
+      authLoading: false,
+      
+      // Subscription & Usage State
+      subscriptionTier: 'free',
+      usage: {
+        questions: { used: 0, limit: 100, percentage: 0 },
+        storage: { used: 0, limit: 100 * 1024 * 1024, percentage: 0, usedMB: 0, limitMB: 100 },
+        topics: { used: 0, limit: 5 }
+      },
       
       // Fixed subjects (no user modification)
       subjects: [
@@ -106,9 +119,18 @@ class SimplifiedStore {
       
       // Modal State
       showCreateTopicModal: false,
+      showAuthModal: false,
+      authMode: 'login', // 'login' or 'register'
       
       // Form State
       newTopic: { name: '', description: '' },
+      authForm: {
+        email: '',
+        password: '',
+        firstName: '',
+        lastName: '',
+        username: ''
+      },
       
       // Notifications
       notifications: [],
@@ -127,9 +149,236 @@ class SimplifiedStore {
       generating: false
     });
 
-    // Auto-persist to localStorage
+    // Auto-persist to localStorage (non-sensitive data only)
     this.setupPersistence();
     this.loadPersistedState();
+    
+    // Auto-load user session if tokens exist
+    this.initializeAuth();
+  }
+
+  // ===== AUTHENTICATION METHODS =====
+  
+  /**
+   * Initialize authentication on app start
+   */
+  async initializeAuth() {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      this.state.authLoading = true;
+      try {
+        await this.loadUserFromToken();
+      } catch (error) {
+        console.warn('Failed to load user from token:', error);
+        await window.api.clearTokens();
+      } finally {
+        this.state.authLoading = false;
+      }
+    }
+  }
+
+  /**
+   * Load user from existing token
+   */
+  async loadUserFromToken() {
+    try {
+      const user = await window.api.getUserProfile();
+      this.state.user = user;
+      this.state.isAuthenticated = true;
+      this.state.subscriptionTier = user.subscriptionTier || 'free';
+      
+      await this.loadUsageStats();
+      console.log('✅ User loaded from token:', user.email);
+    } catch (error) {
+      throw new Error('Invalid token: ' + error.message);
+    }
+  }
+
+  /**
+   * Login user
+   */
+  async login(email, password) {
+    this.state.authLoading = true;
+    try {
+      const user = await window.api.login(email, password);
+      this.state.user = user;
+      this.state.isAuthenticated = true;
+      this.state.subscriptionTier = user.subscriptionTier || 'free';
+      this.state.showAuthModal = false;
+      
+      await this.loadUsageStats();
+      this.showNotification(`Welcome back, ${user.firstName || user.email}!`, 'success');
+      console.log('✅ User logged in:', user.email);
+    } catch (error) {
+      this.showNotification('Login failed: ' + error.message, 'error');
+      throw error;
+    } finally {
+      this.state.authLoading = false;
+    }
+  }
+
+  /**
+   * Register new user
+   */
+  async register(userData) {
+    this.state.authLoading = true;
+    try {
+      const user = await window.api.register(userData);
+      this.state.user = user;
+      this.state.isAuthenticated = true;
+      this.state.subscriptionTier = user.subscriptionTier || 'free';
+      this.state.showAuthModal = false;
+      
+      await this.loadUsageStats();
+      this.showNotification(`Welcome to StudyAI, ${user.firstName || user.email}!`, 'success');
+      console.log('✅ User registered:', user.email);
+    } catch (error) {
+      this.showNotification('Registration failed: ' + error.message, 'error');
+      throw error;
+    } finally {
+      this.state.authLoading = false;
+    }
+  }
+
+  /**
+   * Logout user
+   */
+  async logout() {
+    try {
+      await window.api.logout();
+      this.state.user = null;
+      this.state.isAuthenticated = false;
+      this.state.subscriptionTier = 'free';
+      this.resetUserData();
+      this.showNotification('Logged out successfully', 'success');
+      console.log('✅ User logged out');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  }
+
+  /**
+   * Load usage statistics
+   */
+  async loadUsageStats() {
+    try {
+      const usage = await window.api.getUserUsage();
+      this.state.usage = usage;
+      console.log('📊 Usage stats loaded:', usage);
+    } catch (error) {
+      console.error('Failed to load usage stats:', error);
+    }
+  }
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(updates) {
+    try {
+      const updatedUser = await window.api.updateUserProfile(updates);
+      this.state.user = { ...this.state.user, ...updatedUser };
+      this.showNotification('Profile updated successfully', 'success');
+    } catch (error) {
+      this.showNotification('Failed to update profile: ' + error.message, 'error');
+      throw error;
+    }
+  }
+
+  /**
+   * Reset user-specific data on logout
+   */
+  resetUserData() {
+    this.state.topics = [];
+    this.state.questions = [];
+    this.state.notes = [];
+    this.state.usage = {
+      questions: { used: 0, limit: 100, percentage: 0 },
+      storage: { used: 0, limit: 100 * 1024 * 1024, percentage: 0, usedMB: 0, limitMB: 100 },
+      topics: { used: 0, limit: 5 }
+    };
+    this.clearSelection();
+    this.resetPracticeState();
+  }
+
+  // ===== AUTHENTICATION UI METHODS =====
+  
+  /**
+   * Show authentication modal
+   */
+  showAuthModal(mode = 'login') {
+    this.state.showAuthModal = true;
+    this.state.authMode = mode;
+    this.resetAuthForm();
+  }
+
+  /**
+   * Hide authentication modal
+   */
+  hideAuthModal() {
+    this.state.showAuthModal = false;
+    this.resetAuthForm();
+  }
+
+  /**
+   * Switch between login/register modes
+   */
+  switchAuthMode(mode) {
+    this.state.authMode = mode;
+    this.resetAuthForm();
+  }
+
+  /**
+   * Reset authentication form
+   */
+  resetAuthForm() {
+    this.state.authForm = {
+      email: '',
+      password: '',
+      firstName: '',
+      lastName: '',
+      username: ''
+    };
+  }
+
+  // ===== USAGE LIMIT CHECKS =====
+  
+  /**
+   * Check if user can generate more questions
+   */
+  canGenerateQuestions() {
+    const usage = this.state.usage.questions;
+    return usage.used < usage.limit;
+  }
+
+  /**
+   * Check if user can create more topics in a subject
+   */
+  canCreateTopic(subjectId) {
+    if (this.state.subscriptionTier === 'pro') return true;
+    
+    const topicsInSubject = this.state.topics.filter(t => t.subject_id === subjectId).length;
+    return topicsInSubject < this.state.usage.topics.limit;
+  }
+
+  /**
+   * Check if user can upload more files
+   */
+  canUploadFile(fileSize) {
+    const usage = this.state.usage.storage;
+    return (usage.used + fileSize) <= usage.limit;
+  }
+
+  /**
+   * Show upgrade notification for limits
+   */
+  showUpgradeNotification(feature) {
+    const messages = {
+      questions: 'Monthly question limit reached! Upgrade to Pro for 1500 questions per month.',
+      topics: 'Topic limit reached for this subject! Upgrade to Pro for unlimited topics.',
+      storage: 'Storage limit reached! Upgrade to Pro for 5GB of storage.'
+    };
+    
+    this.showNotification(messages[feature] || 'Upgrade to Pro for more features!', 'warning');
   }
 
   // ===== GETTERS =====
@@ -158,9 +407,18 @@ class SimplifiedStore {
     return this.state.topics.length > 0;
   }
 
+  get requiresAuth() {
+    return !this.state.isAuthenticated;
+  }
+
   // ===== UI ACTIONS =====
   
   setCurrentView(view) {
+    // Require authentication for certain views
+    if (!this.state.isAuthenticated && ['upload', 'practice', 'topics'].includes(view)) {
+      this.showAuthModal('login');
+      return;
+    }
     this.state.currentView = view;
   }
 
@@ -179,6 +437,11 @@ class SimplifiedStore {
   }
 
   selectSubject(subject) {
+    if (!this.state.isAuthenticated) {
+      this.showAuthModal('login');
+      return;
+    }
+    
     this.state.selectedSubject = subject;
     this.state.selectedTopic = null;
     this.loadTopicsForSubject(subject.id);
@@ -199,6 +462,11 @@ class SimplifiedStore {
   }
 
   selectTopic(topic) {
+    if (!this.state.isAuthenticated) {
+      this.showAuthModal('login');
+      return;
+    }
+    
     this.state.selectedTopic = topic;
     this.loadTopicData(topic.id);
   }
@@ -219,9 +487,15 @@ class SimplifiedStore {
 
   async createTopic(subjectId, name, description) {
     try {
+      // Check topic limit
+      if (!this.canCreateTopic(subjectId)) {
+        this.showUpgradeNotification('topics');
+        throw new Error('Topic limit reached for this subject');
+      }
+      
       const topic = await window.api.createTopic(subjectId, name, description);
       this.state.topics.push(topic);
-      this.updateStatistics();
+      await this.updateStatistics();
       return topic;
     } catch (error) {
       this.showNotification('Failed to create topic', 'error');
@@ -240,6 +514,11 @@ class SimplifiedStore {
   // ===== PRACTICE ACTIONS =====
   
   startPractice(questions) {
+    if (!this.state.isAuthenticated) {
+      this.showAuthModal('login');
+      return false;
+    }
+    
     if (!questions || !Array.isArray(questions) || questions.length === 0) {
       this.showNotification('No questions available for practice', 'error');
       return false;
@@ -315,6 +594,8 @@ class SimplifiedStore {
 
   setUploadResult(result) {
     this.state.uploadResult = result;
+    // Refresh usage stats after upload
+    this.loadUsageStats();
   }
 
   clearUploadState() {
@@ -327,6 +608,16 @@ class SimplifiedStore {
   // ===== MODAL ACTIONS =====
   
   showCreateTopicModal() {
+    if (!this.state.isAuthenticated) {
+      this.showAuthModal('login');
+      return;
+    }
+    
+    if (!this.state.selectedSubject) {
+      this.showNotification('Please select a subject first', 'warning');
+      return;
+    }
+    
     this.state.showCreateTopicModal = true;
     this.state.newTopic = { name: '', description: '' };
   }
@@ -343,6 +634,16 @@ class SimplifiedStore {
   }
 
   async generateQuestions(topicId, count = 5) {
+    if (!this.state.isAuthenticated) {
+      this.showAuthModal('login');
+      return [];
+    }
+    
+    if (!this.canGenerateQuestions()) {
+      this.showUpgradeNotification('questions');
+      return [];
+    }
+
     if (!this.state.selectedTopic) {
       this.showNotification('Please select a topic first', 'warning');
       return [];
@@ -364,6 +665,9 @@ class SimplifiedStore {
       if (questions.length > 0) {
         this.state.questions = [...this.state.questions, ...questions];
         this.showNotification(`Generated ${questions.length} questions successfully!`, 'success');
+        
+        // Refresh usage stats
+        await this.loadUsageStats();
       } else {
         this.showNotification('No questions were generated. Please check your study materials.', 'warning');
       }
@@ -371,7 +675,11 @@ class SimplifiedStore {
       return questions;
       
     } catch (error) {
-      this.showNotification('Failed to generate questions. Check that AI service is running.', 'error');
+      if (error.message.includes('limit')) {
+        this.showUpgradeNotification('questions');
+      } else {
+        this.showNotification('Failed to generate questions. Check that AI service is running.', 'error');
+      }
       return [];
     } finally {
       this.setGenerating(false);
@@ -406,6 +714,8 @@ class SimplifiedStore {
   // ===== STATISTICS =====
   
   async updateStatistics() {
+    if (!this.state.isAuthenticated) return;
+    
     try {
       const stats = await window.api.getDashboardStats();
       this.state.statistics = {
@@ -424,6 +734,7 @@ class SimplifiedStore {
   
   setupPersistence() {
     Vue.watchEffect(() => {
+      // Only persist non-sensitive UI state
       const stateToSave = {
         selectedSubject: this.state.selectedSubject,
         selectedTopic: this.state.selectedTopic,
@@ -470,11 +781,7 @@ class SimplifiedStore {
   // ===== UTILITY METHODS =====
   
   resetState() {
-    this.state.topics = [];
-    this.state.questions = [];
-    this.state.notes = [];
-    this.clearSelection();
-    this.resetPracticeState();
+    this.resetUserData();
     this.clearUploadState();
     this.state.score = { correct: 0, total: 0 };
     this.state.statistics = {
@@ -488,6 +795,11 @@ class SimplifiedStore {
   }
 
   async exportData() {
+    if (!this.state.isAuthenticated) {
+      this.showAuthModal('login');
+      return;
+    }
+    
     try {
       const data = await window.api.exportData();
       return data;
@@ -504,7 +816,13 @@ class SimplifiedStore {
   }
 
   debugState() {
-    console.group('StudyAI Simplified State Debug');
+    console.group('StudyAI Simplified State Debug (With Auth)');
+    console.log('Authentication:', {
+      isAuthenticated: this.state.isAuthenticated,
+      user: this.state.user?.email,
+      subscriptionTier: this.state.subscriptionTier
+    });
+    console.log('Usage:', this.state.usage);
     console.log('Current View:', this.state.currentView);
     console.log('Selected Subject:', this.state.selectedSubject?.name);
     console.log('Selected Topic:', this.state.selectedTopic?.name);
@@ -525,4 +843,4 @@ window.simplifiedStore = new SimplifiedStore();
 // Also make it available as 'store' for compatibility
 window.store = window.simplifiedStore;
 
-console.log('✅ Simplified Store loaded successfully!');
+console.log('✅ Simplified Store with Authentication loaded successfully!');

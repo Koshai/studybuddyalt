@@ -39,48 +39,102 @@ class AuthService {
         const { email, password, firstName, lastName, username } = value;
 
         try {
-            // Create user in Supabase Auth
+            // STEP 1: Check if user already exists in auth
+            const { data: existingAuthUser } = await this.supabase.auth.admin.getUserByEmail(email);
+            
+            if (existingAuthUser?.user) {
+                // Check if profile exists too
+                const { data: existingProfile } = await this.supabase
+                    .from('user_profiles')
+                    .select('id')
+                    .eq('id', existingAuthUser.user.id)
+                    .single();
+                    
+                if (existingProfile) {
+                    throw new Error('User already exists. Please use login instead.');
+                }
+                
+                // Auth user exists but no profile - clean up and recreate
+                console.log('🧹 Cleaning up orphaned auth user...');
+                await this.supabase.auth.admin.deleteUser(existingAuthUser.user.id);
+            }
+
+            // STEP 2: Create user in Supabase Auth
             const { data: authData, error: authError } = await this.supabase.auth.admin.createUser({
                 email,
                 password,
-                email_confirm: true
+                email_confirm: true,
+                user_metadata: {
+                    first_name: firstName,
+                    last_name: lastName,
+                    username: username
+                }
             });
 
             if (authError) {
+                console.error('Auth creation error:', authError);
                 throw new Error(`Registration failed: ${authError.message}`);
             }
 
-            // Create user profile
-            const { data: profileData, error: profileError } = await this.supabase
+            console.log('✅ Auth user created:', authData.user.id);
+
+            // STEP 3: Create user profile with conflict handling
+            const profileData = {
+                id: authData.user.id,
+                email,
+                first_name: firstName,
+                last_name: lastName,
+                username,
+                subscription_tier: 'free',
+                subscription_status: 'active',
+                is_active: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            const { data: profile, error: profileError } = await this.supabase
                 .from('user_profiles')
-                .insert({
-                    id: authData.user.id,
-                    email,
-                    first_name: firstName,
-                    last_name: lastName,
-                    username,
-                    subscription_tier: 'free'
+                .upsert(profileData, { 
+                    onConflict: 'id',
+                    ignoreDuplicates: false 
                 })
                 .select()
                 .single();
 
             if (profileError) {
+                console.error('Profile creation error:', profileError);
+                
                 // Clean up auth user if profile creation fails
-                await this.supabase.auth.admin.deleteUser(authData.user.id);
+                try {
+                    await this.supabase.auth.admin.deleteUser(authData.user.id);
+                    console.log('🧹 Cleaned up auth user after profile failure');
+                } catch (cleanupError) {
+                    console.error('Failed to cleanup auth user:', cleanupError);
+                }
+                
                 throw new Error(`Profile creation failed: ${profileError.message}`);
             }
 
-            // Initialize usage tracking
-            await this.initializeUserUsage(authData.user.id);
+            console.log('✅ User profile created:', profile.id);
+
+            // STEP 4: Initialize usage tracking
+            try {
+                await this.initializeUserUsage(authData.user.id);
+                console.log('✅ Usage tracking initialized');
+            } catch (usageError) {
+                console.warn('⚠️ Usage initialization failed:', usageError);
+                // Don't fail registration for this
+            }
 
             return {
                 user: {
                     id: authData.user.id,
-                    email: profileData.email,
-                    username: profileData.username,
-                    firstName: profileData.first_name,
-                    lastName: profileData.last_name,
-                    subscriptionTier: profileData.subscription_tier
+                    email: profile.email,
+                    username: profile.username,
+                    firstName: profile.first_name,
+                    lastName: profile.last_name,
+                    subscriptionTier: profile.subscription_tier,
+                    subscriptionStatus: profile.subscription_status
                 },
                 tokens: this.generateTokens(authData.user.id)
             };
