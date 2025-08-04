@@ -208,15 +208,7 @@ window.NotesDisplayComponent = {
                 console.log('Loaded notes:', notes.value);
             } catch (error) {
                 console.error('Failed to load notes:', error);
-                // Fallback: try direct API call
-                try {
-                    const response = await fetch('http://localhost:3001/api/debug/notes');
-                    if (response.ok) {
-                        notes.value = await response.json();
-                    }
-                } catch (fallbackError) {
-                    store.showNotification('Failed to load study materials', 'error');
-                }
+                store.showNotification('Failed to load study materials', 'error');
             } finally {
                 loading.value = false;
             }
@@ -252,18 +244,23 @@ window.NotesDisplayComponent = {
         };
 
         const generateQuestionsFromNote = async (note) => {
-            if (!note.topic_id) {
-                store.showNotification('Cannot generate questions: no topic associated', 'error');
+            if (!note.id) {
+                store.showNotification('Cannot generate questions: invalid note', 'error');
                 return;
             }
 
             try {
                 store.setGenerating(true);
-                const questions = await window.api.generateQuestions(note.topic_id, 5, 'medium');
-                store.showNotification(`Generated ${questions.length} questions from this material!`, 'success');
+                const questions = await window.api.generateQuestionsForNote(note.id, 5);
+                store.showNotification(`Generated ${questions.length} questions from "${getFileName(note.file_name)}"!`, 'success');
                 emit('questions-generated', questions);
             } catch (error) {
-                store.showNotification('Failed to generate questions', 'error');
+                console.error('Failed to generate note-specific questions:', error);
+                if (error.message.includes('limit')) {
+                    store.showNotification('Question generation failed: ' + error.message, 'warning');
+                } else {
+                    store.showNotification('Failed to generate questions from this note', 'error');
+                }
             } finally {
                 store.setGenerating(false);
             }

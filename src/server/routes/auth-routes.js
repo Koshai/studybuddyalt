@@ -166,6 +166,97 @@ router.post('/logout', authMiddleware.authenticateToken, async (req, res) => {
     }
 });
 
+// Manual email confirmation (with optional confirmation code)
+router.post('/confirm-email', async (req, res) => {
+    try {
+        const { email, confirmationCode } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Email is required'
+            });
+        }
+        
+        console.log('🔄 Email confirmation request:', email, confirmationCode ? 'with code' : 'manual');
+        
+        const result = await authService.confirmEmail(email, confirmationCode);
+        
+        res.json({
+            status: 'success',
+            message: result.message
+        });
+    } catch (error) {
+        console.error('❌ Email confirmation failed:', error.message);
+        
+        res.status(400).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Generate new confirmation code
+router.post('/generate-confirmation-code', async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Email is required'
+            });
+        }
+        
+        console.log('🔄 Generate confirmation code request:', email);
+        
+        const result = await authService.generateConfirmationCode(email);
+        
+        res.json({
+            status: 'success',
+            message: result.message,
+            confirmationCode: result.confirmationCode
+        });
+    } catch (error) {
+        console.error('❌ Generate confirmation code failed:', error.message);
+        
+        res.status(400).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Resend confirmation email (legacy - kept for compatibility)
+router.post('/resend-confirmation', async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Email is required'
+            });
+        }
+        
+        console.log('🔄 Resend confirmation request:', email);
+        
+        const result = await authService.resendConfirmation(email);
+        
+        res.json({
+            status: 'success',
+            message: result.message
+        });
+    } catch (error) {
+        console.error('❌ Resend confirmation failed:', error.message);
+        
+        res.status(400).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
 // Test protected route with subscription check
 router.get('/pro-feature', 
     authMiddleware.authenticateToken,

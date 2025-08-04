@@ -116,6 +116,7 @@ class SimplifiedDatabaseService {
         subject_id TEXT NOT NULL,
         name TEXT NOT NULL,
         description TEXT,
+        user_id TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`,
       
@@ -148,6 +149,7 @@ class SimplifiedDatabaseService {
       `CREATE TABLE IF NOT EXISTS practice_sessions (
         id TEXT PRIMARY KEY,
         topic_id TEXT NOT NULL,
+        user_id TEXT,
         questions_count INTEGER DEFAULT 0,
         correct_answers INTEGER DEFAULT 0,
         accuracy_rate REAL DEFAULT 0,
@@ -169,34 +171,69 @@ class SimplifiedDatabaseService {
       )`
     ];
 
-    // Create tables
-    tables.forEach(sql => {
-      this.db.run(sql, (err) => {
-        if (err) {
-          console.error('Error creating table:', err);
-        }
+    // Create tables and indexes in sequence using serialize
+    this.db.serialize(() => {
+      // Create tables first
+      tables.forEach(sql => {
+        this.db.run(sql, (err) => {
+          if (err) {
+            console.error('Error creating table:', err);
+          }
+        });
+      });
+
+      // Create indexes after tables are created
+      const indexes = [
+        'CREATE INDEX IF NOT EXISTS idx_topics_subject_id ON topics (subject_id)',
+        'CREATE INDEX IF NOT EXISTS idx_notes_topic_id ON notes (topic_id)',
+        'CREATE INDEX IF NOT EXISTS idx_questions_topic_id ON questions (topic_id)',
+        'CREATE INDEX IF NOT EXISTS idx_practice_sessions_topic_id ON practice_sessions (topic_id)',
+        'CREATE INDEX IF NOT EXISTS idx_user_answers_question_id ON user_answers (question_id)',
+        'CREATE INDEX IF NOT EXISTS idx_user_answers_session_id ON user_answers (practice_session_id)'
+      ];
+
+      indexes.forEach(sql => {
+        this.db.run(sql, (err) => {
+          if (err && !err.message.includes('already exists')) {
+            console.error('Error creating index:', err);
+          }
+        });
       });
     });
 
-    // Create indexes for better performance
-    const indexes = [
-      'CREATE INDEX IF NOT EXISTS idx_topics_subject_id ON topics (subject_id)',
-      'CREATE INDEX IF NOT EXISTS idx_notes_topic_id ON notes (topic_id)',
-      'CREATE INDEX IF NOT EXISTS idx_questions_topic_id ON questions (topic_id)',
-      'CREATE INDEX IF NOT EXISTS idx_practice_sessions_topic_id ON practice_sessions (topic_id)',
-      'CREATE INDEX IF NOT EXISTS idx_user_answers_question_id ON user_answers (question_id)',
-      'CREATE INDEX IF NOT EXISTS idx_user_answers_session_id ON user_answers (practice_session_id)'
-    ];
-
-    indexes.forEach(sql => {
-      this.db.run(sql, (err) => {
-        if (err && !err.message.includes('already exists')) {
-          console.error('Error creating index:', err);
-        }
-      });
-    });
-
+    // Add user_id columns if they don't exist (for existing databases)
+    this.addMissingColumns();
+    
     console.log('✅ Simplified database schema initialized');
+  }
+
+  addMissingColumns() {
+    // Add user_id column to topics table if it doesn't exist
+    this.db.run(`ALTER TABLE topics ADD COLUMN user_id TEXT`, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('Error adding user_id to topics:', err.message);
+      } else if (!err) {
+        console.log('✅ Added user_id column to topics table');
+      }
+    });
+
+    // Add user_id column to practice_sessions table if it doesn't exist  
+    this.db.run(`ALTER TABLE practice_sessions ADD COLUMN user_id TEXT`, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('Error adding user_id to practice_sessions:', err.message);
+      } else if (!err) {
+        console.log('✅ Added user_id column to practice_sessions table');
+      }
+    });
+
+    // Add note_id column to questions table for note-specific questions
+    this.db.run(`ALTER TABLE questions ADD COLUMN note_id TEXT`, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('Error adding note_id to questions:', err.message);
+      } else if (!err) {
+        console.log('✅ Added note_id column to questions table');
+      }
+    });
   }
 
   // ===== FIXED SUBJECTS =====
@@ -842,7 +879,7 @@ class SimplifiedDatabaseService {
         questions: 'SELECT COUNT(*) as count FROM questions', 
         notes: 'SELECT COUNT(*) as count FROM notes',
         sessions: 'SELECT COUNT(*) as count FROM practice_sessions',
-        accuracy: 'SELECT AVG(accuracy_rate) as avg FROM practice_sessions'
+        accuracy: 'SELECT COALESCE(AVG(accuracy_rate), 0) as avg FROM practice_sessions'
       };
       
       const results = {};
@@ -1400,37 +1437,39 @@ class SimplifiedDatabaseService {
 
     async deleteTopicForUser(topicId, userId) {
         return new Promise((resolve, reject) => {
-            this.db.serialize(() => {
-                this.db.run('BEGIN TRANSACTION');
+            const db = this.db; // Store reference to avoid scope issues
+            
+            db.serialize(() => {
+                db.run('BEGIN TRANSACTION');
                 
                 // Verify topic belongs to user first
-                this.db.get('SELECT id FROM topics WHERE id = ? AND user_id = ?', [topicId, userId], (err, row) => {
+                db.get('SELECT id FROM topics WHERE id = ? AND user_id = ?', [topicId, userId], (err, row) => {
                     if (err || !row) {
-                        this.db.run('ROLLBACK');
+                        db.run('ROLLBACK');
                         reject(new Error('Topic not found or access denied'));
                         return;
                     }
                     
                     // Delete user answers first
-                    this.db.run(`DELETE FROM user_answers WHERE question_id IN 
+                    db.run(`DELETE FROM user_answers WHERE question_id IN 
                         (SELECT id FROM questions WHERE topic_id = ?)`, [topicId]);
                     
                     // Delete practice sessions
-                    this.db.run('DELETE FROM practice_sessions WHERE topic_id = ? AND user_id = ?', [topicId, userId]);
+                    db.run('DELETE FROM practice_sessions WHERE topic_id = ? AND user_id = ?', [topicId, userId]);
                     
                     // Delete questions
-                    this.db.run('DELETE FROM questions WHERE topic_id = ?', [topicId]);
+                    db.run('DELETE FROM questions WHERE topic_id = ?', [topicId]);
                     
                     // Delete notes
-                    this.db.run('DELETE FROM notes WHERE topic_id = ?', [topicId]);
+                    db.run('DELETE FROM notes WHERE topic_id = ?', [topicId]);
                     
                     // Delete topic
-                    this.db.run('DELETE FROM topics WHERE id = ? AND user_id = ?', [topicId, userId], function(err) {
+                    db.run('DELETE FROM topics WHERE id = ? AND user_id = ?', [topicId, userId], function(err) {
                         if (err) {
-                            this.db.run('ROLLBACK');
+                            db.run('ROLLBACK');
                             reject(err);
                         } else {
-                            this.db.run('COMMIT');
+                            db.run('COMMIT');
                             resolve({ changes: this.changes });
                         }
                     });
@@ -1469,6 +1508,37 @@ class SimplifiedDatabaseService {
             this.db.all(sql, [topicId, userId], (err, rows) => {
                 if (err) reject(err);
                 else resolve(rows || []);
+            });
+        });
+    }
+
+    async getNoteWithTopicForUser(noteId, userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT 
+                    n.*,
+                    t.name as topic_name,
+                    t.subject_id,
+                    t.id as topic_id
+                FROM notes n
+                JOIN topics t ON n.topic_id = t.id
+                WHERE n.id = ? AND t.user_id = ?
+            `;
+            
+            this.db.get(sql, [noteId, userId], (err, row) => {
+                if (err) {
+                    reject(err);
+                } else if (row) {
+                    // Add subject name from FIXED_SUBJECTS array
+                    const subject = this.FIXED_SUBJECTS.find(s => s.id === row.subject_id);
+                    const noteWithSubject = {
+                        ...row,
+                        subject_name: subject ? subject.name : row.subject_id
+                    };
+                    resolve(noteWithSubject);
+                } else {
+                    resolve(null);
+                }
             });
         });
     }
@@ -1546,8 +1616,10 @@ class SimplifiedDatabaseService {
         });
     }
 
-    async createQuestionForUser(topicId, questionData, userId) {
+    async createQuestionForUser(questionData, userId) {
         return new Promise((resolve, reject) => {
+            const { topicId, noteId } = questionData;
+            
             // First verify topic belongs to user
             this.db.get('SELECT id FROM topics WHERE id = ? AND user_id = ?', [topicId, userId], (err, row) => {
                 if (err || !row) {
@@ -1566,20 +1638,21 @@ class SimplifiedDatabaseService {
                 } = questionData;
 
                 const sql = `INSERT INTO questions 
-                    (id, topic_id, question, answer, type, options, correct_index, explanation) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+                    (id, topic_id, note_id, question, answer, type, options, correct_index, explanation) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
                 
                 const optionsJson = options ? JSON.stringify(options) : null;
                 
                 this.db.run(sql, [
-                    id, topicId, question, answer, type, optionsJson, correctIndex, explanation
+                    id, topicId, noteId, question, answer, type, optionsJson, correctIndex, explanation
                 ], function(err) {
                     if (err) {
                         reject(err);
                     } else {
                         resolve({ 
                             id, 
-                            topic_id: topicId, 
+                            topic_id: topicId,
+                            note_id: noteId, 
                             question, 
                             answer, 
                             type,
@@ -1979,6 +2052,135 @@ class SimplifiedDatabaseService {
             this.db.all(sql, [userId], (err, rows) => {
                 if (err) reject(err);
                 else resolve(rows || []);
+            });
+        });
+    }
+
+    // ===== NOTE-SPECIFIC QUESTION METHODS =====
+
+    async getQuestionsForNote(noteId, userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT q.* FROM questions q
+                JOIN topics t ON q.topic_id = t.id
+                WHERE q.note_id = ? AND t.user_id = ?
+                ORDER BY q.created_at DESC
+            `;
+            
+            this.db.all(sql, [noteId, userId], (err, rows) => {
+                if (err) reject(err);
+                else {
+                    const questions = rows.map(row => ({
+                        ...row,
+                        options: row.options ? JSON.parse(row.options) : null,
+                        correct_index: row.correct_index !== null ? parseInt(row.correct_index) : null
+                    }));
+                    resolve(questions);
+                }
+            });
+        });
+    }
+
+    async getRandomQuestionsForNote(noteId, count = 5, userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT q.* FROM questions q
+                JOIN topics t ON q.topic_id = t.id
+                WHERE q.note_id = ? AND t.user_id = ?
+                ORDER BY RANDOM() LIMIT ?
+            `;
+            
+            this.db.all(sql, [noteId, userId, count], (err, rows) => {
+                if (err) reject(err);
+                else {
+                    const questions = rows.map(row => ({
+                        ...row,
+                        options: row.options ? JSON.parse(row.options) : null,
+                        correct_index: row.correct_index !== null ? parseInt(row.correct_index) : null
+                    }));
+                    resolve(questions);
+                }
+            });
+        });
+    }
+
+    async getNotesWithQuestionCounts(topicId, userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT 
+                    n.*,
+                    COUNT(q.id) as question_count
+                FROM notes n
+                JOIN topics t ON n.topic_id = t.id
+                LEFT JOIN questions q ON n.id = q.note_id
+                WHERE n.topic_id = ? AND t.user_id = ?
+                GROUP BY n.id
+                ORDER BY n.created_at DESC
+            `;
+            
+            this.db.all(sql, [topicId, userId], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+    }
+
+    async getNotesForSubject(subjectId, userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT 
+                    n.*,
+                    t.name as topic_name,
+                    t.subject_id
+                FROM notes n
+                JOIN topics t ON n.topic_id = t.id
+                WHERE t.subject_id = ? AND t.user_id = ?
+                ORDER BY n.created_at DESC
+            `;
+            
+            this.db.all(sql, [subjectId, userId], (err, rows) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    // Add subject name from FIXED_SUBJECTS array
+                    const subject = this.FIXED_SUBJECTS.find(s => s.id === subjectId);
+                    const notesWithSubject = (rows || []).map(row => ({
+                        ...row,
+                        subject_name: subject ? subject.name : subjectId
+                    }));
+                    resolve(notesWithSubject);
+                }
+            });
+        });
+    }
+
+    async getAllNotesForUser(userId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT 
+                    n.*,
+                    t.name as topic_name,
+                    t.subject_id
+                FROM notes n
+                JOIN topics t ON n.topic_id = t.id
+                WHERE t.user_id = ?
+                ORDER BY n.created_at DESC
+            `;
+            
+            this.db.all(sql, [userId], (err, rows) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    // Add subject names from FIXED_SUBJECTS array
+                    const notesWithSubjects = (rows || []).map(row => {
+                        const subject = this.FIXED_SUBJECTS.find(s => s.id === row.subject_id);
+                        return {
+                            ...row,
+                            subject_name: subject ? subject.name : row.subject_id
+                        };
+                    });
+                    resolve(notesWithSubjects);
+                }
             });
         });
     }

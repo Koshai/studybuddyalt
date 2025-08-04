@@ -326,6 +326,20 @@ class SimplifiedApiService {
   }
 
   /**
+   * Get all notes for a subject
+   */
+  async getSubjectNotes(subjectId) {
+    return this.request(`/subjects/${subjectId}/notes`);
+  }
+
+  /**
+   * Get all notes for the user
+   */
+  async getAllNotes() {
+    return this.request('/notes');
+  }
+
+  /**
    * Delete a note
    */
   async deleteNote(noteId) {
@@ -452,6 +466,15 @@ class SimplifiedApiService {
    * Upload file with progress tracking
    */
   async uploadFile(file, topicId, onProgress = null) {
+    console.log('📤 API uploadFile called with:', {
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      topicId: topicId,
+      hasAccessToken: !!this.accessToken,
+      accessTokenPrefix: this.accessToken ? this.accessToken.substring(0, 10) + '...' : 'None'
+    });
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('topicId', topicId);
@@ -459,10 +482,7 @@ class SimplifiedApiService {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       
-      // Add authentication header
-      if (this.accessToken) {
-        xhr.setRequestHeader('Authorization', `Bearer ${this.accessToken}`);
-      }
+      console.log('🔗 Setting up XMLHttpRequest...');
       
       // Track upload progress
       if (onProgress) {
@@ -475,32 +495,56 @@ class SimplifiedApiService {
       }
       
       xhr.addEventListener('load', () => {
+        console.log('📨 Upload response received:', {
+          status: xhr.status,
+          statusText: xhr.statusText,
+          responseText: xhr.responseText.substring(0, 200) + '...'
+        });
+        
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             const response = JSON.parse(xhr.responseText);
+            console.log('✅ Upload successful:', response);
             resolve(response);
           } catch (error) {
+            console.error('❌ Failed to parse response:', error);
             reject(new Error('Invalid response format'));
           }
         } else if (xhr.status === 401) {
+          console.error('❌ 401 Unauthorized response');
           reject(new Error('Authentication required - please log in again'));
         } else if (xhr.status === 403) {
+          console.error('❌ 403 Forbidden response');
           reject(new Error('Upload limit reached - upgrade your plan for more storage'));
         } else {
+          console.error('❌ Upload failed with status:', xhr.status, xhr.statusText);
           reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
         }
       });
       
       xhr.addEventListener('error', () => {
+        console.error('❌ Network error during upload');
         reject(new Error('Upload failed - network error'));
       });
       
       xhr.addEventListener('timeout', () => {
+        console.error('❌ Upload timeout');
         reject(new Error('Upload timeout - file may be too large'));
       });
       
       xhr.timeout = this.timeout;
-      xhr.open('POST', `${this.baseURL}/upload-simplified`);
+      const uploadUrl = `${this.baseURL}/upload-simplified`;
+      console.log('🚀 Starting upload to:', uploadUrl);
+      xhr.open('POST', uploadUrl);
+      
+      // Add authentication header AFTER xhr.open()
+      if (this.accessToken) {
+        xhr.setRequestHeader('Authorization', `Bearer ${this.accessToken}`);
+        console.log('🔑 Authorization header added');
+      } else {
+        console.warn('⚠️ No access token available for upload');
+      }
+      
       xhr.send(formData);
     });
   }
@@ -598,6 +642,96 @@ class SimplifiedApiService {
     }
     
     throw lastError;
+  }
+
+  // ===== PRACTICE SESSION METHODS =====
+  
+  /**
+   * Get topics that have questions for practice
+   */
+  async getTopicsWithQuestions() {
+    try {
+      const response = await this.request('/practice/topics-with-questions');
+      return response || [];
+    } catch (error) {
+      console.error('Failed to load topics with questions:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get practice session statistics
+   */
+  async getPracticeStats() {
+    try {
+      const response = await this.request('/practice/stats');
+      return response || {
+        totalSessions: 0,
+        averageScore: 0,
+        totalQuestions: 0,
+        streak: 0,
+        totalCorrect: 0,
+        totalAnswered: 0,
+        lastSession: null
+      };
+    } catch (error) {
+      console.error('Failed to load practice stats:', error);
+      return {
+        totalSessions: 0,
+        averageScore: 0,
+        totalQuestions: 0,
+        streak: 0,
+        totalCorrect: 0,
+        totalAnswered: 0,
+        lastSession: null
+      };
+    }
+  }
+
+  /**
+   * Record practice session results
+   */
+  async recordPracticeSession(topicId, results) {
+    return this.request('/practice/sessions', {
+      method: 'POST',
+      body: JSON.stringify({
+        topicId,
+        results
+      })
+    });
+  }
+
+  // ===== NOTE-SPECIFIC QUESTION METHODS =====
+
+  /**
+   * Generate questions for a specific note
+   */
+  async generateQuestionsForNote(noteId, count = 5) {
+    return this.request(`/notes/${noteId}/generate-questions`, {
+      method: 'POST',
+      body: JSON.stringify({ count })
+    });
+  }
+
+  /**
+   * Get all questions for a specific note
+   */
+  async getQuestionsForNote(noteId) {
+    return this.request(`/notes/${noteId}/questions`);
+  }
+
+  /**
+   * Get random questions for practice from a specific note
+   */
+  async getRandomQuestionsForNote(noteId, count = 5) {
+    return this.request(`/notes/${noteId}/random-questions?count=${count}`);
+  }
+
+  /**
+   * Get notes with question counts for a topic
+   */
+  async getNotesWithQuestions(topicId) {
+    return this.request(`/topics/${topicId}/notes-with-questions`);
   }
 }
 

@@ -146,7 +146,9 @@ class SimplifiedStore {
       
       // AI State
       aiOnline: false,
-      generating: false
+      generating: false,
+      aiService: 'unknown', // 'ollama', 'openai', or 'unknown'
+      aiServiceStatus: null // Full service status from API
     });
 
     // Auto-persist to localStorage (non-sensitive data only)
@@ -415,7 +417,7 @@ class SimplifiedStore {
   
   setCurrentView(view) {
     // Require authentication for certain views
-    if (!this.state.isAuthenticated && ['upload', 'practice', 'topics'].includes(view)) {
+    if (!this.state.isAuthenticated && ['upload', 'practice', 'practice-session', 'browse-practice', 'topics', 'notes'].includes(view)) {
       this.showAuthModal('login');
       return;
     }
@@ -709,6 +711,21 @@ class SimplifiedStore {
   
   setAiOnline(online) {
     this.state.aiOnline = online;
+  }
+
+  async updateAiServiceStatus() {
+    try {
+      const response = await window.api.request('/health/ai');
+      this.state.aiServiceStatus = response;
+      this.state.aiOnline = response.status === 'healthy';
+      this.state.aiService = response.primary_service || 'unknown';
+      console.log('🤖 AI Service Status Updated:', response.primary_service);
+    } catch (error) {
+      console.error('Failed to update AI service status:', error);
+      this.state.aiOnline = false;
+      this.state.aiService = 'unknown';
+      this.state.aiServiceStatus = null;
+    }
   }
 
   // ===== STATISTICS =====
