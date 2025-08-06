@@ -11,6 +11,30 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
+    <!-- Quill.js Rich Text Editor (Local for Offline Support) -->
+    <link href="./lib/quill/quill.snow.css" rel="stylesheet">
+    <script src="./lib/quill/quill.min.js"></script>
+    
+    <!-- Quill.js Loading Verification -->
+    <script>
+        // Debug Quill loading
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                console.log('🔍 Quill loading check:', {
+                    windowQuill: typeof window.Quill,
+                    quillAvailable: !!window.Quill,
+                    quillVersion: window.Quill ? window.Quill.version : 'not loaded'
+                });
+                
+                if (!window.Quill) {
+                    console.error('❌ Quill.js failed to load! Check CSP and network.');
+                } else {
+                    console.log('✅ Quill.js loaded successfully!');
+                }
+            }, 1000);
+        });
+    </script>
+    
     <!-- Tailwind Configuration -->
     <script>
         tailwind.config = {
@@ -96,6 +120,7 @@
     <!-- Use simplified API and store -->
     <script src="./js/api-simplified.js"></script>
     <script src="./js/store-simplified.js"></script>
+    <script src="./js/config-manager.js"></script>
     <script src="./js/utils.js"></script>
     
     <!-- Layout Components (Enhanced) -->
@@ -123,15 +148,40 @@
     <script src="./components/Practice/BrowsePracticeTopics.js"></script>
     <script src="./components/Practice/MCQQuestionCard.js"></script>
 
+    <!-- Form Validation Components -->
+    <script src="./js/validation-utils.js"></script>
+    <script src="./components/Forms/ValidatedInput.js"></script>
+    
     <!-- Authentication Components (Simplified) -->
     <script src="./components/Auth/LoginForm.js"></script>
     <script src="./components/Auth/RegisterForm.js"></script>
     <script src="./components/Auth/EmailConfirmation.js"></script>
     <script src="./components/Auth/UsageIndicator.js"></script>
     
-    <!-- Modal Components (Topic Creation Only) -->
+    <!-- Modal Components -->
     <script src="./components/Modals/ModalBase.js"></script>
     <script src="./components/Modals/CreateTopic.js"></script>
+    <script src="./components/Modals/ConfirmationModal.js"></script>
+    
+    <!-- State Components -->
+    <script src="./components/States/ErrorState.js"></script>
+    
+    <!-- Loading Components -->
+    <script src="./components/Loading/SkeletonLoader.js"></script>
+    
+    <!-- Setup Components -->
+    <script src="./components/Setup/OfflineSetup.js"></script>
+    
+    <!-- UI Components -->
+    <script src="./components/UI/BetaBadge.js"></script>
+    
+    <!-- Settings Components -->
+    <script src="./components/Settings/UserSettings.js"></script>
+    
+    <!-- Note Editing Components -->
+    <script src="./components/Modals/NoteEditorModal.js"></script>
+    <script src="./components/Forms/QuickNoteCreator.js"></script>
+    <script src="./components/Views/NotesView.js"></script>
     
     <!-- Main Application (Simplified) -->
     <script src="./js/main-simplified.js"></script>

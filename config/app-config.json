@@ -1,0 +1,185 @@
+{
+  "app": {
+    "name": "StudyBuddy",
+    "version": "1.0.0-beta",
+    "environment": "production",
+    "features": {
+      "offlineMode": {
+        "enabled": true,
+        "status": "alpha",
+        "requiresBetaAccess": false
+      },
+      "aiGeneration": {
+        "enabled": true,
+        "openaiEnabled": true,
+        "ollamaEnabled": true,
+        "defaultProvider": "openai"
+      },
+      "fileUpload": {
+        "enabled": true,
+        "maxFileSize": "50MB"
+      },
+      "analytics": {
+        "enabled": true,
+        "provider": "google"
+      }
+    }
+  },
+  "tiers": {
+    "free": {
+      "name": "Free",
+      "price": 0,
+      "limits": {
+        "questionsPerMonth": 200,
+        "topicsPerAccount": 5,
+        "storagePerAccount": "100MB",
+        "aiGenerationsPerDay": 50,
+        "practiceSessionsPerDay": 20,
+        "fileUploadsPerDay": 10
+      },
+      "features": {
+        "basicAI": true,
+        "fileUpload": true,
+        "practiceMode": true,
+        "basicAnalytics": true,
+        "offlineMode": false,
+        "prioritySupport": false,
+        "advancedAI": false,
+        "customization": false,
+        "exportData": false
+      },
+      "ads": {
+        "enabled": true,
+        "frequency": "high",
+        "types": ["banner", "interstitial"],
+        "skipAfter": null
+      }
+    },
+    "pro": {
+      "name": "Pro",
+      "price": 9.99,
+      "currency": "USD",
+      "interval": "monthly",
+      "limits": {
+        "questionsPerMonth": 2000,
+        "topicsPerAccount": 50,
+        "storagePerAccount": "1GB",
+        "aiGenerationsPerDay": 500,
+        "practiceSessionsPerDay": -1,
+        "fileUploadsPerDay": 100
+      },
+      "features": {
+        "basicAI": true,
+        "fileUpload": true,
+        "practiceMode": true,
+        "basicAnalytics": true,
+        "offlineMode": true,
+        "prioritySupport": true,
+        "advancedAI": true,
+        "customization": true,
+        "exportData": true,
+        "bulkOperations": true,
+        "advancedAnalytics": true
+      },
+      "ads": {
+        "enabled": false,
+        "frequency": "none",
+        "types": [],
+        "skipAfter": 0
+      }
+    },
+    "premium": {
+      "name": "Premium",
+      "price": 19.99,
+      "currency": "USD",
+      "interval": "monthly",
+      "limits": {
+        "questionsPerMonth": -1,
+        "topicsPerAccount": -1,
+        "storagePerAccount": "10GB",
+        "aiGenerationsPerDay": -1,
+        "practiceSessionsPerDay": -1,
+        "fileUploadsPerDay": -1
+      },
+      "features": {
+        "basicAI": true,
+        "fileUpload": true,
+        "practiceMode": true,
+        "basicAnalytics": true,
+        "offlineMode": true,
+        "prioritySupport": true,
+        "advancedAI": true,
+        "customization": true,
+        "exportData": true,
+        "bulkOperations": true,
+        "advancedAnalytics": true,
+        "apiAccess": true,
+        "whiteLabel": true,
+        "dedicatedSupport": true
+      },
+      "ads": {
+        "enabled": false,
+        "frequency": "none",
+        "types": [],
+        "skipAfter": 0
+      }
+    }
+  },
+  "monetization": {
+    "adsEnabled": true,
+    "adProviders": {
+      "google": {
+        "enabled": true,
+        "adUnitIds": {
+          "banner": "ca-app-pub-xxxxxxxx/xxxxxxxx",
+          "interstitial": "ca-app-pub-xxxxxxxx/xxxxxxxx",
+          "rewarded": "ca-app-pub-xxxxxxxx/xxxxxxxx"
+        }
+      }
+    },
+    "stripeEnabled": true,
+    "paypalEnabled": false,
+    "trialPeriod": 14,
+    "upgradePrompts": {
+      "frequency": "moderate",
+      "showAfterActions": 5,
+      "dismissibleForDays": 7
+    }
+  },
+  "ui": {
+    "showBetaBadge": true,
+    "showUsageLimits": true,
+    "showUpgradePrompts": true,
+    "theme": "light",
+    "animations": true,
+    "compactMode": false
+  },
+  "analytics": {
+    "trackUsage": true,
+    "trackErrors": true,
+    "trackPerformance": true,
+    "privacyMode": false
+  },
+  "maintenance": {
+    "enabled": false,
+    "message": "StudyBuddy is currently under maintenance. We'll be back soon!",
+    "allowedEmails": ["admin@example.com"],
+    "estimatedTime": "30 minutes"
+  },
+  "notifications": {
+    "welcomeMessage": {
+      "enabled": true,
+      "title": "Welcome to StudyBuddy Beta!",
+      "message": "Thanks for testing StudyBuddy! We'd love your feedback as we improve the platform.",
+      "type": "info",
+      "dismissible": true,
+      "showOnLogin": true
+    },
+    "usageLimits": {
+      "enabled": true,
+      "warnAt": 80,
+      "blockAt": 100,
+      "resetMessage": "Your usage limits will reset at the beginning of next month."
+    }
+  }
+}

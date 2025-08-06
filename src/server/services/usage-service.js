@@ -1,6 +1,7 @@
-// src/server/services/usage-service.js - SQLite3 Compatible Version
+// src/server/services/usage-service.js - SQLite3 Compatible Version with Config Integration
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const { getInstance: getConfigService } = require('./config-service');
 
 class UsageService {
     constructor() {
@@ -8,21 +9,13 @@ class UsageService {
         const dbPath = path.join(__dirname, '../../data/study_ai_simplified.db');
         this.db = new sqlite3.Database(dbPath);
         
+        // Get config service instance
+        this.configService = getConfigService();
+        
         // Initialize usage tables if they don't exist
         this.initializeTables();
         
-        this.limits = {
-            free: {
-                questionsPerMonth: 100,
-                topicsPerSubject: 5,
-                storageBytes: 100 * 1024 * 1024 // 100MB
-            },
-            pro: {
-                questionsPerMonth: 1500,
-                topicsPerSubject: -1, // unlimited
-                storageBytes: 5 * 1024 * 1024 * 1024 // 5GB
-            }
-        };
+        console.log('✅ Usage service initialized with dynamic config');
     }
 
     initializeTables() {
@@ -79,9 +72,57 @@ class UsageService {
         });
     }
 
+    /**
+     * Get dynamic limits from config
+     */
+    getLimits(tierName = 'free') {
+        try {
+            const limits = this.configService.getEffectiveLimits(tierName);
+            
+            if (!limits) {
+                console.warn(`No limits found for tier: ${tierName}, using defaults`);
+                return {
+                    questionsPerMonth: 100,
+                    topicsPerAccount: 3,
+                    storagePerAccount: '50MB'
+                };
+            }
+            
+            return limits;
+        } catch (error) {
+            console.error('Error getting limits from config service:', error);
+            return {
+                questionsPerMonth: 100,
+                topicsPerAccount: 3,
+                storagePerAccount: '50MB'
+            };
+        }
+    }
+
+    /**
+     * Parse storage limit string to bytes
+     */
+    parseStorageLimit(limitString) {
+        if (typeof limitString === 'number') return limitString;
+        
+        const units = {
+            'KB': 1024,
+            'MB': 1024 * 1024,
+            'GB': 1024 * 1024 * 1024
+        };
+        
+        const match = limitString.match(/^(\d+(?:\.\d+)?)\s*(KB|MB|GB)$/i);
+        if (match) {
+            return Math.floor(parseFloat(match[1]) * units[match[2].toUpperCase()]);
+        }
+        
+        return parseInt(limitString) || 0;
+    }
+
     async checkQuestionLimit(userId, userTier) {
         const usage = await this.getCurrentUsage(userId);
-        const limit = this.limits[userTier || 'free'].questionsPerMonth;
+        const limits = this.getLimits(userTier || 'free');
+        const limit = limits.questionsPerMonth;
         
         if (usage.questions_used >= limit) {
             throw new Error(`Monthly question limit reached (${limit}). Upgrade to Pro for more questions!`);
@@ -121,7 +162,8 @@ class UsageService {
     }
 
     async checkTopicLimit(userId, userTier, subjectId, dbService = null) {
-        const limit = this.limits[userTier || 'free'].topicsPerSubject;
+        const limits = this.getLimits(userTier || 'free');
+        const limit = limits.topicsPerAccount; // Changed from topicsPerSubject to topicsPerAccount
         
         if (limit === -1) return true; // Unlimited for pro
         
@@ -168,7 +210,8 @@ class UsageService {
 
     async checkStorageLimit(userId, userTier, fileSize) {
         const usage = await this.getCurrentUsage(userId);
-        const limit = this.limits[userTier || 'free'].storageBytes;
+        const limits = this.getLimits(userTier || 'free');
+        const limit = this.parseStorageLimit(limits.storagePerAccount);
         
         if (usage.storage_used + fileSize > limit) {
             const usedMB = Math.round(usage.storage_used / (1024 * 1024));
@@ -247,24 +290,35 @@ class UsageService {
             // Get user tier from database (assuming it's stored in users table)
             // For now, default to 'free' - you can modify this based on your user structure
             const tier = 'free'; // TODO: Get from user record
-            const limits = this.limits[tier];
+            const limits = this.getLimits(tier);
+
+            console.log('📊 Usage stats debug:', {
+                userId,
+                tier,
+                limits,
+                usage: {
+                    questions_used: usage.questions_used,
+                    storage_used: usage.storage_used,
+                    topics_created: usage.topics_created
+                }
+            });
 
             return {
                 questions: {
-                    used: usage.questions_used,
-                    limit: limits.questionsPerMonth,
-                    percentage: Math.round((usage.questions_used / limits.questionsPerMonth) * 100)
+                    used: usage.questions_used || 0,
+                    limit: limits.questionsPerMonth || 100,
+                    percentage: Math.round(((usage.questions_used || 0) / (limits.questionsPerMonth || 100)) * 100)
                 },
                 storage: {
-                    used: usage.storage_used,
-                    limit: limits.storageBytes,
-                    percentage: Math.round((usage.storage_used / limits.storageBytes) * 100),
-                    usedMB: Math.round(usage.storage_used / (1024 * 1024)),
-                    limitMB: Math.round(limits.storageBytes / (1024 * 1024))
+                    used: usage.storage_used || 0,
+                    limit: this.parseStorageLimit(limits.storagePerAccount || '50MB'),
+                    percentage: Math.round(((usage.storage_used || 0) / this.parseStorageLimit(limits.storagePerAccount || '50MB')) * 100),
+                    usedMB: Math.round((usage.storage_used || 0) / (1024 * 1024)),
+                    limitMB: Math.round(this.parseStorageLimit(limits.storagePerAccount || '50MB') / (1024 * 1024))
                 },
                 topics: {
                     used: usage.topics_created || 0,
-                    limit: limits.topicsPerSubject === -1 ? 999 : limits.topicsPerSubject
+                    limit: (limits.topicsPerAccount === -1 ? 999 : limits.topicsPerAccount) || 3
                 },
                 tier: tier
             };

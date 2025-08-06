@@ -3,10 +3,14 @@ const express = require('express');
 const AuthService = require('../services/auth-service');
 const authMiddleware = require('../middleware/auth-middleware');
 const UsageService = require('../services/usage-service');
+const LocalUserService = require('../services/local-user-service');
+const AccountSyncService = require('../services/account-sync-service');
 
 const router = express.Router();
 const authService = new AuthService();
 const usageService = new UsageService();
+const localUserService = new LocalUserService();
+const accountSyncService = new AccountSyncService();
 
 // Test route to check if auth service is working
 router.get('/test', async (req, res) => {
@@ -428,6 +432,384 @@ router.get('/debug-user/:email', async (req, res) => {
         
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// ===============================
+// LOCAL/OFFLINE AUTHENTICATION
+// ===============================
+
+// Initialize local user system
+router.post('/local/init', async (req, res) => {
+    try {
+        await localUserService.initialize();
+        const users = await localUserService.listLocalUsers();
+        
+        res.json({
+            status: 'success',
+            message: 'Local user system initialized',
+            userCount: users.length,
+            initialized: true
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Register local user
+router.post('/local/register', async (req, res) => {
+    try {
+        const { email, firstName, lastName, password } = req.body;
+        
+        if (!email || !firstName || !password) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Email, first name, and password are required'
+            });
+        }
+        
+        console.log('🔄 Local registration attempt:', email);
+        
+        const result = await localUserService.createLocalUser(email, firstName, lastName, password);
+        
+        if (result.success) {
+            console.log('✅ Local registration successful:', email);
+            res.status(201).json({
+                status: 'success',
+                message: 'Local user created successfully',
+                user: {
+                    id: result.userId,
+                    email: result.userProfile.email,
+                    firstName: result.userProfile.firstName,
+                    lastName: result.userProfile.lastName
+                }
+            });
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        console.error('❌ Local registration failed:', error.message);
+        res.status(400).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Login local user
+router.post('/local/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        
+        if (!email || !password) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Email and password are required'
+            });
+        }
+        
+        console.log('🔄 Local login attempt:', email);
+        
+        const result = await localUserService.authenticateLocalUser(email, password);
+        
+        if (result.success) {
+            console.log('✅ Local login successful:', email);
+            
+            // Generate simple session token for local mode
+            const sessionToken = require('crypto').randomUUID();
+            
+            res.json({
+                status: 'success',
+                message: 'Login successful',
+                user: {
+                    id: result.user.id,
+                    email: result.user.email,
+                    firstName: result.user.firstName,
+                    lastName: result.user.lastName,
+                    isLocalMode: true
+                },
+                tokens: {
+                    access_token: sessionToken,
+                    refresh_token: sessionToken,
+                    expires_in: 86400 // 24 hours
+                }
+            });
+        } else {
+            res.status(401).json({
+                status: 'error',
+                message: result.error
+            });
+        }
+    } catch (error) {
+        console.error('❌ Local login failed:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// List local users
+router.get('/local/users', async (req, res) => {
+    try {
+        const users = await localUserService.listLocalUsers();
+        
+        res.json({
+            status: 'success',
+            users: users.map(user => ({
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                lastLogin: user.lastLogin
+            }))
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Get current local user profile
+router.get('/local/profile', async (req, res) => {
+    try {
+        const currentUser = localUserService.getCurrentUser();
+        
+        if (!currentUser) {
+            return res.status(401).json({
+                status: 'error',
+                message: 'No local user logged in'
+            });
+        }
+        
+        // Get user statistics
+        const stats = await localUserService.getUserStats(currentUser.id);
+        
+        res.json({
+            status: 'success',
+            user: {
+                id: currentUser.id,
+                email: currentUser.email,
+                firstName: currentUser.firstName,
+                lastName: currentUser.lastName,
+                isLocalMode: true,
+                createdAt: currentUser.createdAt,
+                lastLogin: currentUser.lastLogin
+            },
+            statistics: stats
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Export local user data
+router.get('/local/export/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+        const exportPath = require('path').join(require('os').tmpdir(), `studybuddy-export-${timestamp}.json`);
+        
+        const result = await localUserService.exportUserData(userId, exportPath);
+        
+        if (result.success) {
+            res.download(exportPath, `studybuddy-export-${timestamp}.json`, (err) => {
+                if (!err) {
+                    // Clean up temp file
+                    require('fs').unlinkSync(exportPath);
+                }
+            });
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Logout local user
+router.post('/local/logout', async (req, res) => {
+    try {
+        localUserService.logout();
+        
+        res.json({
+            status: 'success',
+            message: 'Logged out successfully'
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// ===============================
+// ACCOUNT SYNC FUNCTIONALITY
+// ===============================
+
+// Check account sync status
+router.get('/sync/status/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        
+        await accountSyncService.initialize();
+        const accountStatus = await accountSyncService.findAccountLinks(email);
+        
+        res.json({
+            status: 'success',
+            email,
+            ...accountStatus,
+            syncInProgress: accountSyncService.isSyncInProgress()
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Auto-sync user accounts
+router.post('/sync/auto', async (req, res) => {
+    try {
+        const { email, mode = 'bidirectional' } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Email is required'
+            });
+        }
+        
+        console.log(`🔄 Auto-sync request for ${email} (${mode})`);
+        
+        await accountSyncService.initialize();
+        const result = await accountSyncService.autoSync(email, mode);
+        
+        if (result.success) {
+            res.json({
+                status: 'success',
+                message: result.message,
+                actions: result.actions
+            });
+        } else {
+            res.status(400).json({
+                status: 'error',
+                message: result.error || result.message
+            });
+        }
+    } catch (error) {
+        console.error('❌ Auto-sync failed:', error);
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Sync cloud user to local (for offline use)
+router.post('/sync/cloud-to-local', async (req, res) => {
+    try {
+        const { cloudUserId, cloudUserData } = req.body;
+        
+        if (!cloudUserId || !cloudUserData) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Cloud user ID and data are required'
+            });
+        }
+        
+        console.log(`🔄 Syncing cloud user to local: ${cloudUserData.email}`);
+        
+        await accountSyncService.initialize();
+        const result = await accountSyncService.syncCloudUserToLocal(cloudUserId, cloudUserData);
+        
+        if (result.success) {
+            res.json({
+                status: 'success',
+                message: result.message,
+                localUserId: result.localUserId
+            });
+        } else {
+            res.status(400).json({
+                status: 'error',
+                message: result.error
+            });
+        }
+    } catch (error) {
+        console.error('❌ Cloud to local sync failed:', error);
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Sync local user to cloud (for cross-device access)
+router.post('/sync/local-to-cloud', async (req, res) => {
+    try {
+        const { localUserId } = req.body;
+        
+        if (!localUserId) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Local user ID is required'
+            });
+        }
+        
+        console.log(`🔄 Syncing local user to cloud: ${localUserId}`);
+        
+        await accountSyncService.initialize();
+        const result = await accountSyncService.syncLocalUserToCloud(localUserId);
+        
+        if (result.success) {
+            res.json({
+                status: 'success',
+                message: result.message,
+                cloudUserId: result.cloudUserId
+            });
+        } else {
+            res.status(400).json({
+                status: 'error',
+                message: result.error
+            });
+        }
+    } catch (error) {
+        console.error('❌ Local to cloud sync failed:', error);
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Get sync log
+router.get('/sync/log', async (req, res) => {
+    try {
+        const syncLog = accountSyncService.getSyncLog();
+        
+        res.json({
+            status: 'success',
+            syncLog,
+            syncInProgress: accountSyncService.isSyncInProgress()
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
     }
 });
 

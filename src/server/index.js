@@ -22,6 +22,7 @@ const authMiddleware = require('./middleware/auth-middleware');
 
 // Import routes
 const authRoutes = require('./routes/auth-routes');
+const configRoutes = require('./routes/config-routes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -41,13 +42,15 @@ app.use(helmet({
                 "'unsafe-eval'",
                 "https://cdn.tailwindcss.com",
                 "https://unpkg.com",
-                "https://cdnjs.cloudflare.com"
+                "https://cdnjs.cloudflare.com",
+                "https://cdn.quilljs.com"
             ],
             styleSrc: [
                 "'self'", 
                 "'unsafe-inline'",
                 "https://fonts.googleapis.com",
-                "https://cdnjs.cloudflare.com"
+                "https://cdnjs.cloudflare.com",
+                "https://cdn.quilljs.com"
             ],
             fontSrc: [
                 "'self'",
@@ -176,9 +179,74 @@ db.init();
 // =============================================================================
 
 app.use('/api/auth', authRoutes);
+app.use('/api/config', configRoutes);
 
 // =============================================================================
 // HEALTH CHECK & STATUS
+// =============================================================================
+
+// =============================================================================
+// OFFLINE SETUP ENDPOINTS
+// =============================================================================
+
+const OfflineSetupService = require('./services/offline-setup-service');
+const offlineSetupService = new OfflineSetupService();
+
+app.get('/api/setup/offline/status', async (req, res) => {
+    try {
+        const status = await offlineSetupService.getInstallationStatus();
+        res.json({ status: 'success', ...status });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/setup/offline/requirements', async (req, res) => {
+    try {
+        const requirements = await offlineSetupService.checkSystemRequirements();
+        res.json({ status: 'success', ...requirements });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.post('/api/setup/offline/install', async (req, res) => {
+    try {
+        // Set up Server-Sent Events for progress updates
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Cache-Control'
+        });
+
+        const sendProgress = (data) => {
+            res.write(`data: ${JSON.stringify(data)}\n\n`);
+        };
+
+        const result = await offlineSetupService.installOllama(sendProgress);
+        
+        sendProgress({ ...result, completed: true });
+        res.end();
+
+    } catch (error) {
+        res.write(`data: ${JSON.stringify({ error: error.message, completed: true })}\n\n`);
+        res.end();
+    }
+});
+
+app.get('/api/setup/offline/test', async (req, res) => {
+    try {
+        const testResult = await offlineSetupService.testOfflineInstallation();
+        res.json({ status: 'success', ...testResult });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// =============================================================================
+// HEALTH CHECK ENDPOINTS
 // =============================================================================
 
 app.get('/api/health', (req, res) => {
@@ -394,6 +462,96 @@ app.get('/api/notes', authMiddleware.authenticateToken, async (req, res) => {
     res.json(notes);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Update note content (for editing)
+app.put('/api/notes/:noteId', authMiddleware.authenticateToken, async (req, res) => {
+  try {
+    const { content, title, file_name } = req.body;
+    const noteId = req.params.noteId;
+    const userId = req.user.id;
+    
+    console.log(`📝 Updating note ${noteId} for user ${userId}:`, {
+      hasContent: !!content,
+      contentLength: content?.length || 0,
+      fileName: file_name,
+      title
+    });
+    
+    // Verify note belongs to user
+    const existingNote = await db.getNoteWithTopicForUser(noteId, userId);
+    if (!existingNote) {
+      return res.status(404).json({ error: 'Note not found or access denied' });
+    }
+    
+    const updateData = {
+      content: content,
+      file_name: file_name || existingNote.file_name
+    };
+    
+    console.log('📝 Update data prepared:', updateData);
+    
+    const result = await db.updateNoteForUser(noteId, updateData, userId);
+    
+    console.log(`✅ Note ${noteId} updated successfully:`, result);
+    
+    res.json({ 
+      success: true, 
+      changes: result.changes,
+      message: 'Note updated successfully'
+    });
+  } catch (error) {
+    console.error('❌ Update note error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create manual note (not from file upload)
+app.post('/api/notes/manual', authMiddleware.authenticateToken, async (req, res) => {
+  try {
+    const { topicId, content, fileName, title } = req.body;
+    const userId = req.user.id;
+    
+    if (!topicId || !content || !title) {
+      return res.status(400).json({ error: 'Topic ID, content, and title are required' });
+    }
+    
+    // Verify topic belongs to user
+    const topic = await db.getTopicWithSubjectForUser(topicId, userId);
+    if (!topic) {
+      return res.status(404).json({ error: 'Topic not found or access denied' });
+    }
+    
+    // Check storage limit (estimate HTML content size)
+    const contentSize = Buffer.byteLength(content, 'utf8');
+    await usageService.checkStorageLimit(userId, req.user.subscriptionTier, contentSize);
+    
+    // Create the note
+    const note = await db.createNoteForUser(
+      topicId, 
+      content, 
+      fileName || (title + '.html'),
+      userId
+    );
+    
+    // Update storage usage
+    await usageService.incrementStorageUsage(userId, contentSize);
+    
+    console.log(`✅ Manual note created with ID: ${note.id} for user: ${userId}`);
+    
+    res.json({ 
+      note,
+      message: 'Note created successfully'
+    });
+    
+  } catch (error) {
+    console.error('Manual note creation error:', error);
+    if (error.message.includes('limit')) {
+      res.status(403).json({ error: error.message, upgradeRequired: true });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 

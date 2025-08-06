@@ -177,7 +177,7 @@ window.NotesDisplayComponent = {
     },
 
     setup(props, { emit }) {
-        const store = window.store;
+        // Local state management - simple and reliable
         const notes = Vue.ref([]);
         const loading = Vue.ref(false);
         const expandedNotes = Vue.ref([]);
@@ -197,18 +197,30 @@ window.NotesDisplayComponent = {
         const loadNotes = async () => {
             loading.value = true;
             try {
+                let loadedNotes = [];
+                
                 if (props.topicId) {
-                    notes.value = await window.api.getNotes(props.topicId);
+                    // Load notes for specific topic
+                    loadedNotes = await window.api.getNotes(props.topicId);
                 } else if (props.subjectId) {
-                    notes.value = await window.api.getSubjectNotes(props.subjectId);
+                    // Load all notes for subject
+                    const topics = await window.api.getTopics(props.subjectId);
+                    const allNotes = await window.api.getAllNotes();
+                    const topicIds = topics.map(t => t.id);
+                    loadedNotes = allNotes.filter(note => topicIds.includes(note.topic_id));
                 } else {
                     // Load all notes
-                    notes.value = await window.api.getAllNotes();
+                    loadedNotes = await window.api.getAllNotes();
                 }
-                console.log('Loaded notes:', notes.value);
+                
+                notes.value = loadedNotes || [];
+                console.log('Notes loaded:', notes.value.length);
             } catch (error) {
                 console.error('Failed to load notes:', error);
-                store.showNotification('Failed to load study materials', 'error');
+                notes.value = [];
+                if (window.store && window.store.showNotification) {
+                    window.store.showNotification('Failed to load study materials', 'error');
+                }
             } finally {
                 loading.value = false;
             }
@@ -230,7 +242,9 @@ window.NotesDisplayComponent = {
         const copyToClipboard = async (text) => {
             try {
                 await navigator.clipboard.writeText(text);
-                store.showNotification('Text copied to clipboard!', 'success');
+                if (window.store && window.store.showNotification) {
+                    window.store.showNotification('Text copied to clipboard!', 'success');
+                }
             } catch (error) {
                 // Fallback for older browsers
                 const textarea = document.createElement('textarea');
@@ -239,30 +253,35 @@ window.NotesDisplayComponent = {
                 textarea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
-                store.showNotification('Text copied to clipboard!', 'success');
+                if (window.store && window.store.showNotification) {
+                    window.store.showNotification('Text copied to clipboard!', 'success');
+                }
             }
         };
 
         const generateQuestionsFromNote = async (note) => {
             if (!note.id) {
-                store.showNotification('Cannot generate questions: invalid note', 'error');
+                if (window.store && window.store.showNotification) {
+                    window.store.showNotification('Cannot generate questions: invalid note', 'error');
+                }
                 return;
             }
 
             try {
-                store.setGenerating(true);
                 const questions = await window.api.generateQuestionsForNote(note.id, 5);
-                store.showNotification(`Generated ${questions.length} questions from "${getFileName(note.file_name)}"!`, 'success');
+                if (window.store && window.store.showNotification) {
+                    window.store.showNotification(`Generated ${questions.length} questions from "${getFileName(note.file_name)}"!`, 'success');
+                }
                 emit('questions-generated', questions);
             } catch (error) {
                 console.error('Failed to generate note-specific questions:', error);
-                if (error.message.includes('limit')) {
-                    store.showNotification('Question generation failed: ' + error.message, 'warning');
-                } else {
-                    store.showNotification('Failed to generate questions from this note', 'error');
+                if (window.store && window.store.showNotification) {
+                    if (error.message.includes('limit')) {
+                        window.store.showNotification('Question generation failed: ' + error.message, 'warning');
+                    } else {
+                        window.store.showNotification('Failed to generate questions from this note', 'error');
+                    }
                 }
-            } finally {
-                store.setGenerating(false);
             }
         };
 
@@ -272,16 +291,22 @@ window.NotesDisplayComponent = {
         };
 
         const deleteNote = async (note) => {
-            if (!confirm(`Delete "${getFileName(note.file_name)}"? This cannot be undone.`)) {
-                return;
-            }
-
-            try {
-                await window.api.deleteNote(note.id);
-                notes.value = notes.value.filter(n => n.id !== note.id);
-                store.showNotification('Study material deleted', 'success');
-            } catch (error) {
-                store.showNotification('Failed to delete material', 'error');
+            const fileName = getFileName(note.file_name);
+            
+            if (confirm(`Are you sure you want to delete "${fileName}"? This action cannot be undone.`)) {
+                try {
+                    await window.api.deleteNote(note.id);
+                    // Remove note from local state
+                    notes.value = notes.value.filter(n => n.id !== note.id);
+                    if (window.store && window.store.showNotification) {
+                        window.store.showNotification('Study material deleted successfully', 'success');
+                    }
+                } catch (error) {
+                    console.error('Delete note error:', error);
+                    if (window.store && window.store.showNotification) {
+                        window.store.showNotification('Failed to delete study material', 'error');
+                    }
+                }
             }
         };
 
@@ -325,18 +350,54 @@ window.NotesDisplayComponent = {
             }
         };
 
+        // Simple local caches for subjects and topics
+        const subjects = Vue.ref([]);
+        const allTopics = Vue.ref([]);
+
         const getSubjectName = (subjectId) => {
-            const subject = store.state.subjects.find(s => s.id === subjectId);
+            const subject = subjects.value.find(s => s.id === subjectId);
             return subject ? subject.name : 'Unknown Subject';
         };
 
         const getTopicName = (topicId) => {
-            const topic = store.state.topics.find(t => t.id === topicId);
-            return topic ? topic.name : 'Unknown Topic';
+            const topic = allTopics.value.find(t => t.id === topicId);
+            return topic ? topic.name : 'Loading...';
+        };
+
+        // Load subjects and topics for proper name display
+        const loadSubjectsAndTopics = async () => {
+            try {
+                // Load subjects - hardcoded list like before
+                subjects.value = [
+                    { id: 'mathematics', name: 'Mathematics' },
+                    { id: 'natural-sciences', name: 'Natural Sciences' },
+                    { id: 'literature', name: 'Literature & Writing' },
+                    { id: 'social-studies', name: 'Social Studies' },
+                    { id: 'language-arts', name: 'Language Arts' },
+                    { id: 'computer-science', name: 'Computer Science' },
+                    { id: 'arts', name: 'Arts & Creative' },
+                    { id: 'other', name: 'Other Subjects' }
+                ];
+
+                // Load all topics from all subjects
+                const loadedTopics = [];
+                for (const subject of subjects.value) {
+                    try {
+                        const topics = await window.api.getTopics(subject.id);
+                        loadedTopics.push(...topics);
+                    } catch (error) {
+                        console.warn(`Failed to load topics for ${subject.name}:`, error);
+                    }
+                }
+                allTopics.value = loadedTopics;
+            } catch (error) {
+                console.error('Failed to load subjects and topics:', error);
+            }
         };
 
         // Load notes on mount
-        Vue.onMounted(() => {
+        Vue.onMounted(async () => {
+            await loadSubjectsAndTopics();
             loadNotes();
         });
 
@@ -346,7 +407,6 @@ window.NotesDisplayComponent = {
         });
 
         return {
-            store,
             notes: paginatedNotes,
             loading,
             expandedNotes,

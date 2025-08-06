@@ -8,6 +8,12 @@ class SimplifiedApiService {
     // Authentication properties
     this.accessToken = localStorage.getItem('access_token');
     this.refreshToken = localStorage.getItem('refresh_token');
+    
+    console.log('🔧 API Service initialized with tokens:', {
+      hasAccessToken: !!this.accessToken,
+      hasRefreshToken: !!this.refreshToken,
+      accessTokenLength: this.accessToken ? this.accessToken.length : 0
+    });
   }
 
   /**
@@ -40,7 +46,20 @@ class SimplifiedApiService {
       clearTimeout(timeoutId);
       
       // Handle 401 - token expired, try to refresh
-      if (response.status === 401 && this.refreshToken && !endpoint.startsWith('/auth/')) {
+      // Don't refresh for login/register endpoints, but do refresh for protected auth endpoints like /auth/profile
+      const shouldRefresh = response.status === 401 && this.refreshToken && 
+                           !endpoint.includes('/auth/login') && 
+                           !endpoint.includes('/auth/register') && 
+                           !endpoint.includes('/auth/refresh');
+      
+      console.log('🔍 Token refresh check:', {
+        status: response.status,
+        hasRefreshToken: !!this.refreshToken,
+        endpoint: endpoint,
+        shouldRefresh: shouldRefresh
+      });
+      
+      if (shouldRefresh) {
         console.log('🔄 Token expired, attempting refresh...');
         const refreshed = await this.refreshAccessToken();
         if (refreshed) {
@@ -173,21 +192,25 @@ class SimplifiedApiService {
    */
   async refreshAccessToken() {
     try {
+      console.log('🔄 Starting token refresh...');
       if (!this.refreshToken) {
         throw new Error('No refresh token available');
       }
 
+      console.log('📡 Calling /auth/refresh endpoint...');
       const response = await this.request('/auth/refresh', {
         method: 'POST',
         body: JSON.stringify({ refreshToken: this.refreshToken }),
       });
+      
+      console.log('📨 Refresh response:', response);
       
       if (response.status === 'success') {
         this.setTokens(response.tokens);
         console.log('✅ Token refreshed successfully');
         return true;
       } else {
-        throw new Error('Token refresh failed');
+        throw new Error('Token refresh failed: ' + (response.message || 'Unknown error'));
       }
     } catch (error) {
       console.error('❌ Token refresh error:', error);
@@ -236,10 +259,53 @@ class SimplifiedApiService {
   }
 
   /**
+   * Reload tokens from localStorage (useful after page refresh)
+   */
+  reloadTokens() {
+    this.accessToken = localStorage.getItem('access_token');
+    this.refreshToken = localStorage.getItem('refresh_token');
+    console.log('🔄 Tokens reloaded from localStorage:', {
+      hasAccessToken: !!this.accessToken,
+      hasRefreshToken: !!this.refreshToken
+    });
+  }
+
+  /**
    * Check if user is authenticated
    */
   isAuthenticated() {
     return !!this.accessToken;
+  }
+
+  /**
+   * Test authentication by making a simple authenticated request
+   */
+  async testAuth() {
+    try {
+      console.log('🧪 Testing authentication...');
+      const response = await this.request('/auth/test');
+      console.log('✅ Authentication test passed');
+      return true;
+    } catch (error) {
+      console.log('❌ Authentication test failed:', error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Test basic server connectivity
+   */
+  async testConnection() {
+    try {
+      console.log('🌐 Testing server connection to:', this.baseURL);
+      const response = await fetch(`${this.baseURL}/auth/test`);
+      const data = await response.json();
+      console.log('✅ Server connection successful:', data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('❌ Server connection failed:', error.message);
+      return { success: false, error: error.message };
+    }
   }
 
   /**
@@ -337,6 +403,26 @@ class SimplifiedApiService {
    */
   async getAllNotes() {
     return this.request('/notes');
+  }
+
+  /**
+   * Update a note (for editing)
+   */
+  async updateNote(noteId, updateData) {
+    return this.request(`/notes/${noteId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+  }
+
+  /**
+   * Create manual note (not from file upload)
+   */
+  async createManualNote(noteData) {
+    return this.request('/notes/manual', {
+      method: 'POST',
+      body: JSON.stringify(noteData),
+    });
   }
 
   /**

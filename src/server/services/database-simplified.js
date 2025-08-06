@@ -1575,6 +1575,42 @@ class SimplifiedDatabaseService {
         });
     }
 
+    async updateNoteForUser(noteId, updateData, userId) {
+        return new Promise((resolve, reject) => {
+            // Build dynamic SQL based on provided fields
+            const allowedFields = ['content', 'file_name']; // Only fields that exist in the table
+            const updates = [];
+            const values = [];
+            
+            for (const [key, value] of Object.entries(updateData)) {
+                if (allowedFields.includes(key)) {
+                    updates.push(`${key} = ?`);
+                    values.push(value);
+                }
+            }
+            
+            if (updates.length === 0) {
+                return reject(new Error('No valid fields to update'));
+            }
+            
+            // Add noteId and userId to values for WHERE clause
+            values.push(noteId, userId);
+            
+            const sql = `
+                UPDATE notes 
+                SET ${updates.join(', ')}
+                WHERE id = ? AND topic_id IN (
+                    SELECT id FROM topics WHERE user_id = ?
+                )
+            `;
+            
+            this.db.run(sql, values, function(err) {
+                if (err) reject(err);
+                else resolve({ changes: this.changes });
+            });
+        });
+    }
+
     async deleteNoteForUser(noteId, userId) {
         return new Promise((resolve, reject) => {
             const sql = `

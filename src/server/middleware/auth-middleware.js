@@ -67,6 +67,30 @@ class AuthMiddleware {
             next();
         }
     };
+
+    requireAdmin = (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        // For now, check if user email is in admin list or has admin role
+        // In production, you'd have a proper admin role system
+        const adminEmails = [
+            'admin@studybuddy.com',
+            'syed.r.akbar@gmail.com' // Your email for testing
+        ];
+
+        const isAdmin = adminEmails.includes(req.user.email) || req.user.role === 'admin';
+
+        if (!isAdmin) {
+            return res.status(403).json({ 
+                error: 'Admin access required',
+                message: 'This endpoint requires administrator privileges'
+            });
+        }
+
+        next();
+    };
 }
 
 module.exports = new AuthMiddleware();

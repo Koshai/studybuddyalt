@@ -138,8 +138,24 @@ window.EnhancedPracticeSetupComponent = {
                             {{ getGenerateButtonText }}
                         </button>
                         
+                        <!-- Generation Loading State -->
+                        <div v-if="store.state.generating" class="mt-6">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                                <div class="flex items-center justify-center">
+                                    <i class="fas fa-brain text-blue-600 text-2xl animate-pulse mr-3"></i>
+                                    <div>
+                                        <h4 class="font-medium text-blue-900">AI is working on your questions...</h4>
+                                        <p class="text-sm text-blue-700">This usually takes 1-3 minutes depending on content complexity</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-3">
+                                <QuestionCardSkeleton v-for="skeleton in questionCount" :key="skeleton" />
+                            </div>
+                        </div>
+
                         <!-- Generation limitations info -->
-                        <div v-if="selectedTopic" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div v-else-if="selectedTopic" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                             <h4 class="font-medium text-blue-900 mb-2 flex items-center">
                                 <i class="fas fa-info-circle mr-2"></i>
                                 Generation Info

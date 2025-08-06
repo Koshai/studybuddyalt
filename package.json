@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "node src/server/index.js",
     "start": "node src/server/index.js",
+    "launch": "node launch-studybuddy.js",
+    "desktop": "node launch-studybuddy.js",
     "dev:full": "NODE_ENV=development node src/server/index.js",
     "frontend": "node scripts/serve-frontend.js",
     "backend": "node src/server/index.js",
@@ -14,7 +16,8 @@
     "reset-db-with-data": "node scripts/reset-database-simplified.js --with-test-data",
     "fresh-start": "npm run reset-db-with-data && npm run dev",
     "test-ollama": "curl http://localhost:3001/api/test-ollama-simple",
-    "health-check": "curl http://localhost:3001/api/health"
+    "health-check": "curl http://localhost:3001/api/health",
+    "create-shortcut": "node -e \"require('./launch-studybuddy.js').createDesktopShortcut()\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.53.0",

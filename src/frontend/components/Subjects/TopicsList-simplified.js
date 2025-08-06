@@ -31,10 +31,19 @@ window.TopicsListSimplifiedComponent = {
             </button>
         </div>
 
-        <!-- Loading -->
-        <div v-if="isLoading" class="text-center py-12">
-            <div class="w-8 h-8 bg-white/20 rounded-full mx-auto mb-4 animate-pulse"></div>
-            <p class="text-white text-xl">Loading topics...</p>
+        <!-- Loading State with Skeletons -->
+        <div v-if="isLoading" class="space-y-8">
+            <!-- Stats Skeleton -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div v-for="stat in 4" :key="stat" class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                    <SkeletonLoader type="text" :lines="2" class="text-center" />
+                </div>
+            </div>
+            
+            <!-- Topics Grid Skeleton -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <TopicCardSkeleton v-for="card in 4" :key="card" />
+            </div>
         </div>
 
         <!-- Empty State -->

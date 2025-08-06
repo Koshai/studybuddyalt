@@ -5,7 +5,7 @@
  */
 
 // Date and time utilities
-export const DateUtils = {
+window.DateUtils = {
     formatDate(date) {
         if (!date) return '';
         return new Date(date).toLocaleDateString();
@@ -41,7 +41,7 @@ export const DateUtils = {
 };
 
 // File utilities
-export const FileUtils = {
+window.FileUtils = {
     formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
@@ -101,7 +101,7 @@ export const FileUtils = {
 };
 
 // String utilities
-export const StringUtils = {
+window.StringUtils = {
     truncate(str, length = 100, suffix = '...') {
         if (!str || str.length <= length) return str;
         return str.substring(0, length) + suffix;
@@ -138,7 +138,7 @@ export const StringUtils = {
 };
 
 // Number utilities
-export const NumberUtils = {
+window.NumberUtils = {
     formatPercentage(value, decimals = 0) {
         return `${Number(value).toFixed(decimals)}%`;
     },
@@ -160,7 +160,7 @@ export const NumberUtils = {
 };
 
 // Array utilities
-export const ArrayUtils = {
+window.ArrayUtils = {
     shuffle(array) {
         const shuffled = [...array];
         for (let i = shuffled.length - 1; i > 0; i--) {
@@ -200,7 +200,7 @@ export const ArrayUtils = {
 };
 
 // DOM utilities
-export const DOMUtils = {
+window.DOMUtils = {
     createElement(tag, attributes = {}, children = []) {
         const element = document.createElement(tag);
         
@@ -243,7 +243,7 @@ export const DOMUtils = {
 };
 
 // Local storage utilities
-export const StorageUtils = {
+window.StorageUtils = {
     set(key, value) {
         try {
             localStorage.setItem(key, JSON.stringify(value));
@@ -286,7 +286,7 @@ export const StorageUtils = {
 };
 
 // Debounce and throttle utilities
-export const PerformanceUtils = {
+window.PerformanceUtils = {
     debounce(func, wait, immediate = false) {
         let timeout;
         return function executedFunction(...args) {
@@ -314,7 +314,7 @@ export const PerformanceUtils = {
 };
 
 // Color utilities
-export const ColorUtils = {
+window.ColorUtils = {
     hexToRgb(hex) {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         return result ? {
@@ -342,7 +342,7 @@ export const ColorUtils = {
 };
 
 // Validation utilities
-export const ValidationUtils = {
+window.ValidationUtils = {
     isEmail(email) {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return re.test(email);
@@ -370,7 +370,7 @@ export const ValidationUtils = {
 };
 
 // Async utilities
-export const AsyncUtils = {
+window.AsyncUtils = {
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     },

@@ -2,6 +2,9 @@
 
 class SimplifiedStore {
   constructor() {
+    // Initialize the authentication promise
+    this.authInitialized = null;
+    
     this.state = Vue.reactive({
       // UI State
       currentView: 'dashboard',
@@ -95,10 +98,18 @@ class SimplifiedStore {
         }
       ],
       
-      // User-customizable data
+      // User-customizable data - now managed centrally
       topics: [],
       questions: [],
       notes: [],
+      
+      // Reactive data management state
+      dataVersion: 0, // Increment to force re-renders
+      lastUpdated: {
+        topics: null,
+        questions: null,
+        notes: null
+      },
       
       // Selection State
       selectedSubject: null,
@@ -121,6 +132,21 @@ class SimplifiedStore {
       showCreateTopicModal: false,
       showAuthModal: false,
       authMode: 'login', // 'login' or 'register'
+      showConfirmationModal: false,
+      confirmationModal: {
+        title: 'Confirm Action',
+        message: 'Are you sure you want to continue?',
+        details: null,
+        type: 'info', // 'info', 'warning', 'danger'
+        confirmText: 'Confirm',
+        cancelText: 'Cancel',
+        confirmIcon: null,
+        itemCount: 0,
+        loading: false,
+        preventBackdropClose: false,
+        onConfirm: null,
+        onCancel: null
+      },
       
       // Form State
       newTopic: { name: '', description: '' },
@@ -155,8 +181,10 @@ class SimplifiedStore {
     this.setupPersistence();
     this.loadPersistedState();
     
-    // Auto-load user session if tokens exist
-    this.initializeAuth();
+    // Auto-load user session if tokens exist (store promise for app to wait)
+    this.authInitialized = this.initializeAuth().catch(error => {
+      console.warn('Failed to initialize authentication:', error);
+    });
   }
 
   // ===== AUTHENTICATION METHODS =====
@@ -165,17 +193,32 @@ class SimplifiedStore {
    * Initialize authentication on app start
    */
   async initializeAuth() {
+    console.log('🔐 Initializing authentication...');
+    
+    // Ensure API service has the latest tokens from localStorage
+    window.api.reloadTokens();
+    
     const token = localStorage.getItem('access_token');
+    
     if (token) {
+      console.log('🔑 Found stored access token, attempting to restore session...');
       this.state.authLoading = true;
       try {
         await this.loadUserFromToken();
+        console.log('✅ Session restored successfully');
       } catch (error) {
-        console.warn('Failed to load user from token:', error);
+        console.warn('❌ Failed to load user from token:', error);
+        console.log('🧹 Clearing invalid tokens...');
         await window.api.clearTokens();
+        this.state.user = null;
+        this.state.isAuthenticated = false;
+        this.state.subscriptionTier = 'free';
       } finally {
         this.state.authLoading = false;
       }
+    } else {
+      console.log('🔒 No stored token found, user needs to login');
+      this.state.authLoading = false;
     }
   }
 
@@ -184,14 +227,28 @@ class SimplifiedStore {
    */
   async loadUserFromToken() {
     try {
+      console.log('📡 Attempting to get user profile from API...');
       const user = await window.api.getUserProfile();
+      
+      if (!user) {
+        throw new Error('No user data received from API');
+      }
+      
+      console.log('👤 User profile received:', {
+        id: user.id,
+        email: user.email,
+        subscriptionTier: user.subscriptionTier
+      });
+      
       this.state.user = user;
       this.state.isAuthenticated = true;
       this.state.subscriptionTier = user.subscriptionTier || 'free';
       
+      console.log('📊 Loading usage statistics...');
       await this.loadUsageStats();
       console.log('✅ User loaded from token:', user.email);
     } catch (error) {
+      console.error('❌ Failed to load user from token:', error);
       throw new Error('Invalid token: ' + error.message);
     }
   }
@@ -212,7 +269,33 @@ class SimplifiedStore {
       this.showNotification(`Welcome back, ${user.firstName || user.email}!`, 'success');
       console.log('✅ User logged in:', user.email);
     } catch (error) {
-      this.showNotification('Login failed: ' + error.message, 'error');
+      console.error('❌ Login error:', error);
+      
+      // Provide specific error messages based on error type
+      let errorMessage = '';
+      
+      if (error.message.includes('Invalid credentials') || 
+          error.message.includes('invalid email or password') ||
+          error.message.includes('unauthorized') ||
+          error.message.includes('401')) {
+        errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+      } else if (error.message.includes('user not found') || 
+                 error.message.includes('email not found')) {
+        errorMessage = 'No account found with this email address. Please check your email or sign up for a new account.';
+      } else if (error.message.includes('account locked') || 
+                 error.message.includes('too many attempts')) {
+        errorMessage = 'Account temporarily locked due to too many failed attempts. Please try again later.';
+      } else if (error.message.includes('network') || 
+                 error.message.includes('fetch')) {
+        errorMessage = 'Connection error. Please check your internet connection and try again.';
+      } else if (error.message.includes('server') || 
+                 error.message.includes('500')) {
+        errorMessage = 'Server error. Please try again in a few moments.';
+      } else {
+        errorMessage = 'Login failed. Please try again.';
+      }
+      
+      this.showNotification(errorMessage, 'error');
       throw error;
     } finally {
       this.state.authLoading = false;
@@ -235,7 +318,35 @@ class SimplifiedStore {
       this.showNotification(`Welcome to StudyAI, ${user.firstName || user.email}!`, 'success');
       console.log('✅ User registered:', user.email);
     } catch (error) {
-      this.showNotification('Registration failed: ' + error.message, 'error');
+      console.error('❌ Registration error:', error);
+      
+      // Provide specific error messages for registration
+      let errorMessage = '';
+      
+      if (error.message.includes('email already exists') || 
+          error.message.includes('user already exists') ||
+          error.message.includes('email taken')) {
+        errorMessage = 'An account with this email already exists. Please try signing in instead.';
+      } else if (error.message.includes('invalid email') || 
+                 error.message.includes('email format')) {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.message.includes('password') && 
+                 error.message.includes('weak')) {
+        errorMessage = 'Password is too weak. Please use at least 8 characters with letters and numbers.';
+      } else if (error.message.includes('validation') || 
+                 error.message.includes('required')) {
+        errorMessage = 'Please fill in all required fields correctly.';
+      } else if (error.message.includes('network') || 
+                 error.message.includes('fetch')) {
+        errorMessage = 'Connection error. Please check your internet connection and try again.';
+      } else if (error.message.includes('server') || 
+                 error.message.includes('500')) {
+        errorMessage = 'Server error. Please try again in a few moments.';
+      } else {
+        errorMessage = 'Registration failed. Please try again.';
+      }
+      
+      this.showNotification(errorMessage, 'error');
       throw error;
     } finally {
       this.state.authLoading = false;
@@ -449,13 +560,127 @@ class SimplifiedStore {
     this.loadTopicsForSubject(subject.id);
   }
 
+  // ===== CENTRALIZED DATA MANAGEMENT =====
+  
+  /**
+   * Centralized method to update notes and notify all components
+   */
+  updateNotesCache(notes) {
+    this.state.notes = Array.isArray(notes) ? [...notes] : [];
+    this.state.lastUpdated.notes = Date.now();
+    this.state.dataVersion++; // Force reactive updates
+    console.log('🔄 Notes cache updated:', this.state.notes.length, 'notes');
+  }
+  
+  /**
+   * Centralized method to update topics and notify all components
+   */
+  updateTopicsCache(topics) {
+    this.state.topics = Array.isArray(topics) ? [...topics] : [];
+    this.state.lastUpdated.topics = Date.now();
+    this.state.dataVersion++; // Force reactive updates
+    console.log('🔄 Topics cache updated:', this.state.topics.length, 'topics');
+  }
+  
+  /**
+   * Centralized method to update questions and notify all components
+   */
+  updateQuestionsCache(questions) {
+    this.state.questions = Array.isArray(questions) ? [...questions] : [];
+    this.state.lastUpdated.questions = Date.now();
+    this.state.dataVersion++; // Force reactive updates
+    console.log('🔄 Questions cache updated:', this.state.questions.length, 'questions');
+  }
+  
+  /**
+   * Add a single note to the cache
+   */
+  addNote(note) {
+    if (note && note.id) {
+      // Check if note already exists and update it, or add new
+      const existingIndex = this.state.notes.findIndex(n => n.id === note.id);
+      if (existingIndex >= 0) {
+        this.state.notes[existingIndex] = { ...note };
+        console.log('📝 Note updated in cache:', note.id);
+      } else {
+        this.state.notes.unshift({ ...note }); // Add to beginning for recent notes
+        console.log('📝 Note added to cache:', note.id);
+      }
+      this.state.lastUpdated.notes = Date.now();
+      this.state.dataVersion++;
+    }
+  }
+  
+  /**
+   * Update a single note in the cache
+   */
+  updateNote(noteId, updateData) {
+    const noteIndex = this.state.notes.findIndex(n => n.id === noteId);
+    if (noteIndex >= 0) {
+      this.state.notes[noteIndex] = { ...this.state.notes[noteIndex], ...updateData };
+      this.state.lastUpdated.notes = Date.now();
+      this.state.dataVersion++;
+      console.log('📝 Note updated in cache:', noteId);
+      return this.state.notes[noteIndex];
+    }
+    return null;
+  }
+  
+  /**
+   * Remove a note from the cache
+   */
+  removeNote(noteId) {
+    const initialLength = this.state.notes.length;
+    this.state.notes = this.state.notes.filter(n => n.id !== noteId);
+    if (this.state.notes.length < initialLength) {
+      this.state.lastUpdated.notes = Date.now();
+      this.state.dataVersion++;
+      console.log('📝 Note removed from cache:', noteId);
+    }
+  }
+  
+  /**
+   * Add a single topic to the cache
+   */
+  addTopic(topic) {
+    if (topic && topic.id) {
+      // Check if topic already exists
+      const existingIndex = this.state.topics.findIndex(t => t.id === topic.id);
+      if (existingIndex >= 0) {
+        this.state.topics[existingIndex] = { ...topic };
+        console.log('📚 Topic updated in cache:', topic.id);
+      } else {
+        this.state.topics.push({ ...topic });
+        console.log('📚 Topic added to cache:', topic.id);
+      }
+      this.state.lastUpdated.topics = Date.now();
+      this.state.dataVersion++;
+    }
+  }
+  
+  /**
+   * Add questions to the cache
+   */
+  addQuestions(questions) {
+    if (Array.isArray(questions) && questions.length > 0) {
+      // Merge questions, avoiding duplicates
+      const newQuestions = questions.filter(q => 
+        !this.state.questions.some(existing => existing.id === q.id)
+      );
+      this.state.questions.push(...newQuestions);
+      this.state.lastUpdated.questions = Date.now();
+      this.state.dataVersion++;
+      console.log('❓ Questions added to cache:', newQuestions.length);
+    }
+  }
+
   // ===== TOPIC ACTIONS =====
   
   async loadTopicsForSubject(subjectId) {
     try {
       this.setLoading(true);
       const topics = await window.api.getTopics(subjectId);
-      this.state.topics = topics;
+      this.updateTopicsCache(topics); // Use centralized update
     } catch (error) {
       this.showNotification('Failed to load topics', 'error');
     } finally {
@@ -480,8 +705,9 @@ class SimplifiedStore {
         window.api.getNotes(topicId)
       ]);
       
-      this.state.questions = questions;
-      this.state.notes = notes;
+      // Use centralized updates
+      this.updateQuestionsCache(questions);
+      this.updateNotesCache(notes);
     } catch (error) {
       this.showNotification('Failed to load topic data', 'error');
     }
@@ -496,7 +722,7 @@ class SimplifiedStore {
       }
       
       const topic = await window.api.createTopic(subjectId, name, description);
-      this.state.topics.push(topic);
+      this.addTopic(topic); // Use centralized add
       await this.updateStatistics();
       return topic;
     } catch (error) {
@@ -629,6 +855,176 @@ class SimplifiedStore {
     this.state.newTopic = { name: '', description: '' };
   }
 
+  // ===== CONFIRMATION MODAL ACTIONS =====
+  
+  /**
+   * Show confirmation modal with custom options
+   */
+  showConfirmationModal(options = {}) {
+    this.state.confirmationModal = {
+      title: options.title || 'Confirm Action',
+      message: options.message || 'Are you sure you want to continue?',
+      details: options.details || null,
+      type: options.type || 'info',
+      confirmText: options.confirmText || 'Confirm',
+      cancelText: options.cancelText || 'Cancel',
+      confirmIcon: options.confirmIcon || null,
+      itemCount: options.itemCount || 0,
+      loading: false,
+      preventBackdropClose: options.preventBackdropClose || false,
+      onConfirm: options.onConfirm || null,
+      onCancel: options.onCancel || null
+    };
+    this.state.showConfirmationModal = true;
+  }
+
+  /**
+   * Hide confirmation modal and reset state
+   */
+  hideConfirmationModal() {
+    this.state.showConfirmationModal = false;
+    this.state.confirmationModal.loading = false;
+    // Don't reset callbacks immediately to allow handler execution
+    setTimeout(() => {
+      this.state.confirmationModal.onConfirm = null;
+      this.state.confirmationModal.onCancel = null;
+    }, 100);
+  }
+
+  /**
+   * Set confirmation modal loading state
+   */
+  setConfirmationLoading(loading) {
+    this.state.confirmationModal.loading = loading;
+  }
+
+  /**
+   * Quick method for delete confirmations
+   */
+  confirmDelete(itemName, onConfirm, itemCount = 1) {
+    this.showConfirmationModal({
+      title: `Delete ${itemName}?`,
+      message: `Are you sure you want to delete "${itemName}"? This action cannot be undone.`,
+      details: itemCount > 1 ? `This will also delete ${itemCount - 1} related items.` : null,
+      type: 'danger',
+      confirmText: 'Delete',
+      confirmIcon: 'fas fa-trash',
+      itemCount: itemCount,
+      onConfirm: onConfirm
+    });
+  }
+
+  /**
+   * Quick method for logout confirmation
+   */
+  confirmLogout(onConfirm) {
+    this.showConfirmationModal({
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out?',
+      details: 'You will need to sign in again to access your study materials.',
+      type: 'warning',
+      confirmText: 'Sign Out',
+      confirmIcon: 'fas fa-sign-out-alt',
+      onConfirm: onConfirm
+    });
+  }
+
+  // ===== ERROR STATE HELPERS =====
+  
+  /**
+   * Show network error with helpful tips
+   */
+  showNetworkError(onRetry = null) {
+    return {
+      errorType: 'network',
+      title: 'Connection Problem',
+      message: 'Unable to connect to the server. Please check your internet connection.',
+      showRetry: true,
+      tips: [
+        'Check your internet connection',
+        'Try refreshing the page',
+        'Disable any VPN or proxy',
+        'Check if the server is online'
+      ],
+      onRetry: onRetry
+    };
+  }
+
+  /**
+   * Show server error with retry option
+   */
+  showServerError(onRetry = null) {
+    return {
+      errorType: 'server',
+      title: 'Server Error',
+      message: 'The server encountered an error. Our team has been notified.',
+      showRetry: true,
+      showSupport: true,
+      tips: [
+        'Try again in a few moments',
+        'The issue is usually temporary',
+        'Contact support if the problem persists'
+      ],
+      onRetry: onRetry
+    };
+  }
+
+  /**
+   * Show authentication error
+   */
+  showAuthError() {
+    return {
+      errorType: 'auth',
+      title: 'Authentication Required',
+      message: 'You need to be signed in to access this feature.',
+      showRetry: false,
+      showHome: true,
+      tips: [
+        'Sign in to your account',
+        'Create a new account if you don\'t have one',
+        'Check if your session has expired'
+      ]
+    };
+  }
+
+  /**
+   * Show not found error
+   */
+  showNotFoundError(itemType = 'content') {
+    return {
+      errorType: 'notfound',
+      title: `${itemType} Not Found`,
+      message: `The ${itemType.toLowerCase()} you're looking for doesn't exist or has been moved.`,
+      showRetry: false,
+      showGoBack: true,
+      showHome: true,
+      tips: [
+        'Check the URL for typos',
+        'Go back to the previous page',
+        'Search for what you\'re looking for'
+      ]
+    };
+  }
+
+  /**
+   * Show AI service error
+   */
+  showAIServiceError(onRetry = null) {
+    return {
+      errorType: 'server',
+      title: 'AI Service Unavailable',
+      message: 'The AI service is temporarily unavailable. Question generation is disabled.',
+      showRetry: true,
+      tips: [
+        'Try again in a few minutes',
+        'Check if Ollama is running (local mode)',
+        'Verify OpenAI API key (cloud mode)',
+        'Contact support if the issue persists'
+      ],
+      onRetry: onRetry
+    };
+  }
+
   // ===== QUESTION GENERATION =====
   
   setGenerating(generating) {
@@ -665,7 +1061,7 @@ class SimplifiedStore {
       );
       
       if (questions.length > 0) {
-        this.state.questions = [...this.state.questions, ...questions];
+        this.addQuestions(questions); // Use centralized add
         this.showNotification(`Generated ${questions.length} questions successfully!`, 'success');
         
         // Refresh usage stats
@@ -726,6 +1122,146 @@ class SimplifiedStore {
       this.state.aiService = 'unknown';
       this.state.aiServiceStatus = null;
     }
+  }
+
+  // ===== CENTRALIZED API OPERATIONS =====
+  
+  /**
+   * Centralized method to fetch all notes and update state
+   */
+  async fetchAllNotes() {
+    if (!this.state.isAuthenticated) return [];
+    
+    try {
+      console.log('📋 Fetching all notes from API...');
+      const notes = await window.api.getAllNotes();
+      this.updateNotesCache(notes);
+      return notes;
+    } catch (error) {
+      console.error('Failed to fetch all notes:', error);
+      this.showNotification('Failed to load notes', 'error');
+      return [];
+    }
+  }
+  
+  /**
+   * Centralized method to create a note and update state
+   */
+  async createNote(noteData) {
+    if (!this.state.isAuthenticated) {
+      this.showAuthModal('login');
+      return null;
+    }
+    
+    try {
+      console.log('📝 Creating new note via API...');
+      const newNote = await window.api.createManualNote(noteData);
+      this.addNote(newNote);
+      this.showNotification('Note created successfully!', 'success');
+      await this.loadUsageStats(); // Update usage stats
+      return newNote;
+    } catch (error) {
+      console.error('Failed to create note:', error);
+      if (error.message.includes('limit')) {
+        this.showNotification('Create failed: ' + error.message, 'warning');
+      } else {
+        this.showNotification('Failed to create note', 'error');
+      }
+      throw error;
+    }
+  }
+  
+  /**
+   * Centralized method to update a note and update state
+   */
+  async updateNoteById(noteId, updateData) {
+    if (!this.state.isAuthenticated) {
+      this.showAuthModal('login');
+      return null;
+    }
+    
+    try {
+      console.log('✏️ Updating note via API:', noteId);
+      const updatedNote = await window.api.updateNote(noteId, updateData);
+      this.updateNote(noteId, updatedNote);
+      this.showNotification('Note updated successfully!', 'success');
+      return updatedNote;
+    } catch (error) {
+      console.error('Failed to update note:', error);
+      if (error.message.includes('limit')) {
+        this.showNotification('Update failed: ' + error.message, 'warning');
+      } else {
+        this.showNotification('Failed to update note', 'error');
+      }
+      throw error;
+    }
+  }
+  
+  /**
+   * Centralized method to delete a note and update state
+   */
+  async deleteNoteById(noteId) {
+    if (!this.state.isAuthenticated) {
+      this.showAuthModal('login');
+      return false;
+    }
+    
+    try {
+      console.log('🗑️ Deleting note via API:', noteId);
+      await window.api.deleteNote(noteId);
+      this.removeNote(noteId);
+      this.showNotification('Note deleted successfully', 'success');
+      return true;
+    } catch (error) {
+      console.error('Failed to delete note:', error);
+      this.showNotification('Failed to delete note', 'error');
+      return false;
+    }
+  }
+  
+  /**
+   * Get current notes from cache (reactive)
+   */
+  getAllNotes() {
+    return Array.isArray(this.state.notes) ? this.state.notes : [];
+  }
+  
+  /**
+   * Get notes for a specific topic from cache
+   */
+  getNotesForTopic(topicId) {
+    const notes = Array.isArray(this.state.notes) ? this.state.notes : [];
+    return notes.filter(note => note.topic_id === topicId);
+  }
+  
+  /**
+   * Get current topics from cache (reactive)
+   */
+  getAllTopics() {
+    return Array.isArray(this.state.topics) ? this.state.topics : [];
+  }
+  
+  /**
+   * Get topics for a specific subject from cache
+   */
+  getTopicsForSubject(subjectId) {
+    const topics = Array.isArray(this.state.topics) ? this.state.topics : [];
+    return topics.filter(topic => topic.subject_id === subjectId);
+  }
+  
+  /**
+   * Get current questions from cache (reactive)
+   */
+  getAllQuestions() {
+    return Array.isArray(this.state.questions) ? this.state.questions : [];
+  }
+  
+  /**
+   * Get questions for a specific topic from cache
+   */
+  getQuestionsForTopic(topicId) {
+    const questions = Array.isArray(this.state.questions) ? this.state.questions : [];
+    return questions.filter(question => question.topic_id === topicId);
   }
 
   // ===== STATISTICS =====
@@ -827,6 +1363,41 @@ class SimplifiedStore {
   }
 
   // ===== DEBUG METHODS =====
+  
+  /**
+   * Test authentication manually for debugging
+   */
+  async testAuthentication() {
+    console.log('🧪 === AUTHENTICATION DEBUG TEST ===');
+    
+    // Check localStorage
+    const accessToken = localStorage.getItem('access_token');
+    const refreshToken = localStorage.getItem('refresh_token');
+    console.log('📦 LocalStorage tokens:', {
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refreshToken,
+      accessTokenLength: accessToken ? accessToken.length : 0,
+      accessTokenStart: accessToken ? accessToken.substring(0, 10) + '...' : 'none'
+    });
+    
+    // Check API service tokens
+    console.log('🔧 API Service tokens:', {
+      hasAccessToken: !!window.api.accessToken,
+      hasRefreshToken: !!window.api.refreshToken,
+      tokensMatch: window.api.accessToken === accessToken
+    });
+    
+    // Test API call
+    try {
+      console.log('📡 Testing API call to /auth/profile...');
+      const user = await window.api.getUserProfile();
+      console.log('✅ API call successful:', user);
+      return { success: true, user };
+    } catch (error) {
+      console.log('❌ API call failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
   
   getState() {
     return this.state;

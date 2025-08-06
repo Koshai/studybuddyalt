@@ -7,7 +7,7 @@ const App = {
     template: `
     <div class="min-h-screen">
         <!-- Authentication Screen -->
-        <div v-if="!store.state.isAuthenticated && !store.state.authLoading" 
+        <div v-if="!safeStore.state.isAuthenticated && !safeStore.state.authLoading" 
              class="min-h-screen bg-gradient-to-br from-primary-500 via-secondary-500 to-accent-500 flex items-center justify-center p-4">
             
             <!-- Background Pattern -->
@@ -40,29 +40,40 @@ const App = {
                         </div>
                         
                         <form @submit.prevent="handleLogin" class="space-y-4">
-                            <div>
-                                <input
-                                    v-model="loginEmail"
-                                    type="email"
-                                    placeholder="Email address"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
-                                    required
-                                />
-                            </div>
+                            <ValidatedInput
+                                v-model="loginEmail"
+                                type="email"
+                                label="Email Address"
+                                placeholder="Enter your email address"
+                                :validator="validateEmail"
+                                :required="true"
+                                help-text="We'll never share your email with anyone else"
+                                @validation-change="onEmailValidation"
+                            />
                             
-                            <div>
-                                <input
-                                    v-model="loginPassword"
-                                    type="password"
-                                    placeholder="Password"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
-                                    required
-                                />
+                            <ValidatedInput
+                                v-model="loginPassword"
+                                type="password"
+                                label="Password"
+                                placeholder="Enter your password"
+                                :validator="validatePassword"
+                                :required="true"
+                                :show-password-strength="false"
+                                help-text="Use a strong password to keep your account secure"
+                                @validation-change="onPasswordValidation"
+                            />
+                            
+                            <!-- Login Error Display -->
+                            <div v-if="loginError" class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                                    <p class="text-sm text-red-700">{{ loginError }}</p>
+                                </div>
                             </div>
                             
                             <button
                                 type="submit"
-                                :disabled="loginLoading || !loginEmail || !loginPassword"
+                                :disabled="loginLoading || !isFormValid"
                                 class="w-full bg-gradient-to-r from-primary-500 to-secondary-500 text-white py-3 rounded-lg font-medium hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                             >
                                 <i v-if="loginLoading" class="fas fa-spinner fa-spin mr-2"></i>
@@ -96,7 +107,7 @@ const App = {
         </div>
 
         <!-- Loading Screen -->
-        <div v-else-if="store.state.authLoading" 
+        <div v-else-if="safeStore.state.authLoading" 
              class="min-h-screen bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
             <div class="text-center text-white">
                 <div class="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -107,6 +118,9 @@ const App = {
         
         <!-- Authenticated App -->
         <div v-else class="flex h-screen bg-gray-50">
+            <!-- Beta Badge -->
+            <BetaBadgeComponent />
+            
             <!-- Enhanced Sidebar -->
             <SidebarSimplifiedComponent />
 
@@ -119,33 +133,34 @@ const App = {
                 <main class="flex-1 overflow-auto">
                     <div class="p-6">
                         <!-- Enhanced Dashboard View -->
-                        <DashboardSimplifiedComponent v-if="store.state.currentView === 'dashboard'" />
+                        <DashboardSimplifiedComponent v-if="safeStore.state.currentView === 'dashboard'" />
                         
                         <!-- Subjects List View (Fixed Subjects) -->
-                        <FixedSubjectsListComponent v-if="store.state.currentView === 'subjects' && !store.state.selectedSubject" />
+                        <FixedSubjectsListComponent v-if="safeStore.state.currentView === 'subjects' && !safeStore.state.selectedSubject" />
                         
                         <!-- Topics View (When Subject Selected) -->
-                        <TopicsListSimplifiedComponent v-if="store.state.currentView === 'subjects' && store.state.selectedSubject" />
+                        <TopicsListSimplifiedComponent v-if="safeStore.state.currentView === 'subjects' && safeStore.state.selectedSubject" />
                         
                         <!-- Topics View (Alternative Route) -->
-                        <TopicsListSimplifiedComponent v-if="store.state.currentView === 'topics'" />
+                        <TopicsListSimplifiedComponent v-if="safeStore.state.currentView === 'topics'" />
                         
                         <!-- Enhanced Upload View -->
-                        <UploadFormSimplifiedComponent v-if="store.state.currentView === 'upload'" />
+                        <UploadFormSimplifiedComponent v-if="safeStore.state.currentView === 'upload'" />
                         
                         <!-- Enhanced Practice View -->
-                        <PracticeSetupSimplifiedComponent v-if="store.state.currentView === 'practice'" />
+                        <PracticeSetupSimplifiedComponent v-if="safeStore.state.currentView === 'practice'" />
                         
                         <!-- Practice Session View -->
-                        <PracticeSessionComponent v-if="store.state.currentView === 'practice-session'" />
+                        <PracticeSessionComponent v-if="safeStore.state.currentView === 'practice-session'" />
                         
                         <!-- Browse Practice Topics View -->
-                        <BrowsePracticeTopicsComponent v-if="store.state.currentView === 'browse-practice'" />
+                        <BrowsePracticeTopicsComponent v-if="safeStore.state.currentView === 'browse-practice'" />
                         
                         <!-- Notes Management View -->
-                        <NotesDisplayComponent v-if="store.state.currentView === 'notes'" 
-                                             :topic-id="store.state.selectedTopic?.id" 
-                                             :subject-id="store.state.selectedSubject?.id" />
+                        <NotesViewComponent v-if="safeStore.state.currentView === 'notes'" />
+                        
+                        <!-- Settings View -->
+                        <UserSettingsComponent v-if="safeStore.state.currentView === 'settings'" />
                     </div>
                 </main>
                 
@@ -202,31 +217,31 @@ const App = {
                             <div>
                                 <div class="flex justify-between text-sm mb-1">
                                     <span class="text-gray-600">Questions</span>
-                                    <span class="font-medium">{{ store.state.usage?.questions?.used || 0 }}/{{ store.state.usage?.questions?.limit || 50 }}</span>
+                                    <span class="font-medium">{{ safeStore.state.usage?.questions?.used || 0 }}/{{ safeStore.state.usage?.questions?.limit || 50 }}</span>
                                 </div>
                                 <div class="w-full bg-gray-200 rounded-full h-2">
                                     <div class="bg-primary-500 h-2 rounded-full transition-all duration-300" 
-                                         :style="{ width: Math.min((store.state.usage?.questions?.used || 0) / (store.state.usage?.questions?.limit || 50) * 100, 100) + '%' }"></div>
+                                         :style="{ width: Math.min((safeStore.state.usage?.questions?.used || 0) / (safeStore.state.usage?.questions?.limit || 50) * 100, 100) + '%' }"></div>
                                 </div>
                             </div>
                             
                             <div>
                                 <div class="flex justify-between text-sm mb-1">
                                     <span class="text-gray-600">Storage</span>
-                                    <span class="font-medium">{{ Math.round((store.state.usage?.storage?.used || 0) / (1024 * 1024)) }}MB</span>
+                                    <span class="font-medium">{{ Math.round((safeStore.state.usage?.storage?.used || 0) / (1024 * 1024)) }}MB</span>
                                 </div>
                                 <div class="w-full bg-gray-200 rounded-full h-2">
                                     <div class="bg-green-500 h-2 rounded-full transition-all duration-300" 
-                                         :style="{ width: Math.min((store.state.usage?.storage?.used || 0) / (store.state.usage?.storage?.limit || 104857600) * 100, 100) + '%' }"></div>
+                                         :style="{ width: Math.min((safeStore.state.usage?.storage?.used || 0) / (safeStore.state.usage?.storage?.limit || 104857600) * 100, 100) + '%' }"></div>
                                 </div>
                             </div>
                             
                             <div class="pt-2 border-t border-gray-200">
                                 <span :class="[
                                     'px-3 py-1 rounded-full text-xs font-medium',
-                                    store.state.subscriptionTier === 'pro' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
+                                    safeStore.state.subscriptionTier === 'pro' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
                                 ]">
-                                    {{ store.state.subscriptionTier?.toUpperCase() || 'FREE' }} PLAN
+                                    {{ safeStore.state.subscriptionTier?.toUpperCase() || 'FREE' }} PLAN
                                 </span>
                             </div>
                         </div>
@@ -236,16 +251,40 @@ const App = {
 
             <!-- Modals -->
             <!-- Topic Creation Modal -->
-            <CreateTopicModal v-if="store.state.showCreateTopicModal" />
+            <CreateTopicModal v-if="safeStore.state.showCreateTopicModal" />
 
             <!-- Enhanced Notifications -->
             <NotificationsComponent />
+            
+            <!-- Confirmation Modal -->
+            <ConfirmationModal 
+                :show="safeStore.state.showConfirmationModal"
+                :title="safeStore.state.confirmationModal.title"
+                :message="safeStore.state.confirmationModal.message"
+                :details="safeStore.state.confirmationModal.details"
+                :type="safeStore.state.confirmationModal.type"
+                :confirmText="safeStore.state.confirmationModal.confirmText"
+                :cancelText="safeStore.state.confirmationModal.cancelText"
+                :confirmIcon="safeStore.state.confirmationModal.confirmIcon"
+                :itemCount="safeStore.state.confirmationModal.itemCount"
+                :loading="safeStore.state.confirmationModal.loading"
+                :preventBackdropClose="safeStore.state.confirmationModal.preventBackdropClose"
+                @confirm="handleConfirmationConfirm"
+                @cancel="handleConfirmationCancel"
+            />
         </div>
     </div>
     `,
 
     setup() {
+        // Simple store access - fail gracefully if not available
         const store = window.store;
+        
+        // Safe store accessors to prevent errors during initialization
+        const safeStore = Vue.computed(() => {
+            return window.store || { state: { isAuthenticated: false, authLoading: false, currentView: 'dashboard' } };
+        });
+        
         const authMode = Vue.ref('login');
         const showMobileUsage = Vue.ref(false);
         const showDesktopUsage = Vue.ref(false);
@@ -255,38 +294,71 @@ const App = {
         const loginPassword = Vue.ref('');
         const loginLoading = Vue.ref(false);
         
+        // Form validation state
+        const emailValidation = Vue.ref({ isValid: true, errors: [] }); // Start as valid for empty state
+        const passwordValidation = Vue.ref({ isValid: true, errors: [] }); // Start as valid for empty state
+        const loginError = Vue.ref(''); // Add login error state
+        
         // Email confirmation state
         const confirmationEmail = Vue.ref('');
         const confirmationCode = Vue.ref('');
 
         // Initialize app
         Vue.onMounted(async () => {
+            // Simple delay to ensure store is loaded
+            await new Promise(resolve => setTimeout(resolve, 100));
             await initializeApp();
         });
 
         const initializeApp = async () => {
             try {
-                console.log('🚀 Initializing StudyAI with Enhanced Authentication...');
+                console.log('🚀 Initializing StudyAI...');
+                
+                const currentStore = window.store;
+                if (!currentStore) {
+                    console.log('⚠️ Store not available, running in basic mode');
+                    return;
+                }
+                
+                // Wait for authentication initialization to complete if available
+                if (currentStore.authInitialized) {
+                    console.log('⏳ Waiting for authentication initialization...');
+                    try {
+                        await currentStore.authInitialized;
+                        console.log('✅ Authentication initialization complete');
+                    } catch (error) {
+                        console.warn('⚠️ Authentication initialization failed:', error);
+                    }
+                }
                 
                 // Check AI service health with detailed status
                 try {
-                    await store.updateAiServiceStatus();
-                    console.log(`✅ AI service is online using ${store.state.aiService.toUpperCase()}`);
+                    if (currentStore.updateAiServiceStatus) {
+                        await currentStore.updateAiServiceStatus();
+                        console.log('✅ AI service is online');
+                    }
                 } catch (error) {
                     console.warn('⚠️ AI service not available:', error);
-                    store.setAiOnline(false);
+                    if (currentStore.setAiOnline) {
+                        currentStore.setAiOnline(false);
+                    }
                 }
 
                 // If user is already authenticated, load their data
-                if (store.state.isAuthenticated) {
+                if (currentStore.state && currentStore.state.isAuthenticated) {
+                    console.log('👤 User is authenticated, loading user data...');
                     await loadUserData();
+                } else {
+                    console.log('🔒 No authenticated user found');
                 }
 
-                console.log('✅ StudyAI Enhanced initialized successfully!');
+                console.log('✅ StudyAI initialized successfully!');
 
             } catch (error) {
                 console.error('❌ Failed to initialize app:', error);
-                store.showNotification('Failed to initialize application: ' + error.message, 'error');
+                if (window.store && window.store.showNotification) {
+                    window.store.showNotification('Failed to initialize application: ' + error.message, 'error');
+                }
             }
         };
 
@@ -294,19 +366,22 @@ const App = {
             try {
                 console.log('📊 Loading user data and usage statistics...');
                 
+                const currentStore = safeStore.value;
+                if (!currentStore) return;
+                
                 // Load user's topics if a subject is selected
-                if (store.state.selectedSubject) {
+                if (safeStore.value.state.selectedSubject) {
                     console.log('📂 Loading topics for selected subject...');
-                    const topics = await window.api.getTopics(store.state.selectedSubject.id);
-                    store.state.topics = topics;
+                    const topics = await window.api.getTopics(safeStore.value.state.selectedSubject.id);
+                    safeStore.value.state.topics = topics;
                     console.log(`✅ Loaded ${topics.length} topics`);
                 }
 
                 // Load dashboard statistics
-                await store.updateStatistics();
+                await currentStore.updateStatistics();
                 
                 // Load usage statistics (enhanced)
-                await store.loadUsageStats();
+                await currentStore.loadUsageStats();
 
                 console.log('✅ User data and usage stats loaded successfully');
                 
@@ -318,12 +393,20 @@ const App = {
         const handleLogin = async () => {
             if (!loginEmail.value || !loginPassword.value) return;
             
+            // Clear previous error
+            loginError.value = '';
             loginLoading.value = true;
+            
             try {
-                await store.login(loginEmail.value, loginPassword.value);
+                const currentStore = safeStore.value;
+                if (!currentStore) return;
+                
+                await currentStore.login(loginEmail.value, loginPassword.value);
                 await onAuthSuccess();
             } catch (error) {
                 console.error('Login failed:', error);
+                
+                const currentStore = safeStore.value;
                 
                 // Check if it's an email confirmation error
                 if (error.message?.includes('check your email') || 
@@ -333,9 +416,27 @@ const App = {
                     console.log('🔄 Switching to email confirmation mode');
                     confirmationEmail.value = loginEmail.value;
                     authMode.value = 'confirm-email';
-                    store.showNotification('Please confirm your email address to continue', 'info');
+                    if (currentStore) {
+                        currentStore.showNotification('Please confirm your email address to continue', 'info');
+                    }
+                } else {
+                    // Set login error for display in form
+                    if (error.message.includes('Invalid credentials') || 
+                        error.message.includes('invalid email or password') ||
+                        error.message.includes('unauthorized') ||
+                        error.message.includes('401')) {
+                        loginError.value = 'Invalid email or password. Please check your credentials and try again.';
+                    } else if (error.message.includes('user not found') || 
+                               error.message.includes('email not found')) {
+                        loginError.value = 'No account found with this email address. Please check your email or sign up for a new account.';
+                    } else if (error.message.includes('network') || 
+                               error.message.includes('fetch')) {
+                        loginError.value = 'Connection error. Please check your internet connection and try again.';
+                    } else {
+                        loginError.value = 'Login failed. Please try again.';
+                    }
                 }
-                // Other error handling is done in store
+                // Other error handling is still done in store for notifications
             } finally {
                 loginLoading.value = false;
             }
@@ -343,7 +444,10 @@ const App = {
 
         const onAuthSuccess = async () => {
             console.log('🎉 Authentication successful');
-            store.setCurrentView('dashboard');
+            const currentStore = safeStore.value;
+            if (currentStore) {
+                currentStore.setCurrentView('dashboard');
+            }
             await loadUserData();
             
             // Clear login form
@@ -381,6 +485,59 @@ const App = {
             store.showNotification('Upgrade to Pro for unlimited usage and premium features! Contact support for Pro access.', 'info');
         };
 
+        // Clear login error when user starts typing
+        Vue.watch([loginEmail, loginPassword], () => {
+            if (loginError.value) {
+                loginError.value = '';
+            }
+        });
+
+        // Form validation methods
+        const validateEmail = (email) => {
+            return window.ValidationUtils.validateEmail(email);
+        };
+
+        const validatePassword = (password) => {
+            return window.ValidationUtils.validatePassword(password, {
+                minLength: 6,
+                requireUppercase: false,
+                requireLowercase: false,
+                requireNumbers: false,
+                requireSpecialChars: false
+            });
+        };
+
+        const onEmailValidation = (result) => {
+            emailValidation.value = result;
+        };
+
+        const onPasswordValidation = (result) => {
+            passwordValidation.value = result;
+        };
+
+        const isFormValid = Vue.computed(() => {
+            // Allow submission if fields have values, even if validation hasn't been triggered yet
+            const hasValues = loginEmail.value.trim() && loginPassword.value.trim();
+            const validationPassed = emailValidation.value.isValid && passwordValidation.value.isValid;
+            
+            return hasValues && validationPassed;
+        });
+
+        // Confirmation Modal handlers
+        const handleConfirmationConfirm = () => {
+            if (safeStore.state.confirmationModal.onConfirm) {
+                safeStore.state.confirmationModal.onConfirm();
+            }
+            store.hideConfirmationModal();
+        };
+
+        const handleConfirmationCancel = () => {
+            if (safeStore.state.confirmationModal.onCancel) {
+                safeStore.state.confirmationModal.onCancel();
+            }
+            store.hideConfirmationModal();
+        };
+
         // Global error handler (enhanced)
         window.addEventListener('unhandledrejection', (event) => {
             console.error('Unhandled promise rejection:', event.reason);
@@ -409,25 +566,31 @@ const App = {
 
         // Enhanced periodic health checks and usage refresh
         setInterval(async () => {
-            if (store.state.isAuthenticated) {
+            if (window.store?.state?.isAuthenticated) {
                 // Check AI status
                 try {
                     await window.api.checkHealth();
-                    if (!store.state.aiOnline) {
-                        store.setAiOnline(true);
-                        store.showNotification('AI service is back online!', 'success');
+                    if (!window.store?.state?.aiOnline) {
+                        window.store.setAiOnline(true);
+                        if (window.store.showNotification) {
+                            window.store.showNotification('AI service is back online!', 'success');
+                        }
                     }
                 } catch (error) {
-                    if (store.state.aiOnline) {
-                        store.setAiOnline(false);
-                        store.showNotification('AI service went offline', 'warning');
+                    if (window.store?.state?.aiOnline) {
+                        window.store.setAiOnline(false);
+                        if (window.store.showNotification) {
+                            window.store.showNotification('AI service went offline', 'warning');
+                        }
                     }
                 }
                 
                 // Refresh usage stats every 5 minutes
                 if (Date.now() % 300000 < 60000) { // Every 5 minutes
                     try {
-                        await store.loadUsageStats();
+                        if (window.store?.loadUsageStats) {
+                            await window.store.loadUsageStats();
+                        }
                     } catch (error) {
                         console.warn('Failed to refresh usage stats:', error);
                     }
@@ -450,19 +613,30 @@ const App = {
 
         return {
             store,
+            safeStore,
             authMode,
             showMobileUsage,
             showDesktopUsage,
             loginEmail,
             loginPassword,
             loginLoading,
+            loginError,
             confirmationEmail,
             confirmationCode,
+            emailValidation,
+            passwordValidation,
+            validateEmail,
+            validatePassword,
+            onEmailValidation,
+            onPasswordValidation,
+            isFormValid,
             handleLogin,
             onAuthSuccess,
             onRegisterSuccess,
             onEmailConfirmed,
-            showUpgradeModal
+            showUpgradeModal,
+            handleConfirmationConfirm,
+            handleConfirmationCancel
         };
     }
 };
@@ -489,12 +663,41 @@ app.component('PracticeSetupSimplifiedComponent', window.EnhancedPracticeSetupCo
 app.component('PracticeSessionComponent', window.PracticeSessionComponent);
 app.component('BrowsePracticeTopicsComponent', window.BrowsePracticeTopicsComponent);
 app.component('NotesDisplayComponent', window.NotesDisplayComponent);
+app.component('NotesViewComponent', window.NotesViewComponent);
+app.component('NoteEditorModalComponent', window.NoteEditorModalComponent);
+app.component('QuickNoteCreatorComponent', window.QuickNoteCreatorComponent);
+
+// Settings components
+app.component('UserSettingsComponent', window.UserSettingsComponent);
 
 // Practice components (existing)
 app.component('MCQQuestionCard', window.MCQQuestionCard);
 
 // Modal components (existing)
 app.component('CreateTopicModal', window.CreateTopicModal);
+app.component('ConfirmationModal', window.ConfirmationModal);
+
+// State components
+app.component('ErrorState', window.ErrorState);
+
+// Form components
+app.component('ValidatedInput', window.ValidatedInput);
+
+// Loading components
+app.component('SkeletonLoader', window.SkeletonLoader);
+app.component('TopicCardSkeleton', window.TopicCardSkeleton);
+app.component('QuestionCardSkeleton', window.QuestionCardSkeleton);
+app.component('DashboardStatsSkeleton', window.DashboardStatsSkeleton);
+app.component('ListSkeleton', window.ListSkeleton);
+app.component('FormSkeleton', window.FormSkeleton);
+app.component('TableSkeleton', window.TableSkeleton);
+app.component('ProgressSkeleton', window.ProgressSkeleton);
+
+// Setup components
+app.component('OfflineSetupComponent', window.OfflineSetupComponent);
+
+// UI components
+app.component('BetaBadgeComponent', window.BetaBadgeComponent);
 
 // Utility components (existing)
 app.component('FileDropzone', window.FileDropzone);
@@ -509,12 +712,12 @@ app.mount('#app');
 // Enhanced global keyboard shortcuts (updated for auth and usage awareness)
 document.addEventListener('keydown', (event) => {
     // Only allow shortcuts if authenticated
-    if (!window.store.state.isAuthenticated) return;
+    if (!window.store?.state?.isAuthenticated) return;
     
     // Ctrl/Cmd + U - Upload (if storage available)
     if ((event.ctrlKey || event.metaKey) && event.key === 'u') {
         event.preventDefault();
-        const storageUsage = window.store.state.usage?.storage;
+        const storageUsage = window.store?.state?.usage?.storage;
         if (storageUsage && storageUsage.used >= storageUsage.limit) {
             window.store.showNotification('Storage limit reached! Upgrade to Pro for more storage.', 'warning');
         } else {
@@ -541,9 +744,9 @@ document.addEventListener('keydown', (event) => {
     }
     
     // Ctrl/Cmd + T - Add Topic (only if subject selected and within limits)
-    if ((event.ctrlKey || event.metaKey) && event.key === 't' && window.store.state.selectedSubject) {
+    if ((event.ctrlKey || event.metaKey) && event.key === 't' && window.store?.state?.selectedSubject) {
         event.preventDefault();
-        const topicUsage = window.store.state.usage?.topics;
+        const topicUsage = window.store?.state?.usage?.topics;
         if (topicUsage && topicUsage.used >= topicUsage.limit) {
             window.store.showNotification('Topic limit reached! Upgrade to Pro for unlimited topics.', 'warning');
         } else {
@@ -554,10 +757,10 @@ document.addEventListener('keydown', (event) => {
     // Ctrl/Cmd + G - Generate Questions (if within limits)
     if ((event.ctrlKey || event.metaKey) && event.key === 'g') {
         event.preventDefault();
-        const questionUsage = window.store.state.usage?.questions;
+        const questionUsage = window.store?.state?.usage?.questions;
         if (questionUsage && questionUsage.used >= questionUsage.limit) {
             window.store.showNotification('Question limit reached! Upgrade to Pro for more questions.', 'warning');
-        } else if (window.store.state.statistics?.totalNotes > 0) {
+        } else if (window.store?.state?.statistics?.totalNotes > 0) {
             window.store.setCurrentView('practice');
         } else {
             window.store.showNotification('Upload study materials first to generate questions!', 'info');
@@ -575,13 +778,13 @@ document.addEventListener('keydown', (event) => {
     
     // Escape - Close modals
     if (event.key === 'Escape') {
-        if (window.store.state.showCreateTopicModal) {
+        if (window.store?.state?.showCreateTopicModal) {
             window.store.hideCreateTopicModal();
         }
     }
     
     // Space - Start practice if possible
-    if (event.key === ' ' && !event.target.matches('input, textarea') && window.store.state.selectedTopic) {
+    if (event.key === ' ' && !event.target.matches('input, textarea') && window.store?.state?.selectedTopic) {
         event.preventDefault();
         window.store.setCurrentView('practice');
     }
@@ -664,6 +867,22 @@ window.studyAI = {
             console.error('❌ AI Health check failed:', error);
         }
     },
+    testAuth: async () => {
+        try {
+            const result = await window.store.testAuthentication();
+            return result;
+        } catch (error) {
+            console.error('❌ Auth test failed:', error);
+        }
+    },
+    testConnection: async () => {
+        try {
+            const result = await window.api.testConnection();
+            return result;
+        } catch (error) {
+            console.error('❌ Connection test failed:', error);
+        }
+    },
     simulateUsage: (type, amount) => {
         // For testing usage limits
         if (window.store.state.usage?.[type]) {
@@ -690,6 +909,8 @@ studyAI.usage()                    - Show usage statistics
 studyAI.refreshUsage()             - Refresh usage from server
 studyAI.export()                   - Export user data as JSON
 studyAI.testAI()                   - Test AI service connection
+studyAI.testAuth()                 - Test authentication system
+studyAI.testConnection()           - Test server connectivity
 studyAI.simulateUsage(type, amount) - Simulate usage for testing
 studyAI.help()                     - Show this help
 
@@ -705,11 +926,11 @@ Space  - Start Practice (if topic selected)
 Esc    - Close modals
 
 Current Status:
-- Authentication: ${window.store.state.isAuthenticated ? '✅ Logged in' : '❌ Not authenticated'}
-- User: ${window.store.state.user?.email || 'None'}
-- Subscription: ${window.store.state.subscriptionTier?.toUpperCase() || 'FREE'}
-- AI Service: ${window.store.state.aiOnline ? '✅ Online' : '❌ Offline'}
-- Usage Tracking: ${window.store.state.usage ? '✅ Active' : '❌ Not loaded'}
+- Authentication: ${window.store?.state?.isAuthenticated ? '✅ Logged in' : '❌ Not authenticated'}
+- User: ${window.store?.state?.user?.email || 'None'}
+- Subscription: ${window.store?.state?.subscriptionTier?.toUpperCase() || 'FREE'}
+- AI Service: ${window.store?.state?.aiOnline ? '✅ Online' : '❌ Offline'}
+- Usage Tracking: ${window.store?.state?.usage ? '✅ Active' : '❌ Not loaded'}
         `);
     }
 };
@@ -730,8 +951,8 @@ New Features:
 ✅ Session Management & Auto-refresh
 
 Current Status:
-- Authentication: ${window.store.state.isAuthenticated ? 'Logged in' : 'Ready for login'}
-- AI Service: ${window.store.state.aiOnline ? 'Online' : 'Checking...'}
+- Authentication: ${window.store?.state?.isAuthenticated ? 'Logged in' : 'Ready for login'}
+- AI Service: ${window.store?.state?.aiOnline ? 'Online' : 'Checking...'}
 - Usage Tracking: Active and Monitoring
 
 Type 'studyAI.help()' in console for available commands

@@ -274,7 +274,9 @@ window.EnhancedDashboardComponent = {
                 <!-- AI Status -->
                 <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">🤖 AI Status</h3>
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    
+                    <!-- OpenAI Status -->
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-3">
                         <div class="flex items-center">
                             <div :class="[
                                 'w-3 h-3 rounded-full mr-3',
@@ -289,6 +291,77 @@ window.EnhancedDashboardComponent = {
                             {{ store.state.aiOnline ? 'Online' : 'Offline' }}
                         </span>
                     </div>
+
+                    <!-- Offline Mode Status -->
+                    <div v-if="shouldShowOfflineOption" class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center">
+                                <div :class="[
+                                    'w-3 h-3 rounded-full mr-3',
+                                    offlineStatus === 'ready' ? 'bg-green-500' : 
+                                    offlineStatus === 'checking' ? 'bg-yellow-500 animate-pulse' : 'bg-gray-400'
+                                ]"></div>
+                                <span class="text-sm font-medium text-gray-900">Offline Mode</span>
+                            </div>
+                            <span :class="[
+                                'text-xs font-medium px-2 py-1 rounded-full',
+                                offlineStatus === 'ready' ? 'bg-green-100 text-green-700' : 
+                                offlineStatus === 'checking' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
+                            ]">
+                                {{ getOfflineStatusText() }}
+                            </span>
+                        </div>
+
+                        <!-- Enable Offline Mode Button (Alpha) -->
+                        <button 
+                            v-if="offlineStatus === 'not_available'"
+                            @click="showOfflineSetup = true"
+                            class="w-full flex items-center justify-center p-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 hover:border-purple-300 rounded-lg transition-all duration-300 relative"
+                        >
+                            <i class="fas fa-download text-purple-600 mr-2"></i>
+                            <span class="text-sm font-medium text-purple-700">Enable Offline Mode</span>
+                            <span class="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
+                                ALPHA
+                            </span>
+                        </button>
+
+                        <!-- Offline Mode Already Ready -->
+                        <div v-if="offlineStatus === 'ready'" class="p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                                    <span class="text-sm font-medium text-green-900">Offline Mode Ready</span>
+                                </div>
+                                <span class="bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
+                                    ALPHA
+                                </span>
+                            </div>
+                            <p class="text-xs text-green-700 mb-2">You can generate questions without internet connection.</p>
+                            <button @click="testOfflineFeatures" class="text-xs text-green-600 hover:text-green-700 font-medium">
+                                <i class="fas fa-play mr-1"></i>
+                                Test Offline Features
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Platform Not Supported Message -->
+                    <div v-else-if="window.configManager?.isFeatureEnabled('offlineMode')" class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div class="flex items-start">
+                            <i class="fas fa-info-circle text-yellow-600 mr-2 mt-0.5"></i>
+                            <div class="text-sm text-yellow-700">
+                                <div class="font-medium mb-1">Offline Mode (Alpha)</div>
+                                <p class="text-xs">Available only on desktop computers (Windows, Mac, Linux). Not supported on mobile devices.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Offline Setup Component -->
+                    <OfflineSetupComponent 
+                        v-if="showOfflineSetup"
+                        :show="showOfflineSetup"
+                        @close="showOfflineSetup = false"
+                        @offline-ready="handleOfflineReady"
+                    />
                 </div>
 
                 <!-- Recent Activity -->
@@ -321,7 +394,16 @@ window.EnhancedDashboardComponent = {
     setup() {
         const store = window.store;
         
-        // Usage calculations
+        // Usage calculations with dynamic limits
+        const effectiveLimits = Vue.computed(() => {
+            const userTier = store.state.subscriptionTier || 'free';
+            return window.configManager?.getTierLimits(userTier) || {
+                questionsPerMonth: 100,
+                topicsPerAccount: 3,
+                storagePerAccount: '50MB'
+            };
+        });
+
         const questionsUsagePercentage = Vue.computed(() => {
             const usage = store.state.usage?.questions;
             if (!usage) return 0;
@@ -384,6 +466,10 @@ window.EnhancedDashboardComponent = {
 
         // Recent activity
         const recentActivity = Vue.ref([]);
+
+        // Offline setup state
+        const showOfflineSetup = Vue.ref(false);
+        const offlineStatus = Vue.ref('checking'); // 'checking', 'not_available', 'ready', 'installing'
 
         // Navigation functions
         const selectSubject = (subject) => {
@@ -458,6 +544,76 @@ window.EnhancedDashboardComponent = {
             return date.toLocaleDateString();
         };
 
+        // Offline setup functions
+        const getOfflineStatusText = () => {
+            switch (offlineStatus.value) {
+                case 'checking': return 'Checking...';
+                case 'not_available': return 'Not Setup';
+                case 'ready': return 'Ready';
+                case 'installing': return 'Installing...';
+                default: return 'Unknown';
+            }
+        };
+
+        const checkOfflineStatus = async () => {
+            try {
+                const response = await fetch('/api/setup/offline/status');
+                const result = await response.json();
+                
+                if (result.status === 'ready') {
+                    offlineStatus.value = 'ready';
+                } else if (result.status === 'not_installed' || result.status === 'installed_but_not_working') {
+                    offlineStatus.value = 'not_available';
+                } else {
+                    offlineStatus.value = 'not_available';
+                }
+            } catch (error) {
+                console.warn('Could not check offline status:', error);
+                offlineStatus.value = 'not_available';
+            }
+        };
+
+        // Platform detection
+        const isDesktopPlatform = Vue.computed(() => {
+            const userAgent = navigator.userAgent.toLowerCase();
+            const platform = navigator.platform.toLowerCase();
+            
+            // Check if it's desktop (Windows, Mac, Linux)
+            const isWindows = platform.includes('win') || userAgent.includes('windows');
+            const isMac = platform.includes('mac') || userAgent.includes('macintosh');
+            const isLinux = platform.includes('linux') && !userAgent.includes('android');
+            
+            // Not mobile/tablet
+            const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+            
+            return (isWindows || isMac || isLinux) && !isMobile;
+        });
+
+        const shouldShowOfflineOption = Vue.computed(() => {
+            return isDesktopPlatform.value && window.configManager?.isFeatureEnabled('offlineMode');
+        });
+
+        const handleOfflineReady = () => {
+            offlineStatus.value = 'ready';
+            store.showNotification('Offline mode is now ready! You can generate questions without internet.', 'success');
+        };
+
+        const testOfflineFeatures = async () => {
+            try {
+                const response = await fetch('/api/setup/offline/test');
+                const result = await response.json();
+                
+                if (result.success) {
+                    store.showNotification('Offline features are working correctly!', 'success');
+                } else {
+                    store.showNotification('Offline test failed: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Offline test failed:', error);
+                store.showNotification('Could not test offline features. Check console for details.', 'error');
+            }
+        };
+
         // Load recent activity
         const loadRecentActivity = async () => {
             try {
@@ -472,6 +628,7 @@ window.EnhancedDashboardComponent = {
         // Load data on mount
         Vue.onMounted(async () => {
             await loadRecentActivity();
+            await checkOfflineStatus();
         });
 
         return {
@@ -495,7 +652,16 @@ window.EnhancedDashboardComponent = {
             showUpgradeModal,
             getActivityIcon,
             getActivityIconClass,
-            formatTimeAgo
+            formatTimeAgo,
+            // Offline setup
+            showOfflineSetup,
+            offlineStatus,
+            getOfflineStatusText,
+            handleOfflineReady,
+            testOfflineFeatures,
+            // Platform detection
+            isDesktopPlatform,
+            shouldShowOfflineOption
         };
     }
 };

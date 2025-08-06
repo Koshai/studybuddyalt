@@ -198,6 +198,20 @@ window.EnhancedSidebarComponent = {
                         </span>
                     </div>
                 </button>
+
+                <!-- Settings -->
+                <button
+                    @click="setCurrentView('settings')"
+                    :class="[
+                        'w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors',
+                        store.state.currentView === 'settings' 
+                            ? 'bg-primary-100 text-primary-700 border border-primary-200' 
+                            : 'text-gray-700 hover:bg-gray-100'
+                    ]"
+                >
+                    <i class="fas fa-cog w-4"></i>
+                    <span class="font-medium">Settings</span>
+                </button>
             </div>
 
             <!-- Quick Actions -->
