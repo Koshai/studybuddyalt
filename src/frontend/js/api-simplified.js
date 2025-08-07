@@ -2,8 +2,22 @@
 
 class SimplifiedApiService {
   constructor() {
-    this.baseURL = 'http://localhost:3001/api';
+    // Auto-detect API base URL based on current location
+    const currentHost = window.location.hostname;
+    const currentProtocol = window.location.protocol;
+    const currentPort = window.location.port;
+    
+    if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+      // Local development - API on different port
+      this.baseURL = 'http://localhost:3001/api';
+    } else {
+      // Production - API on same domain and port
+      this.baseURL = `${currentProtocol}//${currentHost}${currentPort ? ':' + currentPort : ''}/api`;
+    }
+    
     this.timeout = 30000;
+    
+    console.log('🌐 API Service configured for:', this.baseURL);
     
     // Authentication properties
     this.accessToken = localStorage.getItem('access_token');

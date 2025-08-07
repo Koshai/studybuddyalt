@@ -59,7 +59,14 @@ app.use(helmet({
                 "https://cdnjs.cloudflare.com"
             ],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "https://api.openai.com"]
+            connectSrc: [
+                "'self'", 
+                "https://api.openai.com",
+                "http://localhost:3001",
+                "https://*.up.railway.app",
+                "https://jaquizy.com",
+                "https://www.jaquizy.com"
+            ]
         }
     }
 }));
