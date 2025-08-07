@@ -1,6 +1,10 @@
 # Use Node.js 20 LTS
 FROM node:20-alpine
 
+# Force fresh build - Railway cache buster
+ARG BUILD_DATE
+ENV BUILD_DATE=$BUILD_DATE
+
 # Install build dependencies for better-sqlite3
 RUN apk add --no-cache python3 make g++ pkgconfig
 
