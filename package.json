@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "AI-powered study platform for students",
   "main": "src/main.js",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "node src/server/index.js",
     "start": "node src/server/index.js",
