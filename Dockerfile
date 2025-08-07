@@ -7,17 +7,18 @@ RUN apk add --no-cache python3 make g++ pkgconfig
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package.json (package-lock.json is in .gitignore)
+COPY package.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # Copy application code
 COPY . .
 
-# Create uploads directory
-RUN mkdir -p src/uploads
+# Create uploads directory and set permissions
+RUN mkdir -p src/uploads src/data
+RUN chmod -R 755 src/uploads src/data
 
 # Expose port
 EXPOSE 3000
