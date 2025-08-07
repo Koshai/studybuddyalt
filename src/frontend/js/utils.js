@@ -1,7 +1,7 @@
 // src/frontend/js/utils.js - Utility functions
 
 /**
- * Utility functions for the StudyAI application
+ * Utility functions for the Jaquizy application
  */
 
 // Date and time utilities

@@ -1,7 +1,7 @@
 // components/Dashboard/Dashboard-enhanced.js - Dashboard with Usage Integration
 window.EnhancedDashboardComponent = {
     template: `
-    <div class="animate-fade-in space-y-8">
+    <div class="animate-fade-in">
         <!-- Welcome Header with User Info -->
         <div class="bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl text-white p-8 mb-8">
             <!-- User Greeting -->
@@ -363,6 +363,12 @@ window.EnhancedDashboardComponent = {
                         @offline-ready="handleOfflineReady"
                     />
                 </div>
+
+                <!-- Advertisement Placement -->
+                <AdComponent 
+                    placement="dashboard_sidebar"
+                    size="medium"
+                />
 
                 <!-- Recent Activity -->
                 <div v-if="recentActivity.length > 0" class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">

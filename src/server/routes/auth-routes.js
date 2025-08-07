@@ -63,11 +63,31 @@ router.post('/login', async (req, res) => {
         
         console.log('✅ Login successful:', result.user.email);
         
+        // Trigger background sync after successful login
+        try {
+            const { getSyncService } = require('../services/enhanced-sync-service');
+            const syncService = getSyncService();
+            
+            // Don't wait for sync to complete - do it in background
+            setTimeout(async () => {
+                try {
+                    console.log('🔄 Starting background sync for', result.user.email);
+                    await syncService.fullSyncFromCloud(result.user.id);
+                    console.log('✅ Background sync completed for', result.user.email);
+                } catch (syncError) {
+                    console.warn('⚠️ Background sync failed:', syncError.message);
+                }
+            }, 1000); // 1 second delay to let login response complete
+        } catch (syncError) {
+            console.warn('⚠️ Sync service not available:', syncError.message);
+        }
+        
         res.json({
             status: 'success',
             message: 'Login successful',
             user: result.user,
-            tokens: result.tokens
+            tokens: result.tokens,
+            syncEnabled: true
         });
     } catch (error) {
         console.error('❌ Login failed:', error.message);

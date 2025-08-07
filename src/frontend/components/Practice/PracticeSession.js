@@ -82,6 +82,14 @@ window.PracticeSessionComponent = {
                 </div>
             </div>
 
+            <!-- Advertisement Placement -->
+            <div class="mb-6">
+                <AdComponent 
+                    placement="practice_completion"
+                    size="large"
+                />
+            </div>
+
             <!-- Actions -->
             <div class="flex flex-col sm:flex-row gap-3 justify-center">
                 <button 

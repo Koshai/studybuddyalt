@@ -355,7 +355,7 @@ window.EnhancedHeaderComponent = {
                     };
                 default:
                     return {
-                        title: 'StudyAI',
+                        title: 'Jaquizy',
                         description: 'Intelligent Learning Platform'
                     };
             }

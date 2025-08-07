@@ -6,8 +6,13 @@ const { createApp } = Vue;
 const App = {
     template: `
     <div class="min-h-screen">
+        <!-- Landing Page (Not Authenticated) -->
+        <div v-if="!safeStore.state.isAuthenticated && !safeStore.state.authLoading && authMode === 'landing'">
+            <LandingPageComponent />
+        </div>
+
         <!-- Authentication Screen -->
-        <div v-if="!safeStore.state.isAuthenticated && !safeStore.state.authLoading" 
+        <div v-else-if="!safeStore.state.isAuthenticated && !safeStore.state.authLoading" 
              class="min-h-screen bg-gradient-to-br from-primary-500 via-secondary-500 to-accent-500 flex items-center justify-center p-4">
             
             <!-- Background Pattern -->
@@ -35,7 +40,7 @@ const App = {
                             <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <i class="fas fa-brain text-white text-2xl"></i>
                             </div>
-                            <h2 class="text-2xl font-bold text-gray-900">Sign In to StudyAI</h2>
+                            <h2 class="text-2xl font-bold text-gray-900">Sign In to Jaquizy</h2>
                             <p class="text-gray-600 mt-2">Continue your learning journey</p>
                         </div>
                         
@@ -111,7 +116,7 @@ const App = {
              class="min-h-screen bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
             <div class="text-center text-white">
                 <div class="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <h2 class="text-xl font-semibold mb-2">Loading StudyAI...</h2>
+                <h2 class="text-xl font-semibold mb-2">Loading Jaquizy...</h2>
                 <p class="text-white/80">Setting up your workspace</p>
             </div>
         </div>
@@ -285,7 +290,16 @@ const App = {
             return window.store || { state: { isAuthenticated: false, authLoading: false, currentView: 'dashboard' } };
         });
         
-        const authMode = Vue.ref('login');
+        const authMode = Vue.ref('landing');
+        
+        // Expose authMode globally for landing page navigation
+        window.appAuthMode = authMode;
+        
+        // Listen for auth mode changes from landing page
+        window.addEventListener('setAuthMode', (event) => {
+            authMode.value = event.detail;
+        });
+        
         const showMobileUsage = Vue.ref(false);
         const showDesktopUsage = Vue.ref(false);
         
@@ -312,7 +326,7 @@ const App = {
 
         const initializeApp = async () => {
             try {
-                console.log('🚀 Initializing StudyAI...');
+                console.log('🚀 Initializing Jaquizy...');
                 
                 const currentStore = window.store;
                 if (!currentStore) {
@@ -352,7 +366,7 @@ const App = {
                     console.log('🔒 No authenticated user found');
                 }
 
-                console.log('✅ StudyAI initialized successfully!');
+                console.log('✅ Jaquizy initialized successfully!');
 
             } catch (error) {
                 console.error('❌ Failed to initialize app:', error);
@@ -698,6 +712,8 @@ app.component('OfflineSetupComponent', window.OfflineSetupComponent);
 
 // UI components
 app.component('BetaBadgeComponent', window.BetaBadgeComponent);
+app.component('AdComponent', window.AdComponent);
+app.component('LandingPageComponent', window.LandingPageComponent);
 
 // Utility components (existing)
 app.component('FileDropzone', window.FileDropzone);
@@ -795,7 +811,7 @@ window.studyAI = {
     store: window.store,
     api: window.api,
     debug: () => {
-        console.group('📊 StudyAI Enhanced Debug Information');
+        console.group('📊 Jaquizy Enhanced Debug Information');
         console.log('Authentication Status:', window.store.state.isAuthenticated);
         console.log('Current User:', {
             id: window.store.state.user?.id,
@@ -896,7 +912,7 @@ window.studyAI = {
     version: '2.0-enhanced-with-usage',
     help: () => {
         console.log(`
-🧠 StudyAI Enhanced with Authentication & Usage Tracking - Console Commands:
+🧠 Jaquizy Enhanced with Authentication & Usage Tracking - Console Commands:
 
 Authentication:
 studyAI.login(email, password)      - Login via console
@@ -937,7 +953,7 @@ Current Status:
 
 // Show enhanced initialization success message
 console.log(`
-🎓 StudyAI Enhanced with Authentication & Usage Tracking v2.0 loaded successfully!
+🎓 Jaquizy Enhanced with Authentication & Usage Tracking v2.0 loaded successfully!
 
 New Features:
 ✅ Complete User Authentication & Registration
@@ -958,6 +974,6 @@ Current Status:
 Type 'studyAI.help()' in console for available commands
 `);
 
-console.log('🧠 StudyAI Enhanced loaded successfully!');
+console.log('🧠 Jaquizy Enhanced loaded successfully!');
 console.log('📝 Use: studyAI.help() for available commands');
 console.log('🎯 All enhanced components integrated with usage tracking!');

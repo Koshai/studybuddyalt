@@ -23,6 +23,7 @@ const authMiddleware = require('./middleware/auth-middleware');
 // Import routes
 const authRoutes = require('./routes/auth-routes');
 const configRoutes = require('./routes/config-routes');
+const syncRoutes = require('./routes/sync-routes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -180,6 +181,7 @@ db.init();
 
 app.use('/api/auth', authRoutes);
 app.use('/api/config', configRoutes);
+app.use('/api/sync', syncRoutes);
 
 // =============================================================================
 // HEALTH CHECK & STATUS

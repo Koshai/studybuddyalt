@@ -315,7 +315,7 @@ class SimplifiedStore {
       this.state.showAuthModal = false;
       
       await this.loadUsageStats();
-      this.showNotification(`Welcome to StudyAI, ${user.firstName || user.email}!`, 'success');
+      this.showNotification(`Welcome to Jaquizy, ${user.firstName || user.email}!`, 'success');
       console.log('✅ User registered:', user.email);
     } catch (error) {
       console.error('❌ Registration error:', error);
@@ -438,6 +438,13 @@ class SimplifiedStore {
   switchAuthMode(mode) {
     this.state.authMode = mode;
     this.resetAuthForm();
+  }
+
+  /**
+   * Set authentication mode (for landing page navigation)
+   */
+  setAuthMode(mode) {
+    this.state.authMode = mode;
   }
 
   /**
@@ -1404,7 +1411,7 @@ class SimplifiedStore {
   }
 
   debugState() {
-    console.group('StudyAI Simplified State Debug (With Auth)');
+    console.group('Jaquizy Simplified State Debug (With Auth)');
     console.log('Authentication:', {
       isAuthenticated: this.state.isAuthenticated,
       user: this.state.user?.email,

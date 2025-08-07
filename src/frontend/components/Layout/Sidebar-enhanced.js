@@ -9,7 +9,7 @@ window.EnhancedSidebarComponent = {
                     <i class="fas fa-brain text-white text-lg"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold text-gray-900">StudyAI</h1>
+                    <h1 class="text-xl font-bold text-gray-900">Jaquizy</h1>
                     <p class="text-xs text-gray-600">AI-Powered Learning</p>
                 </div>
             </div>
@@ -30,11 +30,10 @@ window.EnhancedSidebarComponent = {
                         ]">
                             {{ store.state.subscriptionTier?.toUpperCase() || 'FREE' }}
                         </span>
-                        <button v-if="store.state.subscriptionTier === 'free'" 
-                                @click="showUpgradeModal" 
-                                class="text-xs text-purple-600 hover:text-purple-800 underline">
-                            Upgrade
-                        </button>
+                        <span v-if="store.state.subscriptionTier === 'free'" 
+                              class="text-xs text-gray-500">
+                            Pro Coming Soon
+                        </span>
                     </div>
                 </div>
             </div>
