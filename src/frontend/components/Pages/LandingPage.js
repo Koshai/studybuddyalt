@@ -84,46 +84,60 @@ window.LandingPageComponent = {
                     </p>
                 </div>
 
-                <div class="grid md:grid-cols-3 gap-8 mb-16">
-                    <!-- Step 1 -->
-                    <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                        <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6">
-                            <i class="fas fa-upload text-blue-600 text-2xl"></i>
+                <div class="relative">
+                    <!-- Visual flow diagram -->
+                    <div class="hidden md:block absolute top-1/2 left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-blue-200 via-purple-200 to-green-200 -translate-y-1/2"></div>
+                    <div class="hidden md:block absolute top-1/2 left-1/4 w-4 h-4 bg-blue-400 rounded-full -translate-y-1/2 -translate-x-1/2"></div>
+                    <div class="hidden md:block absolute top-1/2 left-1/2 w-4 h-4 bg-purple-400 rounded-full -translate-y-1/2 -translate-x-1/2"></div>
+                    <div class="hidden md:block absolute top-1/2 right-1/4 w-4 h-4 bg-green-400 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                    
+                    <div class="grid md:grid-cols-3 gap-8 mb-16 relative">
+                        <!-- Step 1 -->
+                        <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 relative z-10">
+                            <div class="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                                <i class="fas fa-upload text-blue-600 text-3xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">1. Upload Materials</h3>
+                            <p class="text-gray-600 mb-6 text-center">
+                                Drop in PDFs, images, or type directly. Our OCR extracts text automatically.
+                            </p>
+                            <div class="bg-blue-50 p-4 rounded-xl">
+                                <div class="text-sm text-blue-700 font-medium text-center">
+                                    <i class="fas fa-file-pdf mr-2"></i>PDFs, Images, Text
+                                </div>
+                            </div>
                         </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-4">1. Upload Your Materials</h3>
-                        <p class="text-gray-600 mb-4">
-                            Drop in PDFs, images, or type your notes directly. Our OCR technology extracts text from any document automatically.
-                        </p>
-                        <div class="text-sm text-blue-600 font-medium">
-                            <i class="fas fa-file-pdf mr-2"></i>PDFs, Images, Text - Any format works
-                        </div>
-                    </div>
 
-                    <!-- Step 2 -->
-                    <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                        <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mb-6">
-                            <i class="fas fa-magic text-purple-600 text-2xl"></i>
+                        <!-- Step 2 -->
+                        <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 relative z-10">
+                            <div class="w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                                <i class="fas fa-brain text-purple-600 text-3xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">2. AI Creates Questions</h3>
+                            <p class="text-gray-600 mb-6 text-center">
+                                Advanced AI analyzes content and generates personalized quiz questions.
+                            </p>
+                            <div class="bg-purple-50 p-4 rounded-xl">
+                                <div class="text-sm text-purple-700 font-medium text-center">
+                                    <i class="fas fa-magic mr-2"></i>Powered by OpenAI & Ollama
+                                </div>
+                            </div>
                         </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-4">2. AI Generates Questions</h3>
-                        <p class="text-gray-600 mb-4">
-                            Our AI reads your content and creates personalized multiple-choice questions that test your understanding, not just memorization.
-                        </p>
-                        <div class="text-sm text-purple-600 font-medium">
-                            <i class="fas fa-brain mr-2"></i>Powered by advanced AI models
-                        </div>
-                    </div>
 
-                    <!-- Step 3 -->
-                    <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                        <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mb-6">
-                            <i class="fas fa-chart-line text-green-600 text-2xl"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-4">3. Practice & Improve</h3>
-                        <p class="text-gray-600 mb-4">
-                            Take practice sessions, get instant feedback, and track your progress. See exactly where you need more study time.
-                        </p>
-                        <div class="text-sm text-green-600 font-medium">
-                            <i class="fas fa-trophy mr-2"></i>Track progress and improve scores
+                        <!-- Step 3 -->
+                        <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 relative z-10">
+                            <div class="w-20 h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                                <i class="fas fa-chart-line text-green-600 text-3xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">3. Practice & Excel</h3>
+                            <p class="text-gray-600 mb-6 text-center">
+                                Take quizzes, get instant feedback, and track your learning progress.
+                            </p>
+                            <div class="bg-green-50 p-4 rounded-xl">
+                                <div class="text-sm text-green-700 font-medium text-center">
+                                    <i class="fas fa-trophy mr-2"></i>Progress Analytics
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -306,53 +320,91 @@ window.LandingPageComponent = {
             </div>
         </section>
 
-        <!-- Social Proof / Testimonials -->
+        <!-- Product Demonstration -->
         <section class="py-20 bg-white">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
                     <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                        Join Thousands of Successful Students
+                        See Jaquizy in Action
                     </h2>
+                    <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                        Transform your study materials into interactive quizzes in seconds. Here's how it works:
+                    </p>
                 </div>
 
-                <div class="grid md:grid-cols-3 gap-8">
-                    <div class="bg-gray-50 rounded-2xl p-6">
-                        <div class="flex items-center mb-4">
-                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                                <i class="fas fa-user text-blue-600"></i>
+                <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl p-8 md:p-12">
+                    <!-- Demo Image/Screenshot -->
+                    <div class="relative mx-auto max-w-4xl">
+                        <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
+                            <!-- Browser mockup header -->
+                            <div class="bg-gray-100 px-4 py-3 flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-red-400 rounded-full"></div>
+                                <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                                <div class="w-3 h-3 bg-green-400 rounded-full"></div>
+                                <div class="flex-1 mx-4">
+                                    <div class="bg-gray-200 rounded-full px-3 py-1 text-sm text-gray-600 text-center">
+                                        jaquizy.com
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <div class="font-semibold text-gray-900">Sarah M.</div>
-                                <div class="text-sm text-gray-600">Pre-Med Student</div>
+                            
+                            <!-- App interface mockup -->
+                            <div class="p-8 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700">
+                                <!-- Dashboard Header -->
+                                <div class="flex items-center justify-between mb-8">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-brain text-white text-lg"></i>
+                                        </div>
+                                        <h1 class="text-2xl font-bold text-white">Jaquizy</h1>
+                                    </div>
+                                    <div class="text-white/80 text-sm">AI-Powered Learning</div>
+                                </div>
+                                
+                                <!-- Main content area -->
+                                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6">
+                                    <div class="flex items-center space-x-4 mb-4">
+                                        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                            <i class="fas fa-upload text-white text-xl"></i>
+                                        </div>
+                                        <div class="text-white">
+                                            <h3 class="font-semibold">Upload Your Study Materials</h3>
+                                            <p class="text-white/70 text-sm">PDF, images, or type directly</p>
+                                        </div>
+                                    </div>
+                                    <div class="border-2 border-dashed border-white/30 rounded-xl p-8 text-center">
+                                        <i class="fas fa-file-pdf text-white/60 text-4xl mb-4"></i>
+                                        <p class="text-white/80">Drop your files here or click to browse</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Generated questions preview -->
+                                <div class="bg-white rounded-2xl p-6">
+                                    <h4 class="font-bold text-gray-900 mb-4">✨ AI-Generated Questions:</h4>
+                                    <div class="space-y-3">
+                                        <div class="bg-blue-50 p-4 rounded-xl">
+                                            <h5 class="font-medium text-gray-900 mb-2">Question 1: Multiple Choice</h5>
+                                            <p class="text-gray-700 mb-3">What is the primary function of mitochondria in cells?</p>
+                                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                                <div class="bg-white p-2 rounded border">A) Protein synthesis</div>
+                                                <div class="bg-green-100 p-2 rounded border border-green-300">B) Energy production ✓</div>
+                                                <div class="bg-white p-2 rounded border">C) DNA storage</div>
+                                                <div class="bg-white p-2 rounded border">D) Waste removal</div>
+                                            </div>
+                                        </div>
+                                        <div class="bg-purple-50 p-4 rounded-xl">
+                                            <h5 class="font-medium text-gray-900 mb-2">Question 2: Multiple Choice</h5>
+                                            <p class="text-gray-700 mb-3">Which process occurs during photosynthesis?</p>
+                                            <div class="text-sm text-gray-600">Click to reveal answer...</div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <p class="text-gray-700 italic">"Jaquizy helped me ace my biochemistry exam. The AI questions were spot-on and much better than making flashcards manually."</p>
-                    </div>
-
-                    <div class="bg-gray-50 rounded-2xl p-6">
-                        <div class="flex items-center mb-4">
-                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                                <i class="fas fa-user text-green-600"></i>
-                            </div>
-                            <div>
-                                <div class="font-semibold text-gray-900">Marcus T.</div>
-                                <div class="text-sm text-gray-600">Law Student</div>
-                            </div>
-                        </div>
-                        <p class="text-gray-700 italic">"Finally, a study tool that actually saves time. The rich text editor is a game-changer for organizing my notes."</p>
-                    </div>
-
-                    <div class="bg-gray-50 rounded-2xl p-6">
-                        <div class="flex items-center mb-4">
-                            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
-                                <i class="fas fa-user text-purple-600"></i>
-                            </div>
-                            <div>
-                                <div class="font-semibold text-gray-900">Emma K.</div>
-                                <div class="text-sm text-gray-600">MBA Candidate</div>
-                            </div>
-                        </div>
-                        <p class="text-gray-700 italic">"The progress tracking feature helped me identify my weak areas. My study efficiency improved dramatically."</p>
+                        
+                        <!-- Floating elements for visual appeal -->
+                        <div class="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full opacity-20 animate-pulse"></div>
+                        <div class="absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-br from-green-400 to-blue-400 rounded-full opacity-20 animate-pulse delay-1000"></div>
                     </div>
                 </div>
             </div>
