@@ -3,11 +3,16 @@ const { Ollama } = require('ollama');
 
 class SimplifiedOllamaService {
   constructor() {
+    // Use environment variable or fallback to default
+    const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
+    
     this.ollama = new Ollama({
-      host: 'http://localhost:11434'
+      host: ollamaUrl
     });
     this.defaultModel = 'llama3.2:3b';
     this.maxAttempts = 5;
+    
+    console.log(`🤖 Ollama service configured for: ${ollamaUrl}`);
     
     // Store successful question patterns for fallback
     this.successfulPatterns = new Map();
