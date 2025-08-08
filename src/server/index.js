@@ -34,16 +34,15 @@ if (process.env.RAILWAY_ENVIRONMENT_NAME) {
     console.log('✅ Railway proxy trust enabled');
 }
 
-// Increase rate limiting for debugging
-const rateLimit = require('express-rate-limit');
-const limiter = rateLimit({
+// Increase rate limiting for debugging - use existing rateLimit import
+const debugLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 100, // Increase from default to 100 requests per minute
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use('/api/', limiter);
+app.use('/api/', debugLimiter);
 
 // =============================================================================
 // SECURITY & MIDDLEWARE SETUP
