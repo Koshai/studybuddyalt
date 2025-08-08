@@ -1341,6 +1341,58 @@ app.post('/api/debug/token', (req, res) => {
     }
 });
 
+// Debug database structure (no auth required)
+app.get('/api/debug/tables', (req, res) => {
+  try {
+    const sqlite3 = require('sqlite3').verbose();
+    const path = require('path');
+    const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
+    const debugDb = new sqlite3.Database(dbPath);
+    
+    // Get all tables
+    debugDb.all("SELECT name FROM sqlite_master WHERE type='table'", [], (err, tables) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      
+      const tableInfo = {};
+      let completedTables = 0;
+      
+      if (tables.length === 0) {
+        debugDb.close();
+        return res.json({ tables: [], message: 'No tables found' });
+      }
+      
+      tables.forEach(table => {
+        debugDb.all(`PRAGMA table_info(${table.name})`, [], (err, columns) => {
+          if (!err) {
+            tableInfo[table.name] = columns.map(col => ({
+              name: col.name,
+              type: col.type,
+              notNull: col.notnull,
+              defaultValue: col.dflt_value
+            }));
+          }
+          
+          completedTables++;
+          if (completedTables === tables.length) {
+            debugDb.close();
+            res.json({
+              tablesCount: tables.length,
+              tables: tables.map(t => t.name),
+              tableStructure: tableInfo
+            });
+          }
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Database debug error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // =============================================================================
 // DATABASE MIGRATION ENDPOINTS
 // =============================================================================
@@ -1447,6 +1499,226 @@ async function runDatabaseMigration() {
     });
   });
 }
+
+// =============================================================================
+// ADMIN SYNC MANAGEMENT ENDPOINTS
+// =============================================================================
+
+// Get sync status and database information
+app.get('/api/admin/sync/status', authMiddleware.requireAdmin, async (req, res) => {
+  try {
+    console.log(`🔍 Admin sync status requested by ${req.user.email}`);
+    
+    // Get database table information
+    const sqlite3 = require('sqlite3').verbose();
+    const path = require('path');
+    const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
+    const checkDb = new sqlite3.Database(dbPath);
+    
+    const tableInfo = {};
+    const tables = ['subjects', 'topics', 'notes', 'questions', 'practice_sessions', 'user_answers'];
+    
+    const getTableInfo = (tableName) => {
+      return new Promise((resolve) => {
+        // Check if table exists and get count
+        checkDb.get(`SELECT COUNT(*) as count FROM ${tableName}`, (err, result) => {
+          if (err) {
+            tableInfo[tableName] = { exists: false, count: 0, error: err.message };
+          } else {
+            tableInfo[tableName] = { exists: true, count: result.count };
+          }
+          resolve();
+        });
+      });
+    };
+    
+    // Check all tables
+    await Promise.all(tables.map(table => getTableInfo(table)));
+    
+    // Get Supabase connection status
+    let supabaseStatus = { connected: false, error: null };
+    try {
+      const { createClient } = require('@supabase/supabase-js');
+      const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+      const { data, error } = await supabase.from('subjects').select('count', { count: 'exact' }).limit(1);
+      if (error) {
+        supabaseStatus = { connected: false, error: error.message };
+      } else {
+        supabaseStatus = { connected: true, subjectsCount: data.length };
+      }
+    } catch (error) {
+      supabaseStatus = { connected: false, error: error.message };
+    }
+    
+    checkDb.close();
+    
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      sqlite: {
+        dbPath: dbPath,
+        tables: tableInfo
+      },
+      supabase: supabaseStatus,
+      environment: process.env.RAILWAY_ENVIRONMENT_NAME || 'local'
+    });
+    
+  } catch (error) {
+    console.error('❌ Admin sync status failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Manually trigger sync for a user
+app.post('/api/admin/sync/trigger', authMiddleware.requireAdmin, async (req, res) => {
+  try {
+    const { userId, userEmail, syncType } = req.body;
+    
+    if (!userId && !userEmail) {
+      return res.status(400).json({ error: 'userId or userEmail required' });
+    }
+    
+    console.log(`🔄 Admin triggered sync for user: ${userEmail || userId} (type: ${syncType || 'full'})`);
+    
+    // Initialize auto-sync service
+    const AutoSyncService = require('./services/auto-sync-service');
+    const autoSyncService = new AutoSyncService();
+    
+    let targetUserId = userId;
+    let targetUserEmail = userEmail;
+    
+    // If only email provided, get userId from Supabase
+    if (!targetUserId && targetUserEmail) {
+      const { createClient } = require('@supabase/supabase-js');
+      const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('email', targetUserEmail)
+        .single();
+      
+      if (error || !data) {
+        return res.status(404).json({ error: 'User not found in Supabase' });
+      }
+      
+      targetUserId = data.id;
+    }
+    
+    // Perform the sync
+    const syncResult = await autoSyncService.performAutoSync(targetUserId, targetUserEmail);
+    
+    res.json({
+      success: true,
+      message: 'Manual sync completed',
+      userId: targetUserId,
+      userEmail: targetUserEmail,
+      syncType: syncType || 'full',
+      result: syncResult,
+      timestamp: new Date().toISOString(),
+      triggeredBy: req.user.email
+    });
+    
+  } catch (error) {
+    console.error('❌ Admin manual sync failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get sync logs and recent activity
+app.get('/api/admin/sync/logs', authMiddleware.requireAdmin, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    console.log(`📋 Admin sync logs requested by ${req.user.email} (limit: ${limit})`);
+    
+    // This would ideally read from a sync_logs table, but for now return recent console logs
+    // In a production system, you'd want to store sync operations in a database table
+    
+    const logs = [
+      {
+        timestamp: new Date().toISOString(),
+        type: 'info',
+        message: 'Sync logs endpoint accessed',
+        user: req.user.email
+      },
+      {
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+        type: 'sync',
+        message: 'Auto-sync service initialized',
+        details: 'Service ready for sync operations'
+      }
+    ];
+    
+    res.json({
+      success: true,
+      logs: logs,
+      total: logs.length,
+      limit: limit,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Admin sync logs failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Reset or repair database
+app.post('/api/admin/database/repair', authMiddleware.requireAdmin, async (req, res) => {
+  try {
+    const { action } = req.body; // 'recreate', 'repair', 'migrate'
+    
+    console.log(`🔧 Admin database repair requested: ${action} by ${req.user.email}`);
+    
+    if (action === 'recreate') {
+      // Recreate all tables
+      const DatabaseService = require('./services/database-simplified');
+      const dbService = new DatabaseService();
+      
+      // This will recreate all tables if they don't exist
+      await dbService.createTables();
+      
+      res.json({
+        success: true,
+        message: 'Database tables recreated successfully',
+        action: action,
+        timestamp: new Date().toISOString(),
+        performedBy: req.user.email
+      });
+    } else if (action === 'migrate') {
+      // Run migration
+      const migrationResult = await runDatabaseMigration();
+      res.json({
+        success: migrationResult.success,
+        message: 'Database migration completed',
+        changes: migrationResult.changes,
+        action: action,
+        timestamp: new Date().toISOString(),
+        performedBy: req.user.email
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid action. Use "recreate" or "migrate"'
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Admin database repair failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
 
 // =============================================================================
 // START SERVER

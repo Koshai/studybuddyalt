@@ -211,6 +211,21 @@ window.EnhancedSidebarComponent = {
                     <i class="fas fa-cog w-4"></i>
                     <span class="font-medium">Settings</span>
                 </button>
+
+                <!-- Admin Dashboard (Only visible for admins) -->
+                <button
+                    v-if="isAdminUser"
+                    @click="setCurrentView('admin')"
+                    :class="[
+                        'w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors',
+                        store.state.currentView === 'admin' 
+                            ? 'bg-red-100 text-red-700 border border-red-200' 
+                            : 'text-gray-700 hover:bg-red-50'
+                    ]"
+                >
+                    <i class="fas fa-shield-alt w-4"></i>
+                    <span class="font-medium">Admin</span>
+                </button>
             </div>
 
             <!-- Quick Actions -->
@@ -368,6 +383,15 @@ window.EnhancedSidebarComponent = {
             return first + last || 'U';
         });
 
+        // Admin check
+        const isAdminUser = Vue.computed(() => {
+            const user = store.state.user;
+            if (!user || !user.email) return false;
+            // Check if user is admin based on email or role
+            const adminEmails = ['admin@studybuddy.com', 'syed.r.akbar@gmail.com'];
+            return adminEmails.includes(user.email) || user.role === 'admin';
+        });
+
         // Navigation methods
         const setCurrentView = (view) => {
             store.setCurrentView(view);
@@ -483,6 +507,7 @@ window.EnhancedSidebarComponent = {
             canGenerate,
             canCreateTopic,
             getUserInitials,
+            isAdminUser,
             setCurrentView,
             handleUploadClick,
             handlePracticeClick,

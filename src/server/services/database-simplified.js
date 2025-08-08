@@ -202,7 +202,10 @@ class SimplifiedDatabaseService {
     });
 
     // Add user_id columns if they don't exist (for existing databases)
-    this.addMissingColumns();
+    // Use setTimeout to ensure tables are created first
+    setTimeout(() => {
+      this.addMissingColumns();
+    }, 1000);
     
     console.log('✅ Simplified database schema initialized');
   }

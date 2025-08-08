@@ -833,6 +833,57 @@ class SimplifiedApiService {
   async getNotesWithQuestions(topicId) {
     return this.request(`/topics/${topicId}/notes-with-questions`);
   }
+
+  // ===== ADMIN SYNC MANAGEMENT =====
+
+  /**
+   * Get admin sync status and database info
+   */
+  async getAdminSyncStatus() {
+    return this.request('/admin/sync/status');
+  }
+
+  /**
+   * Manually trigger sync for a user
+   */
+  async triggerAdminSync(userId, userEmail, syncType = 'full') {
+    return this.request('/admin/sync/trigger', {
+      method: 'POST',
+      body: JSON.stringify({ userId, userEmail, syncType })
+    });
+  }
+
+  /**
+   * Get admin sync logs
+   */
+  async getAdminSyncLogs(limit = 50) {
+    return this.request(`/admin/sync/logs?limit=${limit}`);
+  }
+
+  /**
+   * Repair or recreate database
+   */
+  async repairAdminDatabase(action) {
+    return this.request('/admin/database/repair', {
+      method: 'POST',
+      body: JSON.stringify({ action })
+    });
+  }
+
+  /**
+   * Check if user has admin privileges
+   */
+  async checkAdminAccess() {
+    try {
+      await this.getAdminSyncStatus();
+      return true;
+    } catch (error) {
+      if (error.message.includes('403') || error.message.includes('Admin')) {
+        return false;
+      }
+      throw error;
+    }
+  }
 }
 
 // Create global API instance

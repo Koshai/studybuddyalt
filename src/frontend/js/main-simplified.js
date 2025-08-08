@@ -166,6 +166,9 @@ const App = {
                         
                         <!-- Settings View -->
                         <UserSettingsComponent v-if="safeStore.state.currentView === 'settings'" />
+                        
+                        <!-- Admin Dashboard View -->
+                        <AdminDashboardComponent v-if="safeStore.state.currentView === 'admin'" />
                     </div>
                 </main>
                 
@@ -714,6 +717,9 @@ app.component('OfflineSetupComponent', window.OfflineSetupComponent);
 app.component('BetaBadgeComponent', window.BetaBadgeComponent);
 app.component('AdComponent', window.AdComponent);
 app.component('LandingPageComponent', window.LandingPageComponent);
+
+// Admin components
+app.component('AdminDashboardComponent', window.AdminDashboardComponent);
 
 // Utility components (existing)
 app.component('FileDropzone', window.FileDropzone);
