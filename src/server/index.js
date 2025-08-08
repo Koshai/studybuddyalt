@@ -421,6 +421,43 @@ app.get('/api/admin/debug-supabase/:email', authMiddleware.authenticateToken, au
   }
 });
 
+// Check SQLite table schema
+app.get('/api/admin/debug-schema', authMiddleware.authenticateToken, authMiddleware.requireAdmin, async (req, res) => {
+  try {
+    const sqlite3 = require('sqlite3').verbose();
+    const path = require('path');
+    const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
+    const db = new sqlite3.Database(dbPath);
+    
+    const schemas = {};
+    const tables = ['topics', 'notes', 'questions', 'practice_sessions'];
+    
+    for (const tableName of tables) {
+      await new Promise((resolve) => {
+        db.all(`PRAGMA table_info(${tableName})`, (err, rows) => {
+          if (err) {
+            schemas[tableName] = { error: err.message };
+          } else {
+            schemas[tableName] = { columns: rows };
+          }
+          resolve();
+        });
+      });
+    }
+    
+    db.close();
+    
+    res.json({
+      success: true,
+      schemas: schemas,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Simple admin debug endpoint (moved up for testing)
 app.get('/api/admin/debug', (req, res) => {
   try {
