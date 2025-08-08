@@ -1251,6 +1251,58 @@ app.get('*', (req, res) => {
 });
 
 // =============================================================================
+// DEBUG ENDPOINTS (Railway/Production Debugging)
+// =============================================================================
+
+// Debug endpoint for Railway deployment
+app.get('/api/debug/database', authMiddleware.authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get user's subjects, topics, notes count
+    const subjects = await db.getSubjects();
+    const userTopics = [];
+    let totalNotes = 0;
+    let totalQuestions = 0;
+    
+    for (const subject of subjects) {
+      const topics = await db.getTopicsForUser(subject.id, userId);
+      for (const topic of topics) {
+        const notes = await db.getNotesForTopic(topic.id, userId);
+        const questions = await db.getQuestionsForTopic(topic.id, userId);
+        userTopics.push({
+          ...topic,
+          subject_name: subject.name,
+          notes_count: notes.length,
+          questions_count: questions.length
+        });
+        totalNotes += notes.length;
+        totalQuestions += questions.length;
+      }
+    }
+    
+    res.json({
+      user: {
+        id: userId,
+        email: req.user.email,
+        subscriptionTier: req.user.subscriptionTier
+      },
+      database: {
+        subjects_count: subjects.length,
+        topics_count: userTopics.length,
+        notes_count: totalNotes,
+        questions_count: totalQuestions
+      },
+      topics: userTopics,
+      environment: process.env.NODE_ENV || 'development'
+    });
+  } catch (error) {
+    console.error('❌ Debug endpoint error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// =============================================================================
 // START SERVER
 // =============================================================================
 

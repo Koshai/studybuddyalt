@@ -22,6 +22,61 @@ window.SyncClient = {
     },
 
     /**
+     * Trigger intelligent auto-sync
+     */
+    async performAutoSync() {
+        try {
+            console.log('🤖 Starting intelligent auto-sync...');
+            
+            const response = await fetch('/api/sync/auto', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                console.log('✅ Auto-sync complete:', result.message);
+                
+                // Refresh the current view to show synced data
+                if (window.store && window.store.refreshCurrentView) {
+                    window.store.refreshCurrentView();
+                }
+                
+                // Show success notification with details
+                if (window.store && window.store.showNotification) {
+                    if (result.totalSynced > 0) {
+                        window.store.showNotification(
+                            `Smart sync: ${result.totalSynced} records synchronized`, 
+                            'success'
+                        );
+                    } else {
+                        window.store.showNotification('Everything is already in sync!', 'info');
+                    }
+                }
+            } else {
+                throw new Error(result.error);
+            }
+            
+            return result;
+        } catch (error) {
+            console.error('❌ Failed to perform auto-sync:', error);
+            
+            if (window.store && window.store.showNotification) {
+                window.store.showNotification(
+                    'Auto-sync failed: ' + error.message, 
+                    'error'
+                );
+            }
+            
+            return { success: false, error: error.message };
+        }
+    },
+
+    /**
      * Manually trigger full sync from cloud
      */
     async pullFromCloud() {

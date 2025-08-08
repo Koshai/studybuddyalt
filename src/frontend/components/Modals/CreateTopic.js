@@ -130,7 +130,11 @@ window.CreateTopicModal = {
         // Focus input when modal opens
         Vue.onMounted(() => {
             Vue.nextTick(() => {
-                nameInput.value?.focus();
+                // Access the actual input element inside the ValidatedInput component
+                const inputElement = nameInput.value?.$refs?.input || nameInput.value?.$el?.querySelector('input');
+                if (inputElement && typeof inputElement.focus === 'function') {
+                    inputElement.focus();
+                }
             });
         });
 

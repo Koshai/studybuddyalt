@@ -11,14 +11,17 @@ const router = express.Router();
  */
 router.get('/status', authMiddleware.authenticateToken, async (req, res) => {
     try {
-        const syncService = getSyncService();
-        const status = await syncService.getSyncStatus(req.user.id);
+        const { getAutoSyncService } = require('../services/auto-sync-service');
+        const autoSyncService = getAutoSyncService();
+        
+        const status = await autoSyncService.checkSyncStatus(req.user.id);
         
         res.json({
             success: true,
             status: {
                 ...status,
                 userId: req.user.id,
+                userEmail: req.user.email,
                 lastChecked: new Date().toISOString()
             }
         });
@@ -27,6 +30,43 @@ router.get('/status', authMiddleware.authenticateToken, async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to get sync status'
+        });
+    }
+});
+
+/**
+ * POST /api/sync/auto
+ * Trigger intelligent auto-sync manually
+ */
+router.post('/auto', authMiddleware.authenticateToken, async (req, res) => {
+    try {
+        const { getAutoSyncService } = require('../services/auto-sync-service');
+        const autoSyncService = getAutoSyncService();
+        
+        console.log(`🔄 Manual auto-sync requested by ${req.user.email}`);
+        
+        const result = await autoSyncService.performAutoSync(req.user.id, req.user.email);
+        
+        if (result.success) {
+            res.json({
+                success: true,
+                message: `Auto-sync completed: ${result.totalSynced} records synchronized`,
+                totalSynced: result.totalSynced,
+                results: result.results,
+                syncActions: result.syncActions,
+                timestamp: new Date().toISOString()
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                error: result.error
+            });
+        }
+    } catch (error) {
+        console.error('❌ Manual auto-sync error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to perform auto-sync'
         });
     }
 });

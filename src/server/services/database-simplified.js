@@ -1519,9 +1519,11 @@ class SimplifiedDatabaseService {
                     n.*,
                     t.name as topic_name,
                     t.subject_id,
-                    t.id as topic_id
+                    t.id as topic_id,
+                    s.name as subject_name
                 FROM notes n
                 JOIN topics t ON n.topic_id = t.id
+                JOIN subjects s ON t.subject_id = s.id
                 WHERE n.id = ? AND t.user_id = ?
             `;
             

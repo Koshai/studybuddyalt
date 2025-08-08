@@ -63,23 +63,32 @@ router.post('/login', async (req, res) => {
         
         console.log('✅ Login successful:', result.user.email);
         
-        // Trigger background sync after successful login
+        // Trigger intelligent bidirectional sync after successful login
         try {
-            const { getSyncService } = require('../services/enhanced-sync-service');
-            const syncService = getSyncService();
+            const { getAutoSyncService } = require('../services/auto-sync-service');
+            const autoSyncService = getAutoSyncService();
             
             // Don't wait for sync to complete - do it in background
             setTimeout(async () => {
                 try {
-                    console.log('🔄 Starting background sync for', result.user.email);
-                    await syncService.fullSyncFromCloud(result.user.id);
-                    console.log('✅ Background sync completed for', result.user.email);
+                    console.log('🔄 Starting intelligent auto-sync for', result.user.email);
+                    const syncResult = await autoSyncService.performAutoSync(result.user.id, result.user.email);
+                    
+                    if (syncResult.success) {
+                        console.log('✅ Auto-sync completed for', result.user.email);
+                        console.log(`   📊 ${syncResult.totalSynced} records synchronized`);
+                        if (syncResult.results.errors.length > 0) {
+                            console.warn(`   ⚠️ ${syncResult.results.errors.length} sync errors occurred`);
+                        }
+                    } else {
+                        console.warn('⚠️ Auto-sync failed:', syncResult.error);
+                    }
                 } catch (syncError) {
-                    console.warn('⚠️ Background sync failed:', syncError.message);
+                    console.warn('⚠️ Auto-sync failed:', syncError.message);
                 }
-            }, 1000); // 1 second delay to let login response complete
+            }, 1500); // 1.5 second delay to let login response complete
         } catch (syncError) {
-            console.warn('⚠️ Sync service not available:', syncError.message);
+            console.warn('⚠️ Auto-sync service not available:', syncError.message);
         }
         
         res.json({

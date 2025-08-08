@@ -10,7 +10,24 @@ window.EnhancedDashboardComponent = {
                     <h1 class="text-3xl font-bold mb-2">Welcome back, {{ store.state.user?.firstName || 'Student' }}! 👋</h1>
                     <p class="text-white/90">Ready to continue your learning journey?</p>
                 </div>
-                <div class="text-right">
+                <div class="text-right space-y-2">
+                    <!-- Sync Status Indicator -->
+                    <div v-if="syncStatus" class="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1 flex items-center space-x-2">
+                        <div :class="[
+                            'w-2 h-2 rounded-full',
+                            syncStatus.needsSync ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'
+                        ]"></div>
+                        <span class="text-xs text-white/80">
+                            {{ syncStatus.needsSync ? 'Sync needed' : 'In sync' }}
+                        </span>
+                        <button v-if="syncStatus.needsSync" 
+                                @click="performSync" 
+                                class="text-xs text-white/90 hover:text-white underline ml-1">
+                            Sync
+                        </button>
+                    </div>
+                    
+                    <!-- Plan Badge -->
                     <div class="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
                         <p class="text-sm text-white/80">Current Plan</p>
                         <p class="font-bold text-lg">{{ store.state.subscriptionTier?.toUpperCase() || 'FREE' }}</p>
@@ -400,6 +417,50 @@ window.EnhancedDashboardComponent = {
     setup() {
         const store = window.store;
         
+        // Sync status
+        const syncStatus = Vue.ref(null);
+        const isSyncing = Vue.ref(false);
+        
+        // Check sync status on load
+        const checkSyncStatus = async () => {
+            try {
+                const status = await window.SyncClient.getSyncStatus();
+                if (status.success) {
+                    syncStatus.value = status.status;
+                }
+            } catch (error) {
+                console.warn('Failed to check sync status:', error);
+            }
+        };
+        
+        // Perform manual sync
+        const performSync = async () => {
+            if (isSyncing.value) return;
+            
+            isSyncing.value = true;
+            try {
+                const result = await window.SyncClient.performAutoSync();
+                if (result.success) {
+                    // Refresh sync status after successful sync
+                    setTimeout(checkSyncStatus, 1000);
+                    
+                    // Refresh dashboard data
+                    if (store.loadDashboardData) {
+                        store.loadDashboardData();
+                    }
+                }
+            } catch (error) {
+                console.error('Sync failed:', error);
+            } finally {
+                isSyncing.value = false;
+            }
+        };
+        
+        // Check sync status on component mount
+        Vue.onMounted(() => {
+            setTimeout(checkSyncStatus, 2000); // Delay to let auth complete
+        });
+        
         // Usage calculations with dynamic limits
         const effectiveLimits = Vue.computed(() => {
             const userTier = store.state.subscriptionTier || 'free';
@@ -659,6 +720,11 @@ window.EnhancedDashboardComponent = {
             getActivityIcon,
             getActivityIconClass,
             formatTimeAgo,
+            // Sync functionality
+            syncStatus,
+            isSyncing,
+            performSync,
+            checkSyncStatus,
             // Offline setup
             showOfflineSetup,
             offlineStatus,
