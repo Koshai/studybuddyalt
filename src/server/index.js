@@ -575,19 +575,16 @@ app.post('/api/admin/sync/trigger', authMiddleware.authenticateToken, authMiddle
     
     console.log(`🔄 Admin triggered sync for user: ${userEmail || userId} (type: ${syncType || 'full'})`);
     
-    // For now, return a success response since the AutoSyncService might have issues
-    // We'll implement the actual sync logic step by step
+    // Implement actual data sync from Supabase to SQLite
+    const syncResult = await performDataSync(userEmail, userId);
+    
     res.json({
       success: true,
-      message: 'Manual sync initiated (simplified version)',
-      userId: userId || 'N/A',
+      message: 'Manual sync completed',
+      userId: userId || syncResult.userId,
       userEmail: userEmail || 'N/A',
       syncType: syncType || 'full',
-      result: {
-        status: 'completed',
-        message: 'Sync simulation completed - actual sync implementation in progress',
-        timestamp: new Date().toISOString()
-      },
+      result: syncResult,
       timestamp: new Date().toISOString(),
       triggeredBy: req.user.email
     });
@@ -1855,6 +1852,201 @@ async function runDatabaseMigration() {
       });
     });
   });
+}
+
+// =============================================================================
+// DATA SYNC FUNCTIONS
+// =============================================================================
+
+// Simple data sync function from Supabase to SQLite
+async function performDataSync(userEmail, userId) {
+  try {
+    console.log(`🔄 Starting data sync for ${userEmail || userId}`);
+    
+    // Initialize Supabase
+    const { createClient } = require('@supabase/supabase-js');
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    
+    // Initialize SQLite
+    const sqlite3 = require('sqlite3').verbose();
+    const path = require('path');
+    const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
+    const db = new sqlite3.Database(dbPath);
+    
+    let targetUserId = userId;
+    const syncStats = {
+      topics: { pulled: 0, errors: 0 },
+      notes: { pulled: 0, errors: 0 },
+      questions: { pulled: 0, errors: 0 }
+    };
+    
+    // Get userId from Supabase if only email provided
+    if (!targetUserId && userEmail) {
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('email', userEmail)
+        .single();
+      
+      if (profileError || !profileData) {
+        throw new Error(`User not found in Supabase: ${userEmail}`);
+      }
+      
+      targetUserId = profileData.id;
+      console.log(`✅ Found user ID: ${targetUserId} for email: ${userEmail}`);
+    }
+    
+    // 1. Sync Topics from Supabase to SQLite
+    console.log('🔄 Syncing topics...');
+    const { data: supabaseTopics, error: topicsError } = await supabase
+      .from('topics')
+      .select('*')
+      .eq('user_id', targetUserId);
+    
+    if (topicsError) {
+      console.error('❌ Error fetching topics from Supabase:', topicsError);
+    } else if (supabaseTopics && supabaseTopics.length > 0) {
+      for (const topic of supabaseTopics) {
+        try {
+          await new Promise((resolve, reject) => {
+            db.run(`
+              INSERT OR REPLACE INTO topics 
+              (id, subject_id, name, description, user_id, created_at, updated_at) 
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+            `, [
+              topic.id,
+              topic.subject_id,
+              topic.name,
+              topic.description,
+              topic.user_id,
+              topic.created_at,
+              topic.updated_at || topic.created_at
+            ], (err) => {
+              if (err) {
+                console.error('❌ Failed to insert topic:', topic.name, err);
+                syncStats.topics.errors++;
+                reject(err);
+              } else {
+                console.log(`✅ Synced topic: ${topic.name}`);
+                syncStats.topics.pulled++;
+                resolve();
+              }
+            });
+          });
+        } catch (error) {
+          console.error('❌ Topic sync error:', error);
+        }
+      }
+    }
+    
+    // 2. Sync Notes from Supabase to SQLite
+    console.log('🔄 Syncing notes...');
+    const { data: supabaseNotes, error: notesError } = await supabase
+      .from('notes')
+      .select('*')
+      .eq('user_id', targetUserId);
+    
+    if (notesError) {
+      console.error('❌ Error fetching notes from Supabase:', notesError);
+    } else if (supabaseNotes && supabaseNotes.length > 0) {
+      for (const note of supabaseNotes) {
+        try {
+          await new Promise((resolve, reject) => {
+            db.run(`
+              INSERT OR REPLACE INTO notes 
+              (id, topic_id, title, content, file_name, file_type, user_id, created_at, updated_at) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+              note.id,
+              note.topic_id,
+              note.title,
+              note.content,
+              note.file_name,
+              note.file_type,
+              note.user_id,
+              note.created_at,
+              note.updated_at || note.created_at
+            ], (err) => {
+              if (err) {
+                console.error('❌ Failed to insert note:', note.title, err);
+                syncStats.notes.errors++;
+                reject(err);
+              } else {
+                console.log(`✅ Synced note: ${note.title}`);
+                syncStats.notes.pulled++;
+                resolve();
+              }
+            });
+          });
+        } catch (error) {
+          console.error('❌ Note sync error:', error);
+        }
+      }
+    }
+    
+    // 3. Sync Questions from Supabase to SQLite
+    console.log('🔄 Syncing questions...');
+    const { data: supabaseQuestions, error: questionsError } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('user_id', targetUserId);
+    
+    if (questionsError) {
+      console.error('❌ Error fetching questions from Supabase:', questionsError);
+    } else if (supabaseQuestions && supabaseQuestions.length > 0) {
+      for (const question of supabaseQuestions) {
+        try {
+          await new Promise((resolve, reject) => {
+            db.run(`
+              INSERT OR REPLACE INTO questions 
+              (id, topic_id, note_id, question_text, question_type, options, correct_answer, user_id, created_at, updated_at) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+              question.id,
+              question.topic_id,
+              question.note_id,
+              question.question_text,
+              question.question_type,
+              JSON.stringify(question.options),
+              question.correct_answer,
+              question.user_id,
+              question.created_at,
+              question.updated_at || question.created_at
+            ], (err) => {
+              if (err) {
+                console.error('❌ Failed to insert question:', question.question_text?.substring(0, 50), err);
+                syncStats.questions.errors++;
+                reject(err);
+              } else {
+                console.log(`✅ Synced question: ${question.question_text?.substring(0, 50)}...`);
+                syncStats.questions.pulled++;
+                resolve();
+              }
+            });
+          });
+        } catch (error) {
+          console.error('❌ Question sync error:', error);
+        }
+      }
+    }
+    
+    // Close database connection
+    db.close();
+    
+    console.log('✅ Data sync completed:', syncStats);
+    
+    return {
+      status: 'completed',
+      userId: targetUserId,
+      userEmail: userEmail,
+      stats: syncStats,
+      timestamp: new Date().toISOString()
+    };
+    
+  } catch (error) {
+    console.error('❌ Data sync failed:', error);
+    throw error;
+  }
 }
 
 // =============================================================================
