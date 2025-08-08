@@ -34,6 +34,17 @@ if (process.env.RAILWAY_ENVIRONMENT_NAME) {
     console.log('✅ Railway proxy trust enabled');
 }
 
+// Increase rate limiting for debugging
+const rateLimit = require('express-rate-limit');
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100, // Increase from default to 100 requests per minute
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', limiter);
+
 // =============================================================================
 // SECURITY & MIDDLEWARE SETUP
 // =============================================================================
@@ -452,6 +463,53 @@ app.get('/api/admin/debug-schema', authMiddleware.authenticateToken, authMiddlew
       schemas: schemas,
       timestamp: new Date().toISOString()
     });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Debug synced topics and their subject IDs
+app.get('/api/admin/debug-topics', authMiddleware.authenticateToken, authMiddleware.requireAdmin, async (req, res) => {
+  try {
+    const sqlite3 = require('sqlite3').verbose();
+    const path = require('path');
+    const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
+    const db = new sqlite3.Database(dbPath);
+    
+    // Get all topics and their subject mappings
+    await new Promise((resolve, reject) => {
+      db.all(`
+        SELECT t.id, t.name, t.subject_id, t.user_id, s.name as subject_name
+        FROM topics t 
+        LEFT JOIN subjects s ON t.subject_id = s.id
+        ORDER BY t.created_at DESC
+      `, (err, topics) => {
+        if (err) {
+          res.status(500).json({ error: err.message });
+          reject(err);
+          return;
+        }
+        
+        // Also get subject list
+        db.all('SELECT id, name FROM subjects ORDER BY name', (err, subjects) => {
+          if (err) {
+            console.error('Error getting subjects:', err);
+          }
+          
+          res.json({
+            success: true,
+            topics: topics,
+            subjects: subjects || [],
+            timestamp: new Date().toISOString()
+          });
+          
+          resolve();
+        });
+      });
+    });
+    
+    db.close();
     
   } catch (error) {
     res.status(500).json({ error: error.message });
