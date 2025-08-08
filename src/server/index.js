@@ -283,6 +283,83 @@ app.get('/api/test-new-route', (req, res) => {
   });
 });
 
+// Create subjects table manually for debugging
+app.post('/api/admin/create-subjects', authMiddleware.authenticateToken, authMiddleware.requireAdmin, async (req, res) => {
+  try {
+    console.log('🔧 Manually creating subjects table...');
+    
+    const sqlite3 = require('sqlite3').verbose();
+    const path = require('path');
+    const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
+    
+    const db = new sqlite3.Database(dbPath);
+    
+    // Create subjects table
+    const createSubjectsSQL = `
+      CREATE TABLE IF NOT EXISTS subjects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        description TEXT,
+        icon TEXT DEFAULT '📚',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    
+    await new Promise((resolve, reject) => {
+      db.run(createSubjectsSQL, (err) => {
+        if (err) {
+          console.error('❌ Failed to create subjects table:', err);
+          reject(err);
+        } else {
+          console.log('✅ Subjects table created successfully');
+          resolve();
+        }
+      });
+    });
+    
+    // Insert fixed subjects
+    const fixedSubjects = [
+      { name: 'Mathematics', description: 'Algebra, Calculus, Geometry, Statistics', icon: '🔢' },
+      { name: 'Science', description: 'Physics, Chemistry, Biology', icon: '🔬' },
+      { name: 'History', description: 'World History, Ancient Civilizations', icon: '📜' },
+      { name: 'Language Arts', description: 'Literature, Writing, Grammar', icon: '📖' },
+      { name: 'Computer Science', description: 'Programming, Algorithms, Data Structures', icon: '💻' }
+    ];
+    
+    for (const subject of fixedSubjects) {
+      await new Promise((resolve, reject) => {
+        db.run(
+          'INSERT OR IGNORE INTO subjects (name, description, icon) VALUES (?, ?, ?)',
+          [subject.name, subject.description, subject.icon],
+          (err) => {
+            if (err) {
+              console.warn(`⚠️ Failed to insert subject ${subject.name}:`, err.message);
+            } else {
+              console.log(`✅ Inserted subject: ${subject.name}`);
+            }
+            resolve(); // Continue even if one fails
+          }
+        );
+      });
+    }
+    
+    db.close();
+    
+    res.json({
+      success: true,
+      message: 'Subjects table created and populated',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Manual subjects creation failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Simple admin debug endpoint (moved up for testing)
 app.get('/api/admin/debug', (req, res) => {
   try {
@@ -1771,19 +1848,30 @@ app.post('/api/admin/database/repair', authMiddleware.authenticateToken, authMid
     
     if (action === 'recreate') {
       // Recreate all tables
-      const DatabaseService = require('./services/database-simplified');
-      const dbService = new DatabaseService();
-      
-      // This will recreate all tables if they don't exist
-      await dbService.createTables();
-      
-      res.json({
-        success: true,
-        message: 'Database tables recreated successfully',
-        action: action,
-        timestamp: new Date().toISOString(),
-        performedBy: req.user.email
-      });
+      console.log('🔧 Starting database table recreation...');
+      try {
+        const DatabaseService = require('./services/database-simplified');
+        console.log('✅ DatabaseService loaded');
+        
+        const dbService = new DatabaseService();
+        console.log('✅ DatabaseService instantiated');
+        
+        // This will recreate all tables if they don't exist
+        console.log('🔄 Calling createTables()...');
+        await dbService.createTables();
+        console.log('✅ createTables() completed successfully');
+        
+        res.json({
+          success: true,
+          message: 'Database tables recreated successfully',
+          action: action,
+          timestamp: new Date().toISOString(),
+          performedBy: req.user.email
+        });
+      } catch (recreateError) {
+        console.error('❌ Database recreation failed:', recreateError);
+        throw new Error(`Table recreation failed: ${recreateError.message}`);
+      }
     } else if (action === 'migrate') {
       // Run migration
       const migrationResult = await runDatabaseMigration();
