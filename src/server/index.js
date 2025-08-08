@@ -2072,16 +2072,14 @@ async function performDataSync(userEmail, userId) {
           await new Promise((resolve, reject) => {
             db.run(`
               INSERT OR REPLACE INTO notes 
-              (id, topic_id, title, content, file_name, file_type, user_id, created_at, updated_at) 
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+              (id, topic_id, content, file_name, word_count, created_at, updated_at) 
+              VALUES (?, ?, ?, ?, ?, ?, ?)
             `, [
               note.id,
               note.topic_id,
-              note.title || note.file_name, // Use file_name as title if title missing
               note.content,
               note.file_name,
-              note.file_type,
-              targetUserId, // Use the target user ID instead of note.user_id
+              note.word_count || 0,
               note.created_at,
               note.updated_at || note.created_at
             ], (err) => {
@@ -2123,17 +2121,18 @@ async function performDataSync(userEmail, userId) {
           await new Promise((resolve, reject) => {
             db.run(`
               INSERT OR REPLACE INTO questions 
-              (id, topic_id, note_id, question_text, question_type, options, correct_answer, user_id, created_at, updated_at) 
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              (id, topic_id, note_id, question, answer, type, options, correct_index, explanation, created_at, updated_at) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `, [
               question.id,
               question.topic_id,
               question.note_id,
-              question.question || question.question_text, // Handle both column names
-              question.type || question.question_type, // Handle both column names
+              question.question || question.question_text, // Use Supabase column name
+              question.answer || question.correct_answer, // Use Supabase column name  
+              question.type || question.question_type, // Use Supabase column name
               JSON.stringify(question.options || []),
-              question.answer || question.correct_answer, // Handle both column names
-              targetUserId, // Use the target user ID
+              question.correct_index || 0,
+              question.explanation || '',
               question.created_at,
               question.updated_at || question.created_at
             ], (err) => {
@@ -2167,22 +2166,22 @@ async function performDataSync(userEmail, userId) {
     });
     
     await new Promise((resolve, reject) => {
-      db.get('SELECT COUNT(*) as count FROM notes WHERE user_id = ?', [targetUserId], (err, result) => {
+      db.get('SELECT COUNT(*) as count FROM notes', (err, result) => {
         if (err) {
           console.error('❌ Error verifying synced notes:', err);
         } else {
-          console.log(`✅ Verified: ${result.count} notes in SQLite for user ${targetUserId}`);
+          console.log(`✅ Verified: ${result.count} total notes in SQLite`);
         }
         resolve();
       });
     });
     
     await new Promise((resolve, reject) => {
-      db.get('SELECT COUNT(*) as count FROM questions WHERE user_id = ?', [targetUserId], (err, result) => {
+      db.get('SELECT COUNT(*) as count FROM questions', (err, result) => {
         if (err) {
           console.error('❌ Error verifying synced questions:', err);
         } else {
-          console.log(`✅ Verified: ${result.count} questions in SQLite for user ${targetUserId}`);
+          console.log(`✅ Verified: ${result.count} total questions in SQLite`);
         }
         resolve();
       });
