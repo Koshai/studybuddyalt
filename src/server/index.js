@@ -283,6 +283,30 @@ app.get('/api/test-new-route', (req, res) => {
   });
 });
 
+// Simple admin debug endpoint (moved up for testing)
+app.get('/api/admin/debug', (req, res) => {
+  try {
+    const path = require('path');
+    const fs = require('fs');
+    const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
+    
+    res.json({
+      success: true,
+      server_status: 'running',
+      database_file_exists: fs.existsSync(dbPath),
+      database_path: dbPath,
+      environment: process.env.RAILWAY_ENVIRONMENT_NAME || 'local',
+      nodejs_version: process.version,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // AI Services Health Check
 app.get('/api/health/ai', async (req, res) => {
   try {
@@ -1512,29 +1536,7 @@ async function runDatabaseMigration() {
 // ADMIN SYNC MANAGEMENT ENDPOINTS
 // =============================================================================
 
-// Simple admin debug endpoint (bypass auth for troubleshooting)
-app.get('/api/admin/debug', (req, res) => {
-  try {
-    const path = require('path');
-    const fs = require('fs');
-    const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
-    
-    res.json({
-      success: true,
-      server_status: 'running',
-      database_file_exists: fs.existsSync(dbPath),
-      database_path: dbPath,
-      environment: process.env.RAILWAY_ENVIRONMENT_NAME || 'local',
-      nodejs_version: process.version,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
+// Admin debug endpoint moved to earlier in file to avoid conflicts
 
 // Get sync status and database information
 app.get('/api/admin/sync/status', authMiddleware.requireAdmin, async (req, res) => {
