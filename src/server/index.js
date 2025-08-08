@@ -1923,11 +1923,30 @@ async function performDataSync(userEmail, userId) {
     const { createClient } = require('@supabase/supabase-js');
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
     
-    // Initialize SQLite
+    // Initialize SQLite with proper directory creation
     const sqlite3 = require('sqlite3').verbose();
     const path = require('path');
-    const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
-    const db = new sqlite3.Database(dbPath);
+    const fs = require('fs');
+    
+    // Ensure data directory exists
+    const dataDir = path.join(__dirname, '../data');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+      console.log('✅ Created data directory:', dataDir);
+    }
+    
+    const dbPath = path.join(dataDir, 'study_ai_simplified.db');
+    console.log('📁 Database path:', dbPath);
+    console.log('📁 Database exists before sync:', fs.existsSync(dbPath));
+    
+    const db = new sqlite3.Database(dbPath, (err) => {
+      if (err) {
+        console.error('❌ Database connection error:', err);
+        throw err;
+      } else {
+        console.log('✅ Database connected for sync');
+      }
+    });
     
     let targetUserId = userId;
     const syncStats = {
@@ -2021,11 +2040,11 @@ async function performDataSync(userEmail, userId) {
             `, [
               note.id,
               note.topic_id,
-              note.title,
+              note.title || note.file_name, // Use file_name as title if title missing
               note.content,
               note.file_name,
               note.file_type,
-              note.user_id,
+              targetUserId, // Use the target user ID instead of note.user_id
               note.created_at,
               note.updated_at || note.created_at
             ], (err) => {
@@ -2073,11 +2092,11 @@ async function performDataSync(userEmail, userId) {
               question.id,
               question.topic_id,
               question.note_id,
-              question.question_text,
-              question.question_type,
-              JSON.stringify(question.options),
-              question.correct_answer,
-              question.user_id,
+              question.question || question.question_text, // Handle both column names
+              question.type || question.question_type, // Handle both column names
+              JSON.stringify(question.options || []),
+              question.answer || question.correct_answer, // Handle both column names
+              targetUserId, // Use the target user ID
               question.created_at,
               question.updated_at || question.created_at
             ], (err) => {
@@ -2097,6 +2116,40 @@ async function performDataSync(userEmail, userId) {
         }
       }
     }
+    
+    // Verify data was written before closing
+    await new Promise((resolve, reject) => {
+      db.get('SELECT COUNT(*) as count FROM topics WHERE user_id = ?', [targetUserId], (err, result) => {
+        if (err) {
+          console.error('❌ Error verifying synced data:', err);
+        } else {
+          console.log(`✅ Verified: ${result.count} topics in SQLite for user ${targetUserId}`);
+        }
+        resolve();
+      });
+    });
+    
+    await new Promise((resolve, reject) => {
+      db.get('SELECT COUNT(*) as count FROM notes WHERE user_id = ?', [targetUserId], (err, result) => {
+        if (err) {
+          console.error('❌ Error verifying synced notes:', err);
+        } else {
+          console.log(`✅ Verified: ${result.count} notes in SQLite for user ${targetUserId}`);
+        }
+        resolve();
+      });
+    });
+    
+    await new Promise((resolve, reject) => {
+      db.get('SELECT COUNT(*) as count FROM questions WHERE user_id = ?', [targetUserId], (err, result) => {
+        if (err) {
+          console.error('❌ Error verifying synced questions:', err);
+        } else {
+          console.log(`✅ Verified: ${result.count} questions in SQLite for user ${targetUserId}`);
+        }
+        resolve();
+      });
+    });
     
     // Close database connection
     db.close();
