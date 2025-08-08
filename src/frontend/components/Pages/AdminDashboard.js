@@ -1,26 +1,24 @@
 // src/frontend/components/Pages/AdminDashboard.js
-import { ref, onMounted, reactive } from 'vue';
-
-export default {
+const AdminDashboard = {
     name: 'AdminDashboard',
     setup() {
-        const loading = ref(false);
-        const error = ref(null);
-        const success = ref(null);
+        const loading = Vue.ref(false);
+        const error = Vue.ref(null);
+        const success = Vue.ref(null);
         
-        const syncStatus = ref(null);
-        const syncLogs = ref([]);
-        const isAdmin = ref(false);
+        const syncStatus = Vue.ref(null);
+        const syncLogs = Vue.ref([]);
+        const isAdmin = Vue.ref(false);
         
         // Manual sync form
-        const syncForm = reactive({
+        const syncForm = Vue.reactive({
             userEmail: '',
             userId: '',
             syncType: 'full'
         });
         
         // Check admin access on mount
-        onMounted(async () => {
+        Vue.onMounted(async () => {
             await checkAdminAccess();
             if (isAdmin.value) {
                 await loadSyncStatus();

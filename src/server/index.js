@@ -28,9 +28,9 @@ const syncRoutes = require('./routes/sync-routes');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Trust Railway proxy for rate limiting
+// Trust Railway proxy for rate limiting with proper configuration
 if (process.env.RAILWAY_ENVIRONMENT_NAME) {
-    app.set('trust proxy', true);
+    app.set('trust proxy', 1); // Trust only the first proxy (Railway)
     console.log('✅ Railway proxy trust enabled');
 }
 
