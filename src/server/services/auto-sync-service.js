@@ -6,9 +6,10 @@ const { getSyncService } = require('./enhanced-sync-service');
 
 class AutoSyncService {
     constructor() {
+        // Use service role key for admin operations
         this.supabase = createClient(
             process.env.SUPABASE_URL,
-            process.env.SUPABASE_ANON_KEY
+            process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
         );
         this.syncService = null;
     }
@@ -190,27 +191,66 @@ class AutoSyncService {
         const supabaseCounts = {};
         
         try {
-            // Set user context for RLS
-            const { data: { session }, error: sessionError } = await this.supabase.auth.getSession();
-            if (sessionError) throw sessionError;
-
-            const supabaseQueries = {
-                topics: this.supabase.from('topics').select('id', { count: 'exact', head: true }),
-                notes: this.supabase.from('notes').select('id', { count: 'exact', head: true }),
-                questions: this.supabase.from('questions').select('id', { count: 'exact', head: true }),
-                practice_sessions: this.supabase.from('practice_sessions').select('id', { count: 'exact', head: true }),
-                user_answers: this.supabase.from('user_answers').select('id', { count: 'exact', head: true })
-            };
-
-            for (const [table, query] of Object.entries(supabaseQueries)) {
-                try {
-                    const { count, error } = await query;
-                    if (error) throw error;
-                    supabaseCounts[table] = count || 0;
-                } catch (error) {
-                    console.warn(`⚠️ Failed to get Supabase count for ${table}:`, error.message);
-                    supabaseCounts[table] = 0;
-                }
+            // Query Supabase with explicit user filtering (bypassing RLS with service key)
+            // For now, get all user data and count client-side to avoid complex joins
+            const supabaseData = {};
+            
+            // Get topics directly
+            const { data: topicsData, error: topicsError } = await this.supabase
+                .from('topics')
+                .select('id')
+                .eq('user_id', userId);
+                
+            if (topicsError) throw topicsError;
+            supabaseCounts.topics = topicsData?.length || 0;
+            
+            // Get user's topic IDs for filtering other tables
+            const userTopicIds = topicsData?.map(t => t.id) || [];
+            
+            if (userTopicIds.length > 0) {
+                // Get notes for user's topics
+                const { data: notesData, error: notesError } = await this.supabase
+                    .from('notes')
+                    .select('id')
+                    .in('topic_id', userTopicIds);
+                    
+                if (!notesError) supabaseCounts.notes = notesData?.length || 0;
+                else supabaseCounts.notes = 0;
+                
+                // Get questions for user's topics  
+                const { data: questionsData, error: questionsError } = await this.supabase
+                    .from('questions')
+                    .select('id')
+                    .in('topic_id', userTopicIds);
+                    
+                if (!questionsError) supabaseCounts.questions = questionsData?.length || 0;
+                else supabaseCounts.questions = 0;
+            } else {
+                supabaseCounts.notes = 0;
+                supabaseCounts.questions = 0;
+            }
+            
+            // Get practice sessions directly
+            const { data: sessionsData, error: sessionsError } = await this.supabase
+                .from('practice_sessions')
+                .select('id')
+                .eq('user_id', userId);
+                
+            if (!sessionsError) supabaseCounts.practice_sessions = sessionsData?.length || 0;
+            else supabaseCounts.practice_sessions = 0;
+            
+            // Get user answers for user's sessions
+            const sessionIds = sessionsData?.map(s => s.id) || [];
+            if (sessionIds.length > 0) {
+                const { data: answersData, error: answersError } = await this.supabase
+                    .from('user_answers')
+                    .select('id')
+                    .in('practice_session_id', sessionIds);
+                    
+                if (!answersError) supabaseCounts.user_answers = answersData?.length || 0;
+                else supabaseCounts.user_answers = 0;
+            } else {
+                supabaseCounts.user_answers = 0;
             }
         } catch (error) {
             console.warn('⚠️ Failed to connect to Supabase for counts:', error.message);
@@ -236,14 +276,15 @@ class AutoSyncService {
                 .from('user_profiles')
                 .select('id')
                 .eq('id', userId)
-                .single();
+                .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no rows
 
-            if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
-                throw checkError;
+            if (checkError) {
+                console.warn('⚠️ Error checking user profile:', checkError.message);
+                return; // Skip profile creation if check fails
             }
 
             if (!existingProfile) {
-                // Create profile
+                // Create profile using service role (bypasses RLS)
                 const { error: insertError } = await this.supabase
                     .from('user_profiles')
                     .insert({
@@ -254,14 +295,17 @@ class AutoSyncService {
                         updated_at: new Date().toISOString()
                     });
 
-                if (insertError) throw insertError;
+                if (insertError) {
+                    console.warn('⚠️ Failed to create user profile:', insertError.message);
+                    return; // Don't throw - profile creation is not critical for sync
+                }
                 console.log('✅ User profile created in Supabase');
             } else {
                 console.log('✅ User profile exists in Supabase');
             }
         } catch (error) {
-            console.error('❌ Failed to ensure user profile:', error.message);
-            throw error;
+            console.warn('⚠️ User profile operation failed:', error.message);
+            // Don't throw - profile creation is not critical for data sync
         }
     }
 
@@ -333,12 +377,44 @@ class AutoSyncService {
 
             db.close();
 
-            // Get cloud data, excluding already-synced records
-            const { data: cloudRecords, error } = await this.supabase
-                .from(table)
-                .select('*')
-                .not('id', 'in', `(${existingIds.map(id => `"${id}"`).join(',') || '""'})`)
-                .order('created_at', { ascending: true });
+            // Get cloud data with proper user filtering and excluding already-synced records
+            let query = this.supabase.from(table).select('*');
+            
+            // Add user filtering
+            if (table === 'topics' || table === 'practice_sessions') {
+                query = query.eq('user_id', userId);
+            } else if (table === 'notes' || table === 'questions') {
+                // Get user's topic IDs for filtering
+                const { data: userTopics, error: topicsError } = await this.supabase
+                    .from('topics')
+                    .select('id')
+                    .eq('user_id', userId);
+                    
+                if (topicsError) throw topicsError;
+                const topicIds = userTopics?.map(t => t.id) || [];
+                if (topicIds.length === 0) return 0;
+                
+                query = query.in('topic_id', topicIds);
+            } else if (table === 'user_answers') {
+                // Get user's session IDs for filtering
+                const { data: userSessions, error: sessionsError } = await this.supabase
+                    .from('practice_sessions')
+                    .select('id')
+                    .eq('user_id', userId);
+                    
+                if (sessionsError) throw sessionsError;
+                const sessionIds = userSessions?.map(s => s.id) || [];
+                if (sessionIds.length === 0) return 0;
+                
+                query = query.in('practice_session_id', sessionIds);
+            }
+            
+            // Exclude already-synced records
+            if (existingIds.length > 0) {
+                query = query.not('id', 'in', `(${existingIds.map(id => `"${id}"`).join(',')})`);
+            }
+            
+            const { data: cloudRecords, error } = await query.order('created_at', { ascending: true });
 
             if (error) throw error;
             
@@ -363,11 +439,39 @@ class AutoSyncService {
      */
     async mergeToCloud(table, userId) {
         try {
-            // Get existing Supabase IDs
-            const { data: existingRecords, error: fetchError } = await this.supabase
-                .from(table)
-                .select('id')
-                .order('created_at', { ascending: true });
+            // Get existing Supabase IDs with user filtering
+            let query = this.supabase.from(table).select('id');
+            
+            // Add user filtering
+            if (table === 'topics' || table === 'practice_sessions') {
+                query = query.eq('user_id', userId);
+            } else if (table === 'notes' || table === 'questions') {
+                // Get user's topic IDs for filtering
+                const { data: userTopics, error: topicsError } = await this.supabase
+                    .from('topics')
+                    .select('id')
+                    .eq('user_id', userId);
+                    
+                if (topicsError) throw topicsError;
+                const topicIds = userTopics?.map(t => t.id) || [];
+                if (topicIds.length === 0) return 0;
+                
+                query = query.in('topic_id', topicIds);
+            } else if (table === 'user_answers') {
+                // Get user's session IDs for filtering
+                const { data: userSessions, error: sessionsError } = await this.supabase
+                    .from('practice_sessions')
+                    .select('id')
+                    .eq('user_id', userId);
+                    
+                if (sessionsError) throw sessionsError;
+                const sessionIds = userSessions?.map(s => s.id) || [];
+                if (sessionIds.length === 0) return 0;
+                
+                query = query.in('practice_session_id', sessionIds);
+            }
+            
+            const { data: existingRecords, error: fetchError } = await query.order('created_at', { ascending: true });
 
             if (fetchError) throw fetchError;
 

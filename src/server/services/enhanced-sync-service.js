@@ -6,9 +6,10 @@ const Database = require('better-sqlite3');
 
 class EnhancedSyncService {
     constructor() {
+        // Use service role key for server-side operations that bypass RLS
         this.supabase = createClient(
             process.env.SUPABASE_URL,
-            process.env.SUPABASE_ANON_KEY
+            process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
         );
         
         // Use existing database path
@@ -33,10 +34,6 @@ class EnhancedSyncService {
         console.log(`🔄 Starting full sync for user ${userId}`);
         
         try {
-            // Set Supabase session for RLS
-            const { data: { session }, error: sessionError } = await this.supabase.auth.getSession();
-            if (sessionError) throw sessionError;
-
             let syncedCount = 0;
             
             for (const tableName of this.syncTables) {
@@ -85,11 +82,46 @@ class EnhancedSyncService {
      * Sync a specific table from Supabase to SQLite
      */
     async syncTableFromCloud(tableName, userId) {
-        // Get all records for this user from Supabase
-        const { data: cloudRecords, error } = await this.supabase
-            .from(tableName)
-            .select('*')
-            .order('created_at', { ascending: true });
+        // Get records for this user from Supabase with proper filtering
+        let query = this.supabase.from(tableName).select('*');
+        
+        // Add user filtering based on table structure
+        if (tableName === 'topics' || tableName === 'practice_sessions') {
+            // These tables have direct user_id column
+            query = query.eq('user_id', userId);
+        } else if (tableName === 'notes' || tableName === 'questions') {
+            // These tables are related through topics - need to get user's topic IDs first
+            const { data: userTopics, error: topicsError } = await this.supabase
+                .from('topics')
+                .select('id')
+                .eq('user_id', userId);
+                
+            if (topicsError) throw topicsError;
+            
+            const topicIds = userTopics?.map(t => t.id) || [];
+            if (topicIds.length === 0) {
+                return 0; // No topics = no notes/questions
+            }
+            
+            query = query.in('topic_id', topicIds);
+        } else if (tableName === 'user_answers') {
+            // Related through practice_sessions
+            const { data: userSessions, error: sessionsError } = await this.supabase
+                .from('practice_sessions')
+                .select('id')
+                .eq('user_id', userId);
+                
+            if (sessionsError) throw sessionsError;
+            
+            const sessionIds = userSessions?.map(s => s.id) || [];
+            if (sessionIds.length === 0) {
+                return 0; // No sessions = no answers
+            }
+            
+            query = query.in('practice_session_id', sessionIds);
+        }
+        
+        const { data: cloudRecords, error } = await query.order('created_at', { ascending: true });
 
         if (error) throw error;
         if (!cloudRecords || cloudRecords.length === 0) return 0;
