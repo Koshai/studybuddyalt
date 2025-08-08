@@ -307,6 +307,27 @@ app.get('/api/admin/debug', (req, res) => {
   }
 });
 
+// Simple admin auth test endpoint
+app.get('/api/admin/auth-test', authMiddleware.requireAdmin, (req, res) => {
+  try {
+    res.json({
+      success: true,
+      message: 'Admin authentication successful',
+      user: {
+        email: req.user.email,
+        id: req.user.id,
+        subscriptionTier: req.user.subscriptionTier
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Admin sync status endpoint (moved up for testing)
 app.get('/api/admin/sync/status', authMiddleware.requireAdmin, async (req, res) => {
   try {

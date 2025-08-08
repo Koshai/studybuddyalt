@@ -875,13 +875,24 @@ class SimplifiedApiService {
    */
   async checkAdminAccess() {
     try {
-      await this.getAdminSyncStatus();
+      // Try the simpler auth test first
+      await this.request('/admin/auth-test');
       return true;
     } catch (error) {
-      if (error.message.includes('403') || error.message.includes('Admin')) {
+      if (error.message.includes('403') || error.message.includes('Admin') || error.message.includes('Forbidden')) {
         return false;
       }
-      throw error;
+      // If it's a 502 or other server error, still try to check
+      console.warn('Admin auth test failed, trying sync status:', error.message);
+      try {
+        await this.getAdminSyncStatus();
+        return true;
+      } catch (syncError) {
+        if (syncError.message.includes('403') || syncError.message.includes('Admin') || syncError.message.includes('Forbidden')) {
+          return false;
+        }
+        throw syncError;
+      }
     }
   }
 }
