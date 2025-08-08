@@ -365,6 +365,62 @@ app.post('/api/admin/create-subjects', authMiddleware.authenticateToken, authMid
   }
 });
 
+// Debug Supabase data for user
+app.get('/api/admin/debug-supabase/:email', authMiddleware.authenticateToken, authMiddleware.requireAdmin, async (req, res) => {
+  try {
+    const userEmail = req.params.email;
+    console.log(`🔍 Debugging Supabase data for: ${userEmail}`);
+    
+    const { createClient } = require('@supabase/supabase-js');
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    
+    // Get user ID
+    const { data: profileData, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('id, email')
+      .eq('email', userEmail)
+      .single();
+    
+    if (profileError) {
+      return res.json({ error: 'User not found', details: profileError });
+    }
+    
+    const userId = profileData.id;
+    
+    // Check all tables
+    const [topicsResult, notesResult, questionsResult] = await Promise.all([
+      supabase.from('topics').select('*').eq('user_id', userId),
+      supabase.from('notes').select('*').eq('user_id', userId),
+      supabase.from('questions').select('*').eq('user_id', userId)
+    ]);
+    
+    res.json({
+      userEmail,
+      userId,
+      data: {
+        topics: { 
+          count: topicsResult.data?.length || 0, 
+          data: topicsResult.data,
+          error: topicsResult.error 
+        },
+        notes: { 
+          count: notesResult.data?.length || 0, 
+          data: notesResult.data,
+          error: notesResult.error 
+        },
+        questions: { 
+          count: questionsResult.data?.length || 0, 
+          data: questionsResult.data,
+          error: questionsResult.error 
+        }
+      }
+    });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Simple admin debug endpoint (moved up for testing)
 app.get('/api/admin/debug', (req, res) => {
   try {
@@ -1946,8 +2002,14 @@ async function performDataSync(userEmail, userId) {
       .select('*')
       .eq('user_id', targetUserId);
     
+    console.log(`📝 Found ${supabaseNotes?.length || 0} notes in Supabase for user ${targetUserId}`);
+    if (supabaseNotes?.length > 0) {
+      console.log('📝 Sample note structure:', JSON.stringify(supabaseNotes[0], null, 2));
+    }
+    
     if (notesError) {
       console.error('❌ Error fetching notes from Supabase:', notesError);
+      syncStats.notes.errors++;
     } else if (supabaseNotes && supabaseNotes.length > 0) {
       for (const note of supabaseNotes) {
         try {
@@ -1991,8 +2053,14 @@ async function performDataSync(userEmail, userId) {
       .select('*')
       .eq('user_id', targetUserId);
     
+    console.log(`❓ Found ${supabaseQuestions?.length || 0} questions in Supabase for user ${targetUserId}`);
+    if (supabaseQuestions?.length > 0) {
+      console.log('❓ Sample question structure:', JSON.stringify(supabaseQuestions[0], null, 2));
+    }
+    
     if (questionsError) {
       console.error('❌ Error fetching questions from Supabase:', questionsError);
+      syncStats.questions.errors++;
     } else if (supabaseQuestions && supabaseQuestions.length > 0) {
       for (const question of supabaseQuestions) {
         try {
