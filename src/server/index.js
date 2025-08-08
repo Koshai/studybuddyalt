@@ -308,7 +308,7 @@ app.get('/api/admin/debug', (req, res) => {
 });
 
 // Simple admin auth test endpoint
-app.get('/api/admin/auth-test', authMiddleware.requireAdmin, (req, res) => {
+app.get('/api/admin/auth-test', authMiddleware.authenticateToken, authMiddleware.requireAdmin, (req, res) => {
   try {
     res.json({
       success: true,
@@ -329,7 +329,7 @@ app.get('/api/admin/auth-test', authMiddleware.requireAdmin, (req, res) => {
 });
 
 // Admin sync status endpoint (moved up for testing)
-app.get('/api/admin/sync/status', authMiddleware.requireAdmin, async (req, res) => {
+app.get('/api/admin/sync/status', authMiddleware.authenticateToken, authMiddleware.requireAdmin, async (req, res) => {
   try {
     console.log(`🔍 Admin sync status requested by ${req.user.email}`);
     
@@ -1664,7 +1664,7 @@ async function runDatabaseMigration() {
 // to avoid Express route registration conflicts
 
 // Manually trigger sync for a user
-app.post('/api/admin/sync/trigger', authMiddleware.requireAdmin, async (req, res) => {
+app.post('/api/admin/sync/trigger', authMiddleware.authenticateToken, authMiddleware.requireAdmin, async (req, res) => {
   try {
     const { userId, userEmail, syncType } = req.body;
     
@@ -1722,7 +1722,7 @@ app.post('/api/admin/sync/trigger', authMiddleware.requireAdmin, async (req, res
 });
 
 // Get sync logs and recent activity
-app.get('/api/admin/sync/logs', authMiddleware.requireAdmin, async (req, res) => {
+app.get('/api/admin/sync/logs', authMiddleware.authenticateToken, authMiddleware.requireAdmin, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
     console.log(`📋 Admin sync logs requested by ${req.user.email} (limit: ${limit})`);
@@ -1763,7 +1763,7 @@ app.get('/api/admin/sync/logs', authMiddleware.requireAdmin, async (req, res) =>
 });
 
 // Reset or repair database
-app.post('/api/admin/database/repair', authMiddleware.requireAdmin, async (req, res) => {
+app.post('/api/admin/database/repair', authMiddleware.authenticateToken, authMiddleware.requireAdmin, async (req, res) => {
   try {
     const { action } = req.body; // 'recreate', 'repair', 'migrate'
     
