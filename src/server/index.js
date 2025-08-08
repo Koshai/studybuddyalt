@@ -1505,7 +1505,7 @@ async function runDatabaseMigration() {
 // =============================================================================
 
 // Simple admin debug endpoint (bypass auth for troubleshooting)
-app.get('/api/admin/debug', async (req, res) => {
+app.get('/api/admin/debug', (req, res) => {
   try {
     const path = require('path');
     const fs = require('fs');
@@ -1523,8 +1523,7 @@ app.get('/api/admin/debug', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error.message,
-      stack: error.stack
+      error: error.message
     });
   }
 });
@@ -1579,25 +1578,38 @@ app.get('/api/admin/sync/status', authMiddleware.requireAdmin, async (req, res) 
       });
     };
     
-    // Check all tables
-    await Promise.all(tables.map(table => getTableInfo(table)));
+    // Check all tables with proper error handling
+    try {
+      await Promise.all(tables.map(table => getTableInfo(table)));
+    } catch (dbError) {
+      console.error('❌ Database table check failed:', dbError);
+      // Continue anyway with empty table info
+    }
     
     // Get Supabase connection status
     let supabaseStatus = { connected: false, error: null };
     try {
-      const { createClient } = require('@supabase/supabase-js');
-      const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-      const { data, error } = await supabase.from('subjects').select('count', { count: 'exact' }).limit(1);
-      if (error) {
-        supabaseStatus = { connected: false, error: error.message };
+      if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+        const { data, error } = await supabase.from('subjects').select('count', { count: 'exact' }).limit(1);
+        if (error) {
+          supabaseStatus = { connected: false, error: error.message };
+        } else {
+          supabaseStatus = { connected: true, subjectsCount: data.length };
+        }
       } else {
-        supabaseStatus = { connected: true, subjectsCount: data.length };
+        supabaseStatus = { connected: false, error: 'Supabase environment variables missing' };
       }
     } catch (error) {
       supabaseStatus = { connected: false, error: error.message };
     }
     
-    checkDb.close();
+    try {
+      checkDb.close();
+    } catch (closeError) {
+      console.warn('Warning: Could not close database connection:', closeError.message);
+    }
     
     res.json({
       success: true,
