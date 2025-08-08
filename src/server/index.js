@@ -1504,16 +1504,63 @@ async function runDatabaseMigration() {
 // ADMIN SYNC MANAGEMENT ENDPOINTS
 // =============================================================================
 
+// Simple admin debug endpoint (bypass auth for troubleshooting)
+app.get('/api/admin/debug', async (req, res) => {
+  try {
+    const path = require('path');
+    const fs = require('fs');
+    const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
+    
+    res.json({
+      success: true,
+      server_status: 'running',
+      database_file_exists: fs.existsSync(dbPath),
+      database_path: dbPath,
+      environment: process.env.RAILWAY_ENVIRONMENT_NAME || 'local',
+      nodejs_version: process.version,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Get sync status and database information
 app.get('/api/admin/sync/status', authMiddleware.requireAdmin, async (req, res) => {
   try {
     console.log(`🔍 Admin sync status requested by ${req.user.email}`);
     
-    // Get database table information
+    // Get database table information with error handling
     const sqlite3 = require('sqlite3').verbose();
     const path = require('path');
+    const fs = require('fs');
     const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
-    const checkDb = new sqlite3.Database(dbPath);
+    
+    // Check if database file exists
+    if (!fs.existsSync(dbPath)) {
+      console.error('❌ Database file does not exist:', dbPath);
+      return res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        sqlite: {
+          dbPath: dbPath,
+          exists: false,
+          error: 'Database file not found'
+        },
+        supabase: { connected: false, error: 'Database not available' },
+        environment: process.env.RAILWAY_ENVIRONMENT_NAME || 'local'
+      });
+    }
+    
+    const checkDb = new sqlite3.Database(dbPath, (err) => {
+      if (err) {
+        console.error('❌ Database connection failed:', err);
+      }
+    });
     
     const tableInfo = {};
     const tables = ['subjects', 'topics', 'notes', 'questions', 'practice_sessions', 'user_answers'];
