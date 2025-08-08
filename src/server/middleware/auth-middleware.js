@@ -11,7 +11,16 @@ class AuthMiddleware {
             const authHeader = req.headers['authorization'];
             const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
+            console.log('🔐 Auth debug:', {
+                endpoint: req.path,
+                authHeader: authHeader ? authHeader.substring(0, 20) + '...' : null,
+                tokenExists: !!token,
+                tokenLength: token?.length,
+                tokenPrefix: token ? token.substring(0, 10) + '...' : null
+            });
+
             if (!token) {
+                console.log('❌ No token provided');
                 return res.status(401).json({ error: 'Access token required' });
             }
 
@@ -19,10 +28,11 @@ class AuthMiddleware {
             const userProfile = await this.authService.getUserProfile(decoded.userId);
 
             req.user = userProfile;
+            console.log('✅ Token verified for user:', userProfile.email);
             next();
 
         } catch (error) {
-            console.error('Token verification failed:', error);
+            console.error('❌ Token verification failed:', error.message);
             return res.status(403).json({ error: 'Invalid or expired token' });
         }
     };

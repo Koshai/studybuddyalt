@@ -28,6 +28,12 @@ const syncRoutes = require('./routes/sync-routes');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust Railway proxy for rate limiting
+if (process.env.RAILWAY_ENVIRONMENT_NAME) {
+    app.set('trust proxy', true);
+    console.log('✅ Railway proxy trust enabled');
+}
+
 // =============================================================================
 // SECURITY & MIDDLEWARE SETUP
 // =============================================================================
@@ -1302,6 +1308,37 @@ app.get('/api/debug/database', authMiddleware.authenticateToken, async (req, res
     console.error('❌ Debug endpoint error:', error);
     res.status(500).json({ error: error.message });
   }
+});
+
+// =============================================================================
+// TOKEN DEBUGGING ENDPOINTS
+// =============================================================================
+
+// Debug token format (no auth required)
+app.post('/api/debug/token', (req, res) => {
+    try {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+        
+        console.log('🔍 Token debug request:', {
+            authHeader: authHeader ? authHeader.substring(0, 30) + '...' : null,
+            tokenExists: !!token,
+            tokenLength: token?.length,
+            tokenPrefix: token ? token.substring(0, 20) + '...' : null,
+            userAgent: req.headers['user-agent']?.substring(0, 50),
+            origin: req.headers['origin']
+        });
+
+        res.json({
+            tokenReceived: !!token,
+            tokenLength: token?.length,
+            authHeaderFormat: authHeader ? authHeader.split(' ')[0] : null,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Token debug error:', error);
+        res.status(500).json({ error: 'Debug failed' });
+    }
 });
 
 // =============================================================================
