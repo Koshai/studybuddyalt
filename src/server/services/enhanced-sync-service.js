@@ -2,7 +2,7 @@
 // Builds on existing hybrid-storage-service.js with full sync capabilities
 
 const { createClient } = require('@supabase/supabase-js');
-const Database = require('better-sqlite3');
+const sqlite3 = require('sqlite3').verbose();
 
 class EnhancedSyncService {
     constructor() {
@@ -12,8 +12,10 @@ class EnhancedSyncService {
             process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
         );
         
-        // Use existing database path
-        this.db = new Database('./src/data/study_ai_simplified.db');
+        // Use existing database path with sqlite3
+        const path = require('path');
+        const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
+        this.db = new sqlite3.Database(dbPath);
         
         // Tables that need syncing (in dependency order)
         this.syncTables = [
@@ -126,43 +128,69 @@ class EnhancedSyncService {
         if (error) throw error;
         if (!cloudRecords || cloudRecords.length === 0) return 0;
 
-        // Filter columns to match SQLite schema - exclude Supabase-specific columns
-        const excludedColumns = ['last_synced', 'updated_at'];
-        const columns = Object.keys(cloudRecords[0]).filter(col => !excludedColumns.includes(col));
+        // Get SQLite table schema to determine which columns actually exist
+        const tableInfo = await this.getSQLiteTableSchema(tableName);
+        const sqliteColumns = tableInfo.map(col => col.name);
         
-        // For questions table, ensure note_id is included if it exists in data
-        if (tableName === 'questions') {
-            const sampleRecord = cloudRecords[0];
-            if (!columns.includes('note_id') && sampleRecord.note_id !== undefined) {
-                columns.push('note_id');
-            }
+        // Filter Supabase columns to only include ones that exist in SQLite
+        const availableColumns = Object.keys(cloudRecords[0]).filter(col => sqliteColumns.includes(col));
+        
+        if (availableColumns.length === 0) {
+            console.warn(`⚠️ No matching columns found for table ${tableName}`);
+            return 0;
         }
         
-        const placeholders = columns.map(() => '?').join(',');
-        const columnsList = columns.join(',');
+        const placeholders = availableColumns.map(() => '?').join(',');
+        const columnsList = availableColumns.join(',');
         
-        const insertStmt = this.db.prepare(`
-            INSERT OR REPLACE INTO ${tableName} (${columnsList}) 
-            VALUES (${placeholders})
-        `);
+        console.log(`   📋 Syncing columns for ${tableName}: ${availableColumns.join(', ')}`);
         
-        const updateSyncStmt = this.db.prepare(`
-            UPDATE ${tableName} SET last_synced = ? WHERE id = ?
-        `);
+        const insertSql = `INSERT OR REPLACE INTO ${tableName} (${columnsList}) VALUES (${placeholders})`;
+        const updateSyncSql = `UPDATE ${tableName} SET last_synced = ? WHERE id = ?`;
 
-        // Insert all records in a transaction
-        const insertMany = this.db.transaction(() => {
-            for (const record of cloudRecords) {
-                const values = columns.map(col => record[col]);
-                insertStmt.run(...values);
+        // Insert records one by one (sqlite3 doesn't have transactions like better-sqlite3)
+        let insertedCount = 0;
+        for (const record of cloudRecords) {
+            try {
+                const values = availableColumns.map(col => record[col]);
+                await new Promise((resolve, reject) => {
+                    this.db.run(insertSql, values, function(err) {
+                        if (err) reject(err);
+                        else resolve();
+                    });
+                });
                 
-                // Mark as synced in local DB
-                updateSyncStmt.run(new Date().toISOString(), record.id);
+                // Only update last_synced if the column exists
+                if (sqliteColumns.includes('last_synced')) {
+                    await new Promise((resolve, reject) => {
+                        this.db.run(updateSyncSql, [new Date().toISOString(), record.id], function(err) {
+                            if (err) reject(err);
+                            else resolve();
+                        });
+                    });
+                }
+                insertedCount++;
+            } catch (error) {
+                console.warn(`⚠️ Failed to insert record ${record.id}:`, error.message);
             }
-        });
+        }
 
-        insertMany();
-        return cloudRecords.length;
+        return insertedCount;
+    }
+
+    /**
+     * Get SQLite table schema information
+     */
+    async getSQLiteTableSchema(tableName) {
+        return new Promise((resolve, reject) => {
+            this.db.all(`PRAGMA table_info(${tableName})`, (err, rows) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(rows || []);
+                }
+            });
+        });
     }
 
     /**

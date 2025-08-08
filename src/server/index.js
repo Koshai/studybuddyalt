@@ -1305,6 +1305,113 @@ app.get('/api/debug/database', authMiddleware.authenticateToken, async (req, res
 });
 
 // =============================================================================
+// DATABASE MIGRATION ENDPOINTS
+// =============================================================================
+
+// Emergency database schema update endpoint
+app.post('/api/admin/migrate-database', authMiddleware.authenticateToken, async (req, res) => {
+  try {
+    // Only allow specific admin users or in development
+    const isAdmin = req.user.email === 'syed.r.akbar@gmail.com' || process.env.NODE_ENV === 'development';
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    console.log(`🔧 Database migration requested by ${req.user.email}`);
+    
+    // Run the database migration
+    const migrationResult = await runDatabaseMigration();
+    
+    if (migrationResult.success) {
+      res.json({
+        success: true,
+        message: 'Database migration completed successfully',
+        changes: migrationResult.changes,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: migrationResult.error
+      });
+    }
+  } catch (error) {
+    console.error('❌ Database migration failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Database migration failed: ' + error.message
+    });
+  }
+});
+
+// Function to run database migration
+async function runDatabaseMigration() {
+  const sqlite3 = require('sqlite3').verbose();
+  const path = require('path');
+  
+  return new Promise((resolve) => {
+    const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
+    const migrationDb = new sqlite3.Database(dbPath);
+    
+    const changes = [];
+    let completedMigrations = 0;
+    let totalMigrations = 0;
+    
+    const migrations = [
+      // Add missing columns to topics
+      { table: 'topics', column: 'user_id', type: 'TEXT' },
+      { table: 'topics', column: 'updated_at', type: 'DATETIME DEFAULT CURRENT_TIMESTAMP' },
+      { table: 'topics', column: 'last_synced', type: 'DATETIME' },
+      
+      // Add missing columns to notes
+      { table: 'notes', column: 'updated_at', type: 'DATETIME DEFAULT CURRENT_TIMESTAMP' },
+      { table: 'notes', column: 'last_synced', type: 'DATETIME' },
+      
+      // Add missing columns to questions
+      { table: 'questions', column: 'note_id', type: 'TEXT' },
+      { table: 'questions', column: 'updated_at', type: 'DATETIME DEFAULT CURRENT_TIMESTAMP' },
+      { table: 'questions', column: 'last_synced', type: 'DATETIME' },
+      
+      // Add missing columns to practice_sessions
+      { table: 'practice_sessions', column: 'user_id', type: 'TEXT' },
+      { table: 'practice_sessions', column: 'updated_at', type: 'DATETIME DEFAULT CURRENT_TIMESTAMP' },
+      { table: 'practice_sessions', column: 'last_synced', type: 'DATETIME' },
+      
+      // Add missing columns to user_answers
+      { table: 'user_answers', column: 'updated_at', type: 'DATETIME DEFAULT CURRENT_TIMESTAMP' },
+      { table: 'user_answers', column: 'last_synced', type: 'DATETIME' }
+    ];
+    
+    totalMigrations = migrations.length;
+    
+    const checkCompletion = () => {
+      completedMigrations++;
+      if (completedMigrations >= totalMigrations) {
+        migrationDb.close();
+        resolve({ success: true, changes });
+      }
+    };
+    
+    migrations.forEach(migration => {
+      const sql = `ALTER TABLE ${migration.table} ADD COLUMN ${migration.column} ${migration.type}`;
+      
+      migrationDb.run(sql, (err) => {
+        if (err) {
+          if (err.message.includes('duplicate column name')) {
+            changes.push(`✅ Column ${migration.table}.${migration.column} already exists`);
+          } else {
+            changes.push(`❌ Failed to add ${migration.table}.${migration.column}: ${err.message}`);
+          }
+        } else {
+          changes.push(`✅ Added column ${migration.table}.${migration.column}`);
+        }
+        checkCompletion();
+      });
+    });
+  });
+}
+
+// =============================================================================
 // START SERVER
 // =============================================================================
 
