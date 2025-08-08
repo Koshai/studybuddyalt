@@ -277,9 +277,14 @@ window.SyncClient = {
             if (navigator.sendBeacon && window.store && window.store.state.isAuthenticated) {
                 const token = localStorage.getItem('auth_token');
                 if (token) {
-                    navigator.sendBeacon('/api/sync/background', JSON.stringify({
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    }));
+                    // sendBeacon doesn't support custom headers, so we'll use a different endpoint
+                    // or skip this for now since it's causing authentication issues
+                    try {
+                        // Quick background sync without blocking
+                        this.backgroundSync().catch(err => console.warn('Background sync failed:', err));
+                    } catch (error) {
+                        console.warn('Failed to trigger background sync on unload:', error);
+                    }
                 }
             }
         });

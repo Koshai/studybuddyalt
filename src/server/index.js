@@ -44,7 +44,9 @@ app.use(helmet({
                 "https://cdn.tailwindcss.com",
                 "https://unpkg.com",
                 "https://cdnjs.cloudflare.com",
-                "https://cdn.quilljs.com"
+                "https://cdn.quilljs.com",
+                "https://pagead2.googlesyndication.com",
+                "https://www.googletagservices.com"
             ],
             styleSrc: [
                 "'self'", 

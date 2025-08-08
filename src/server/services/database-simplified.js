@@ -234,6 +234,29 @@ class SimplifiedDatabaseService {
         console.log('✅ Added note_id column to questions table');
       }
     });
+
+    // Add updated_at columns for sync compatibility
+    const tablesNeedingUpdatedAt = ['topics', 'notes', 'questions', 'practice_sessions', 'user_answers'];
+    tablesNeedingUpdatedAt.forEach(table => {
+      this.db.run(`ALTER TABLE ${table} ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error(`Error adding updated_at to ${table}:`, err.message);
+        } else if (!err) {
+          console.log(`✅ Added updated_at column to ${table} table`);
+        }
+      });
+    });
+
+    // Add last_synced columns for sync tracking
+    tablesNeedingUpdatedAt.forEach(table => {
+      this.db.run(`ALTER TABLE ${table} ADD COLUMN last_synced DATETIME`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error(`Error adding last_synced to ${table}:`, err.message);
+        } else if (!err) {
+          console.log(`✅ Added last_synced column to ${table} table`);
+        }
+      });
+    });
   }
 
   // ===== FIXED SUBJECTS =====

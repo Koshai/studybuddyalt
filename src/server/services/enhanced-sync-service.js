@@ -126,8 +126,18 @@ class EnhancedSyncService {
         if (error) throw error;
         if (!cloudRecords || cloudRecords.length === 0) return 0;
 
-        // Prepare SQLite statements
-        const columns = Object.keys(cloudRecords[0]).filter(col => col !== 'last_synced');
+        // Filter columns to match SQLite schema - exclude Supabase-specific columns
+        const excludedColumns = ['last_synced', 'updated_at'];
+        const columns = Object.keys(cloudRecords[0]).filter(col => !excludedColumns.includes(col));
+        
+        // For questions table, ensure note_id is included if it exists in data
+        if (tableName === 'questions') {
+            const sampleRecord = cloudRecords[0];
+            if (!columns.includes('note_id') && sampleRecord.note_id !== undefined) {
+                columns.push('note_id');
+            }
+        }
+        
         const placeholders = columns.map(() => '?').join(',');
         const columnsList = columns.join(',');
         
