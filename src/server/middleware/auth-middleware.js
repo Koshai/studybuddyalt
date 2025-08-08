@@ -16,11 +16,13 @@ class AuthMiddleware {
                 authHeader: authHeader ? authHeader.substring(0, 20) + '...' : null,
                 tokenExists: !!token,
                 tokenLength: token?.length,
-                tokenPrefix: token ? token.substring(0, 10) + '...' : null
+                tokenPrefix: token ? token.substring(0, 10) + '...' : null,
+                isNullToken: token === 'null',
+                fullTokenPreview: token ? token.substring(0, 50) + '...' : null
             });
 
-            if (!token) {
-                console.log('❌ No token provided');
+            if (!token || token === 'null' || token === 'undefined') {
+                console.log('❌ No valid token provided (null/undefined token detected)');
                 return res.status(401).json({ error: 'Access token required' });
             }
 
