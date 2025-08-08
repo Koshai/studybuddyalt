@@ -275,6 +275,14 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Simple test endpoint to check if new routes work
+app.get('/api/test-new-route', (req, res) => {
+  res.json({ 
+    message: 'New route works!',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // AI Services Health Check
 app.get('/api/health/ai', async (req, res) => {
   try {
