@@ -307,6 +307,109 @@ app.get('/api/admin/debug', (req, res) => {
   }
 });
 
+// Admin sync status endpoint (moved up for testing)
+app.get('/api/admin/sync/status', authMiddleware.requireAdmin, async (req, res) => {
+  try {
+    console.log(`🔍 Admin sync status requested by ${req.user.email}`);
+    
+    // Get database table information with error handling
+    const sqlite3 = require('sqlite3').verbose();
+    const path = require('path');
+    const fs = require('fs');
+    const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
+    
+    // Check if database file exists
+    if (!fs.existsSync(dbPath)) {
+      console.error('❌ Database file does not exist:', dbPath);
+      return res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        sqlite: {
+          dbPath: dbPath,
+          exists: false,
+          error: 'Database file not found'
+        },
+        supabase: { connected: false, error: 'Database not available' },
+        environment: process.env.RAILWAY_ENVIRONMENT_NAME || 'local'
+      });
+    }
+    
+    const checkDb = new sqlite3.Database(dbPath, (err) => {
+      if (err) {
+        console.error('❌ Database connection failed:', err);
+      }
+    });
+    
+    const tableInfo = {};
+    const tables = ['subjects', 'topics', 'notes', 'questions', 'practice_sessions', 'user_answers'];
+    
+    const getTableInfo = (tableName) => {
+      return new Promise((resolve) => {
+        // Check if table exists and get count
+        checkDb.get(`SELECT COUNT(*) as count FROM ${tableName}`, (err, result) => {
+          if (err) {
+            tableInfo[tableName] = { exists: false, count: 0, error: err.message };
+          } else {
+            tableInfo[tableName] = { exists: true, count: result.count };
+          }
+          resolve();
+        });
+      });
+    };
+    
+    // Check all tables with proper error handling
+    try {
+      await Promise.all(tables.map(table => getTableInfo(table)));
+    } catch (dbError) {
+      console.error('❌ Database table check failed:', dbError);
+      // Continue anyway with empty table info
+    }
+    
+    // Get Supabase connection status
+    let supabaseStatus = { connected: false, error: null };
+    try {
+      if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+        const { data, error } = await supabase.from('subjects').select('count', { count: 'exact' }).limit(1);
+        if (error) {
+          supabaseStatus = { connected: false, error: error.message };
+        } else {
+          supabaseStatus = { connected: true, subjectsCount: data.length };
+        }
+      } else {
+        supabaseStatus = { connected: false, error: 'Supabase environment variables missing' };
+      }
+    } catch (error) {
+      supabaseStatus = { connected: false, error: error.message };
+    }
+    
+    try {
+      checkDb.close();
+    } catch (closeError) {
+      console.warn('Warning: Could not close database connection:', closeError.message);
+    }
+    
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      sqlite: {
+        dbPath: dbPath,
+        tables: tableInfo
+      },
+      supabase: supabaseStatus,
+      environment: process.env.RAILWAY_ENVIRONMENT_NAME || 'local'
+    });
+    
+  } catch (error) {
+    console.error('❌ Admin sync status failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // AI Services Health Check
 app.get('/api/health/ai', async (req, res) => {
   try {
@@ -1536,110 +1639,8 @@ async function runDatabaseMigration() {
 // ADMIN SYNC MANAGEMENT ENDPOINTS
 // =============================================================================
 
-// Admin debug endpoint moved to earlier in file to avoid conflicts
-
-// Get sync status and database information
-app.get('/api/admin/sync/status', authMiddleware.requireAdmin, async (req, res) => {
-  try {
-    console.log(`🔍 Admin sync status requested by ${req.user.email}`);
-    
-    // Get database table information with error handling
-    const sqlite3 = require('sqlite3').verbose();
-    const path = require('path');
-    const fs = require('fs');
-    const dbPath = path.join(__dirname, '../data/study_ai_simplified.db');
-    
-    // Check if database file exists
-    if (!fs.existsSync(dbPath)) {
-      console.error('❌ Database file does not exist:', dbPath);
-      return res.json({
-        success: true,
-        timestamp: new Date().toISOString(),
-        sqlite: {
-          dbPath: dbPath,
-          exists: false,
-          error: 'Database file not found'
-        },
-        supabase: { connected: false, error: 'Database not available' },
-        environment: process.env.RAILWAY_ENVIRONMENT_NAME || 'local'
-      });
-    }
-    
-    const checkDb = new sqlite3.Database(dbPath, (err) => {
-      if (err) {
-        console.error('❌ Database connection failed:', err);
-      }
-    });
-    
-    const tableInfo = {};
-    const tables = ['subjects', 'topics', 'notes', 'questions', 'practice_sessions', 'user_answers'];
-    
-    const getTableInfo = (tableName) => {
-      return new Promise((resolve) => {
-        // Check if table exists and get count
-        checkDb.get(`SELECT COUNT(*) as count FROM ${tableName}`, (err, result) => {
-          if (err) {
-            tableInfo[tableName] = { exists: false, count: 0, error: err.message };
-          } else {
-            tableInfo[tableName] = { exists: true, count: result.count };
-          }
-          resolve();
-        });
-      });
-    };
-    
-    // Check all tables with proper error handling
-    try {
-      await Promise.all(tables.map(table => getTableInfo(table)));
-    } catch (dbError) {
-      console.error('❌ Database table check failed:', dbError);
-      // Continue anyway with empty table info
-    }
-    
-    // Get Supabase connection status
-    let supabaseStatus = { connected: false, error: null };
-    try {
-      if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
-        const { createClient } = require('@supabase/supabase-js');
-        const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-        const { data, error } = await supabase.from('subjects').select('count', { count: 'exact' }).limit(1);
-        if (error) {
-          supabaseStatus = { connected: false, error: error.message };
-        } else {
-          supabaseStatus = { connected: true, subjectsCount: data.length };
-        }
-      } else {
-        supabaseStatus = { connected: false, error: 'Supabase environment variables missing' };
-      }
-    } catch (error) {
-      supabaseStatus = { connected: false, error: error.message };
-    }
-    
-    try {
-      checkDb.close();
-    } catch (closeError) {
-      console.warn('Warning: Could not close database connection:', closeError.message);
-    }
-    
-    res.json({
-      success: true,
-      timestamp: new Date().toISOString(),
-      sqlite: {
-        dbPath: dbPath,
-        tables: tableInfo
-      },
-      supabase: supabaseStatus,
-      environment: process.env.RAILWAY_ENVIRONMENT_NAME || 'local'
-    });
-    
-  } catch (error) {
-    console.error('❌ Admin sync status failed:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
+// Note: Admin debug and sync status endpoints have been moved to earlier in the file (around line 287-411)
+// to avoid Express route registration conflicts
 
 // Manually trigger sync for a user
 app.post('/api/admin/sync/trigger', authMiddleware.requireAdmin, async (req, res) => {
