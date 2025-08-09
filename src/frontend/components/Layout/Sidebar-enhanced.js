@@ -1,7 +1,7 @@
 // components/Layout/Sidebar-enhanced.js - Sidebar with Subscription Info
 window.EnhancedSidebarComponent = {
     template: `
-    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col h-full dashboard-content">
+    <aside class="w-64 bg-indigo-50 border-r border-indigo-200 flex flex-col h-full dashboard-content">
         <!-- Logo/Brand -->
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center space-x-3">
@@ -9,8 +9,8 @@ window.EnhancedSidebarComponent = {
                     <i class="fas fa-brain text-white text-lg"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold text-gray-900">Jaquizy</h1>
-                    <p class="text-xs text-gray-600">AI-Powered Learning</p>
+                    <h1 class="text-xl font-bold text-indigo-900">Jaquizy</h1>
+                    <p class="text-xs text-indigo-700">AI-Powered Learning</p>
                 </div>
             </div>
         </div>

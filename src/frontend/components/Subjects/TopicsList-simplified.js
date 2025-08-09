@@ -88,7 +88,7 @@ window.TopicsListSimplifiedComponent = {
                 <div
                     v-for="topic in topics"
                     :key="topic.id"
-                    class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300"
+                    class="bg-orange-50 rounded-2xl shadow-lg border border-orange-200 overflow-hidden hover:shadow-xl transition-all duration-300"
                 >
                     <!-- Topic Header -->
                     <div class="p-6 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">

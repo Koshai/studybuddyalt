@@ -104,7 +104,7 @@ window.EnhancedDashboardComponent = {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Enhanced Statistics Cards with Usage Context -->
             <div class="lg:col-span-2 space-y-6">
-                <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative">
+                <div class="bg-blue-50 rounded-xl p-6 border border-blue-200 shadow-sm hover:shadow-md transition-shadow relative">
                     <!-- Subscription Badge -->
                     <div class="absolute top-4 right-4">
                         <span :class="[
@@ -116,7 +116,7 @@ window.EnhancedDashboardComponent = {
                     </div>
                     
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900">📊 Your Progress & Usage</h3>
+                        <h3 class="text-lg font-semibold text-blue-900">📊 Your Progress & Usage</h3>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4 mb-6">
@@ -174,9 +174,9 @@ window.EnhancedDashboardComponent = {
                 </div>
 
                 <!-- Fixed Subjects Grid -->
-                <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                <div class="bg-green-50 rounded-xl p-6 border border-green-200 shadow-sm">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900">📚 Choose Your Subject</h3>
+                        <h3 class="text-lg font-semibold text-green-900">📚 Choose Your Subject</h3>
                         <span class="text-sm bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
                             {{ store.state.subjects.length }} Available
                         </span>
@@ -208,8 +208,8 @@ window.EnhancedDashboardComponent = {
             <!-- Sidebar -->
             <div class="space-y-6">
                 <!-- Quick Actions -->
-                <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">🚀 Quick Actions</h3>
+                <div class="bg-purple-50 rounded-xl p-6 border border-purple-200 shadow-sm">
+                    <h3 class="text-lg font-semibold text-purple-900 mb-4">🚀 Quick Actions</h3>
                     <div class="space-y-3">
                         <!-- Upload Materials -->
                         <button
@@ -289,8 +289,8 @@ window.EnhancedDashboardComponent = {
                 </div>
 
                 <!-- AI Status -->
-                <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">🤖 AI Status</h3>
+                <div class="bg-yellow-50 rounded-xl p-6 border border-yellow-200 shadow-sm">
+                    <h3 class="text-lg font-semibold text-yellow-900 mb-4">🤖 AI Status</h3>
                     
                     <!-- OpenAI Status -->
                     <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-3">

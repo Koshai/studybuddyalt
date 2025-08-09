@@ -3,7 +3,7 @@ window.NotesViewComponent = {
     template: `
     <div class="space-y-8 dashboard-content">
         <!-- Header -->
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div class="bg-cyan-50 rounded-2xl shadow-lg border border-gray-100 p-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900 flex items-center">
@@ -19,7 +19,7 @@ window.NotesViewComponent = {
                             @click="currentView = 'all'"
                             :class="[
                                 'px-3 py-1 rounded text-sm font-medium transition-colors',
-                                currentView === 'all' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                                currentView === 'all' ? 'bg-cyan-50 text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
                             ]"
                         >
                             All Notes
@@ -28,7 +28,7 @@ window.NotesViewComponent = {
                             @click="currentView = 'create'"
                             :class="[
                                 'px-3 py-1 rounded text-sm font-medium transition-colors',
-                                currentView === 'create' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                                currentView === 'create' ? 'bg-cyan-50 text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
                             ]"
                         >
                             Create Note
@@ -91,7 +91,7 @@ window.NotesViewComponent = {
         </div>
 
         <!-- Search and Filter -->
-        <div v-if="currentView === 'all'" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div v-if="currentView === 'all'" class="bg-cyan-50 rounded-2xl shadow-lg border border-gray-100 p-6">
             <div class="flex flex-col md:flex-row md:items-center gap-4">
                 <!-- Search -->
                 <div class="flex-1">
@@ -166,7 +166,7 @@ window.NotesViewComponent = {
 
             <!-- Recent Activity Sidebar (Create View) -->
             <div v-if="currentView === 'create'" class="lg:col-span-1">
-                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                <div class="bg-cyan-50 rounded-2xl shadow-lg border border-gray-100 p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
                         <i class="fas fa-history mr-2 text-gray-600"></i>
                         Recent Notes

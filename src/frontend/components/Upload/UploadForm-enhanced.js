@@ -5,12 +5,12 @@ window.EnhancedUploadFormComponent = {
         <!-- Header Section with Usage Info -->
         <div class="mb-8">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-2xl font-bold text-gray-900 flex items-center">
+                <h2 class="text-2xl font-bold text-pink-900 flex items-center">
                     <i class="fas fa-upload mr-3 text-primary-500"></i>
                     Upload Study Materials
                 </h2>
                 <div class="text-right">
-                    <div class="bg-white border border-gray-200 rounded-lg px-4 py-2">
+                    <div class="bg-pink-50 border border-pink-200 rounded-lg px-4 py-2">
                         <p class="text-xs text-gray-600">Storage Used</p>
                         <p class="font-bold text-sm" :class="storageUsagePercentage > 80 ? 'text-red-600' : 'text-gray-900'">
                             {{ storageUsedMB }}MB / {{ storageUsageLimitMB }}MB
@@ -43,7 +43,7 @@ window.EnhancedUploadFormComponent = {
         </div>
 
         <div class="max-w-2xl mx-auto">
-            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div class="bg-pink-50 rounded-2xl shadow-lg border border-pink-200 overflow-hidden">
                 <!-- Header with Subscription Info -->
                 <div class="p-6 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
                     <div class="flex items-center justify-between mb-4">
@@ -68,11 +68,11 @@ window.EnhancedUploadFormComponent = {
                     
                     <!-- Usage Statistics -->
                     <div class="grid grid-cols-2 gap-4 mt-4">
-                        <div class="text-center p-3 bg-white rounded-lg border border-gray-200">
+                        <div class="text-center p-3 bg-pink-50 rounded-lg border border-gray-200">
                             <p class="text-xs text-gray-600 mb-1">Files Uploaded</p>
                             <p class="text-lg font-bold text-gray-900">{{ store.state.statistics?.totalNotes || 0 }}</p>
                         </div>
-                        <div class="text-center p-3 bg-white rounded-lg border border-gray-200">
+                        <div class="text-center p-3 bg-pink-50 rounded-lg border border-gray-200">
                             <p class="text-xs text-gray-600 mb-1">Storage Available</p>
                             <p class="text-lg font-bold" :class="storageUsagePercentage > 80 ? 'text-red-600' : 'text-gray-900'">
                                 {{ Math.max(0, storageUsageLimitMB - storageUsedMB) }}MB
@@ -91,7 +91,7 @@ window.EnhancedUploadFormComponent = {
                         <select
                             v-model="selectedSubject"
                             @change="handleSubjectChange"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-pink-50"
                             required
                         >
                             <option value="">Choose a subject...</option>
@@ -114,7 +114,7 @@ window.EnhancedUploadFormComponent = {
                         <div class="flex space-x-3">
                             <select
                                 v-model="selectedTopic"
-                                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-pink-50"
                                 required
                             >
                                 <option value="">Choose a topic...</option>
