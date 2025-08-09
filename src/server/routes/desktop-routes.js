@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const path = require('path');
-const fs = require('fs-extra');
+const fs = require('fs').promises;
 
 // Import services
 const authMiddleware = require('../middleware/auth-middleware');
@@ -189,8 +189,10 @@ router.get('/download/:userId', authMiddleware.authenticateToken, async (req, re
         
         const mockDownloadPath = path.join(__dirname, '../../../dist-desktop', `StudyBuddy-${userId}.exe`);
         
-        if (await fs.pathExists(mockDownloadPath)) {
-            res.download(mockDownloadPath, `StudyBuddy-Desktop.exe`, (err) => {
+        try {
+            await fs.access(mockDownloadPath);
+            // File exists
+            res.download(mockDownloadPath, `Jaquizy-Desktop.exe`, (err) => {
                 if (err) {
                     console.error('Download error:', err);
                     if (!res.headersSent) {
@@ -201,7 +203,7 @@ router.get('/download/:userId', authMiddleware.authenticateToken, async (req, re
                     }
                 }
             });
-        } else {
+        } catch (error) {
             res.status(404).json({
                 success: false,
                 error: 'Desktop app not found or expired'

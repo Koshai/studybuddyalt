@@ -1,6 +1,55 @@
 // src/server/services/desktop-app-builder.js - Personalized Desktop App Generator
-const fs = require('fs-extra');
+const fs = require('fs').promises;
+const fsSync = require('fs');
 const path = require('path');
+
+// Helper functions to replace fs-extra methods
+const fsUtils = {
+    async ensureDir(dirPath) {
+        try {
+            await fs.mkdir(dirPath, { recursive: true });
+        } catch (error) {
+            if (error.code !== 'EEXIST') throw error;
+        }
+    },
+    
+    async pathExists(filePath) {
+        try {
+            await fs.access(filePath);
+            return true;
+        } catch {
+            return false;
+        }
+    },
+    
+    async copy(src, dest, options = {}) {
+        const stat = await fs.stat(src);
+        if (stat.isDirectory()) {
+            await this.ensureDir(dest);
+            const items = await fs.readdir(src);
+            await Promise.all(
+                items.map(item => this.copy(path.join(src, item), path.join(dest, item), options))
+            );
+        } else {
+            await this.ensureDir(path.dirname(dest));
+            await fs.copyFile(src, dest);
+        }
+    },
+    
+    async writeJson(filePath, data, options = {}) {
+        const spaces = options.spaces || 2;
+        await this.ensureDir(path.dirname(filePath));
+        await fs.writeFile(filePath, JSON.stringify(data, null, spaces));
+    },
+    
+    async remove(dirPath) {
+        try {
+            await fs.rm(dirPath, { recursive: true, force: true });
+        } catch (error) {
+            if (error.code !== 'ENOENT') throw error;
+        }
+    }
+};
 const { spawn } = require('child_process');
 const { v4: uuidv4 } = require('uuid');
 const EnvironmentService = require('./environment-service');
@@ -71,10 +120,10 @@ class DesktopAppBuilder {
      * Create the build directory structure
      */
     async createBuildDirectory(buildDir) {
-        await fs.ensureDir(buildDir);
-        await fs.ensureDir(path.join(buildDir, 'data'));
-        await fs.ensureDir(path.join(buildDir, 'assets'));
-        await fs.ensureDir(path.join(buildDir, 'src'));
+        await fsUtils.ensureDir(buildDir);
+        await fsUtils.ensureDir(path.join(buildDir, 'data'));
+        await fsUtils.ensureDir(path.join(buildDir, 'assets'));
+        await fsUtils.ensureDir(path.join(buildDir, 'src'));
         
         console.log(`📁 Build directory created: ${buildDir}`);
     }
@@ -93,16 +142,16 @@ class DesktopAppBuilder {
             const sourcePath = path.join(this.templatePath, file);
             const targetPath = path.join(buildDir, file);
             
-            if (await fs.pathExists(sourcePath)) {
-                await fs.copy(sourcePath, targetPath);
+            if (await fsUtils.pathExists(sourcePath)) {
+                await fsUtils.copy(sourcePath, targetPath);
                 console.log(`📄 Copied template file: ${file}`);
             }
         }
         
         // Copy server directory
         const serverDir = path.join(this.templatePath, 'server');
-        if (await fs.pathExists(serverDir)) {
-            await fs.copy(serverDir, path.join(buildDir, 'server'));
+        if (await fsUtils.pathExists(serverDir)) {
+            await fsUtils.copy(serverDir, path.join(buildDir, 'server'));
             console.log(`📁 Copied server directory`);
         }
     }
@@ -115,14 +164,7 @@ class DesktopAppBuilder {
         const targetPath = path.join(buildDir, 'src');
         
         // Copy the entire src directory
-        await fs.copy(sourcePath, targetPath, {
-            filter: (src) => {
-                // Skip node_modules and other unnecessary files
-                return !src.includes('node_modules') && 
-                       !src.includes('.git') && 
-                       !src.includes('dist');
-            }
-        });
+        await fsUtils.copy(sourcePath, targetPath);
         
         console.log(`📦 Copied application source`);
     }
@@ -150,7 +192,7 @@ class DesktopAppBuilder {
                 totalQuestions: userData.questions?.length || 0
             };
             
-            await fs.writeJson(
+            await fsUtils.writeJson(
                 path.join(buildDir, 'data', 'user_metadata.json'),
                 userMetadata,
                 { spaces: 2 }
@@ -206,7 +248,7 @@ class DesktopAppBuilder {
         const tierConfig = this.getTierFeatures(userTier);
         
         // Create tier configuration file
-        await fs.writeJson(
+        await fsUtils.writeJson(
             path.join(buildDir, 'data', 'tier_config.json'),
             {
                 tier: userTier,
@@ -245,7 +287,7 @@ class DesktopAppBuilder {
             }
         };
         
-        await fs.writeJson(
+        await fsUtils.writeJson(
             path.join(buildDir, 'data', 'app_config.json'),
             config,
             { spaces: 2 }
@@ -353,8 +395,8 @@ class DesktopAppBuilder {
      */
     async cleanup(buildDir) {
         try {
-            if (await fs.pathExists(buildDir)) {
-                await fs.remove(buildDir);
+            if (await fsUtils.pathExists(buildDir)) {
+                await fsUtils.remove(buildDir);
                 console.log(`🧹 Cleaned up build directory: ${buildDir}`);
             }
         } catch (error) {
