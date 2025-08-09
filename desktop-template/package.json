@@ -1,0 +1,76 @@
+{
+  "name": "studybuddy-desktop",
+  "version": "1.0.0",
+  "description": "StudyBuddy Desktop App - Offline AI-powered study platform",
+  "main": "main.js",
+  "author": "StudyBuddy",
+  "license": "MIT",
+  "homepage": ".",
+  "scripts": {
+    "start": "electron .",
+    "dev": "NODE_ENV=development electron .",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-mac": "electron-builder --mac",
+    "build-linux": "electron-builder --linux",
+    "dist": "npm run build",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.studybuddy.desktop",
+    "productName": "StudyBuddy",
+    "directories": {
+      "output": "../dist-desktop"
+    },
+    "files": [
+      "**/*",
+      "!node_modules",
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "data",
+        "to": "data",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.education"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png",
+      "category": "Education"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "dependencies": {
+    "electron": "^27.0.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "sqlite3": "^5.1.7",
+    "uuid": "^9.0.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "joi": "^17.13.3",
+    "helmet": "^7.2.0",
+    "express-rate-limit": "^7.5.1",
+    "multer": "^1.4.5-lts.1",
+    "pdf-parse": "^1.1.1",
+    "tesseract.js": "^5.0.4",
+    "ollama": "^0.5.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.6.4"
+  }
+}

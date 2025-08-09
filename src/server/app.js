@@ -12,6 +12,7 @@ const configRoutes = require('./routes/config-routes');
 const subjectRoutes = require('./routes/subject-routes');
 const topicRoutes = require('./routes/topic-routes');
 const adminRoutes = require('./routes/admin-routes');
+const desktopRoutes = require('./routes/desktop-routes');
 
 // Import middleware
 const securityMiddleware = require('./middleware/security-middleware');
@@ -55,10 +56,55 @@ app.use(cors({
 app.get('/', (req, res) => {
     res.json({ 
         status: 'OK', 
-        message: 'StudyBuddy API Server', 
+        message: 'Jaquizy API Server', 
         version: '2.0.0',
         environment: process.env.NODE_ENV || 'development'
     });
+});
+
+// Architecture test endpoint
+app.get('/api/architecture', async (req, res) => {
+    try {
+        const EnvironmentService = require('./services/environment-service');
+        const ServiceFactory = require('./services/service-factory');
+        
+        const envConfig = {
+            environment: EnvironmentService.getEnvironment(),
+            isWeb: EnvironmentService.isWeb(),
+            isDesktop: EnvironmentService.isDesktop(),
+            aiConfig: EnvironmentService.getAIServiceConfig(),
+            storageConfig: EnvironmentService.getStorageServiceConfig(),
+            features: EnvironmentService.getFeatureFlags()
+        };
+        
+        const serviceStatus = await ServiceFactory.getServiceStatus();
+        
+        res.json({
+            success: true,
+            architecture: 'Web-First + Desktop Download',
+            environment: envConfig,
+            services: serviceStatus,
+            implementation: {
+                webMode: {
+                    ai: 'OpenAI (primary) + Ollama (fallback)',
+                    storage: 'Supabase (only - no SQLite complexity)',
+                    features: 'Usage tracking, cloud sync, subscription limits'
+                },
+                desktopMode: {
+                    ai: 'Ollama (local-only)',
+                    storage: 'SQLite (local-only)',
+                    features: 'Offline-first, privacy-focused, unlimited'
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.error('Architecture test error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
 });
 
 // API Routes
@@ -67,6 +113,7 @@ app.use('/api/config', configRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/topics', topicRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/desktop', desktopRoutes);
 
 // Static file serving
 app.use(express.static(path.join(__dirname, '../frontend')));

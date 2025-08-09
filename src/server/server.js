@@ -4,7 +4,7 @@ const PORT = process.env.PORT || 3001;
 
 // Start server
 app.listen(PORT, () => {
-    console.log('🚀 StudyBuddy API Server started');
+    console.log('🚀 Jaquizy API Server started');
     console.log(`📡 Server running on port ${PORT}`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🔗 URL: http://localhost:${PORT}`);

@@ -262,13 +262,87 @@ class SimplifiedDatabaseService {
     });
   }
 
-  // ===== FIXED SUBJECTS =====
+  // ===== SUBJECTS (Fixed List + Database Table) =====
   
   /**
-   * Get all fixed subjects (no database needed)
+   * Create subjects table and populate with fixed subjects
+   */
+  async createSubjectsTable() {
+    return new Promise((resolve, reject) => {
+      // Create subjects table
+      const createTableSql = `
+        CREATE TABLE IF NOT EXISTS subjects (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT,
+          icon TEXT,
+          color TEXT
+        )
+      `;
+      
+      this.db.run(createTableSql, (err) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        
+        // Clear existing subjects and insert fixed subjects
+        this.db.run('DELETE FROM subjects', (err) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          
+          // Insert all fixed subjects
+          const insertSql = `
+            INSERT INTO subjects (id, name, description, icon, color) 
+            VALUES (?, ?, ?, ?, ?)
+          `;
+          
+          let completed = 0;
+          const total = this.FIXED_SUBJECTS.length;
+          
+          this.FIXED_SUBJECTS.forEach(subject => {
+            this.db.run(insertSql, [
+              subject.id,
+              subject.name, 
+              subject.description,
+              subject.icon,
+              subject.color
+            ], (err) => {
+              if (err) {
+                reject(err);
+                return;
+              }
+              
+              completed++;
+              if (completed === total) {
+                console.log(`✅ Created subjects table with ${total} subjects`);
+                resolve(total);
+              }
+            });
+          });
+        });
+      });
+    });
+  }
+  
+  /**
+   * Get all subjects (from database if exists, fallback to hardcoded)
    */
   async getSubjects() {
-    return Promise.resolve([...this.FIXED_SUBJECTS]);
+    return new Promise((resolve, reject) => {
+      const sql = 'SELECT * FROM subjects ORDER BY name';
+      this.db.all(sql, (err, rows) => {
+        if (err) {
+          // If subjects table doesn't exist, return hardcoded subjects
+          console.log('📝 Subjects table not found, using hardcoded subjects');
+          resolve([...this.FIXED_SUBJECTS]);
+        } else {
+          resolve(rows || [...this.FIXED_SUBJECTS]);
+        }
+      });
+    });
   }
 
   /**
