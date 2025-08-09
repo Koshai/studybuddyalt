@@ -8,13 +8,13 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "dev": "node src/server/index.js",
-    "start": "node src/server/index.js",
+    "dev": "node src/server/server.js",
+    "start": "node src/server/server.js",
     "launch": "node launch-studybuddy.js",
     "desktop": "node launch-studybuddy.js",
-    "dev:full": "NODE_ENV=development node src/server/index.js",
+    "dev:full": "NODE_ENV=development node src/server/server.js",
     "frontend": "node scripts/serve-frontend.js",
-    "backend": "node src/server/index.js",
+    "backend": "node src/server/server.js",
     "dev:separate": "concurrently \"npm run backend\" \"npm run frontend\"",
     "reset-db": "node scripts/reset-database-simplified.js",
     "reset-db-with-data": "node scripts/reset-database-simplified.js --with-test-data",

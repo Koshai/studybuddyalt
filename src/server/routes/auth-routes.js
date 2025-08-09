@@ -4,13 +4,13 @@ const AuthService = require('../services/auth-service');
 const authMiddleware = require('../middleware/auth-middleware');
 const UsageService = require('../services/usage-service');
 const LocalUserService = require('../services/local-user-service');
-const AccountSyncService = require('../services/account-sync-service');
+// const AccountSyncService = require('../services/account-sync-service'); // Removed - using Supabase-only approach
 
 const router = express.Router();
 const authService = new AuthService();
 const usageService = new UsageService();
 const localUserService = new LocalUserService();
-const accountSyncService = new AccountSyncService();
+// const accountSyncService = new AccountSyncService(); // Removed - using Supabase-only approach
 
 // Test route to check if auth service is working
 router.get('/test', async (req, res) => {
@@ -688,6 +688,8 @@ router.post('/local/logout', async (req, res) => {
 // ACCOUNT SYNC FUNCTIONALITY
 // ===============================
 
+// TEMPORARILY DISABLED - Complex sync functionality removed
+/*
 // Check account sync status
 router.get('/sync/status/:email', async (req, res) => {
     try {
@@ -841,5 +843,6 @@ router.get('/sync/log', async (req, res) => {
         });
     }
 });
+*/
 
 module.exports = router;
