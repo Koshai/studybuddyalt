@@ -350,12 +350,11 @@ window.SyncClient = {
     }
 };
 
-// Auto-initialize when loaded (disabled until subjects table is fixed)
+// Auto-initialize when loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Small delay to let other systems initialize first
     setTimeout(() => {
-        // Temporarily disabled - subjects table is missing causing 502 errors
-        // window.SyncClient.init();
-        console.log('⏸️ Sync client initialization disabled (subjects table missing)');
+        window.SyncClient.init();
+        console.log('✅ Sync client initialized (with missing table handling)');
     }, 2000);
 });

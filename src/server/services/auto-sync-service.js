@@ -310,11 +310,57 @@ class AutoSyncService {
     }
 
     /**
+     * Check if required database tables exist
+     */
+    async checkTablesExist() {
+        const sqlite3 = require('sqlite3').verbose();
+        const path = require('path');
+        const dbPath = path.join(__dirname, '../../data/study_ai_simplified.db');
+        const db = new sqlite3.Database(dbPath);
+
+        const tables = ['subjects', 'topics', 'notes', 'questions', 'practice_sessions'];
+        const existsMap = {};
+
+        for (const table of tables) {
+            try {
+                const result = await new Promise((resolve, reject) => {
+                    db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`, [table], (err, row) => {
+                        if (err) reject(err);
+                        else resolve(row);
+                    });
+                });
+                existsMap[table] = !!result;
+            } catch (error) {
+                console.warn(`⚠️ Error checking table ${table}:`, error.message);
+                existsMap[table] = false;
+            }
+        }
+
+        db.close();
+        return existsMap;
+    }
+
+    /**
      * Quick sync check - just compare counts without full sync
      */
     async checkSyncStatus(userId) {
         try {
             await this.init();
+            
+            // Check if database tables exist before attempting sync
+            const tablesExist = await this.checkTablesExist();
+            if (!tablesExist.subjects) {
+                console.warn('⚠️ Subjects table missing - sync disabled until database is repaired');
+                return {
+                    needsSync: false,
+                    differences: {},
+                    totalSqlite: 0,
+                    totalSupabase: 0,
+                    warning: 'Database tables missing - sync disabled',
+                    missingTables: Object.keys(tablesExist).filter(table => !tablesExist[table])
+                };
+            }
+            
             const { sqlite: sqliteCounts, supabase: supabaseCounts } = await this.getDataCounts(userId);
             
             const differences = {};
