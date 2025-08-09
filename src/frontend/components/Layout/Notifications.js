@@ -46,10 +46,10 @@ window.NotificationsComponent = {
 
         const getNotificationClasses = (type) => {
             const classes = {
-                success: 'notification-success',
-                error: 'notification-error',
-                warning: 'notification-warning',
-                info: 'notification-info'
+                success: 'md-notification-success',
+                error: 'md-notification-error',
+                warning: 'md-notification-warning',
+                info: 'md-notification-info'
             };
             return classes[type] || classes.info;
         };

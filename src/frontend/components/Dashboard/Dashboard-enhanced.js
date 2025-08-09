@@ -1,14 +1,14 @@
 // components/Dashboard/Dashboard-enhanced.js - Dashboard with Usage Integration
 window.EnhancedDashboardComponent = {
     template: `
-    <div class="animate-fade-in dashboard-dark-grey">
+    <div class="animate-fade-in md-dashboard p-6">
         <!-- Welcome Header with User Info -->
-        <div class="bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl text-white p-8 mb-8">
+        <div class="md-primary-container rounded-2xl p-8 mb-8">
             <!-- User Greeting -->
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h1 class="text-3xl font-bold mb-2">Welcome back, {{ store.state.user?.firstName || 'Student' }}! 👋</h1>
-                    <p class="text-white/90">Ready to continue your learning journey?</p>
+                    <p class="opacity-90">Ready to continue your learning journey?</p>
                 </div>
                 <div class="text-right space-y-2">
                     <!-- Sync Status Indicator -->
@@ -104,7 +104,7 @@ window.EnhancedDashboardComponent = {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Enhanced Statistics Cards with Usage Context -->
             <div class="lg:col-span-2 space-y-6">
-                <div class="bg-blue-50 rounded-xl p-6 border border-blue-200 shadow-sm hover:shadow-md transition-shadow relative">
+                <div class="md-elevated-card p-6 hover:shadow-lg transition-shadow relative">
                     <!-- Subscription Badge -->
                     <div class="absolute top-4 right-4">
                         <span :class="[
@@ -116,37 +116,37 @@ window.EnhancedDashboardComponent = {
                     </div>
                     
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-blue-900">📊 Your Progress & Usage</h3>
+                        <h3 class="text-lg font-semibold md-text-primary">📊 Your Progress & Usage</h3>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4 mb-6">
-                        <div class="text-center p-4 bg-primary-50 rounded-lg relative">
-                            <div class="text-2xl font-bold text-primary-600">{{ store.state.statistics.totalTopics }}</div>
-                            <div class="text-sm text-gray-600">Topics</div>
-                            <div class="text-xs text-gray-500 mt-1">
+                        <div class="text-center p-4 md-secondary-container rounded-lg relative">
+                            <div class="text-2xl font-bold">{{ store.state.statistics.totalTopics }}</div>
+                            <div class="text-sm opacity-80">Topics</div>
+                            <div class="text-xs opacity-60 mt-1">
                                 {{ store.state.usage?.topics?.used || 0 }}/{{ store.state.usage?.topics?.limit || 3 }} used
                             </div>
                         </div>
                         
-                        <div class="text-center p-4 bg-secondary-50 rounded-lg relative">
-                            <div class="text-2xl font-bold text-secondary-600">{{ store.state.statistics.totalQuestions }}</div>
-                            <div class="text-sm text-gray-600">Questions</div>
-                            <div class="text-xs text-gray-500 mt-1">
+                        <div class="text-center p-4 md-tertiary-container rounded-lg relative">
+                            <div class="text-2xl font-bold">{{ store.state.statistics.totalQuestions }}</div>
+                            <div class="text-sm opacity-80">Questions</div>
+                            <div class="text-xs opacity-60 mt-1">
                                 {{ store.state.usage?.questions?.used || 0 }}/{{ store.state.usage?.questions?.limit || 50 }} used
                             </div>
                         </div>
                         
-                        <div class="text-center p-4 bg-green-50 rounded-lg relative">
-                            <div class="text-2xl font-bold text-green-600">{{ store.state.statistics.totalPracticeSessions }}</div>
-                            <div class="text-sm text-gray-600">Sessions</div>
+                        <div class="text-center p-4 md-surface-container-high rounded-lg relative">
+                            <div class="text-2xl font-bold">{{ store.state.statistics.totalPracticeSessions }}</div>
+                            <div class="text-sm opacity-80">Sessions</div>
                             <div class="text-xs text-gray-500 mt-1">
                                 {{ (store.state.statistics.averageScore || 0).toFixed(1) }}% avg score
                             </div>
                         </div>
                         
-                        <div class="text-center p-4 bg-orange-50 rounded-lg relative">
-                            <div class="text-2xl font-bold text-orange-600">{{ storageUsedMB }}MB</div>
-                            <div class="text-sm text-gray-600">Storage</div>
+                        <div class="text-center p-4 md-surface-container rounded-lg relative">
+                            <div class="text-2xl font-bold">{{ storageUsedMB }}MB</div>
+                            <div class="text-sm opacity-80">Storage</div>
                             <div class="text-xs text-gray-500 mt-1">
                                 {{ storageUsagePercentage.toFixed(1) }}% of {{ storageUsageLimitMB }}MB
                             </div>
@@ -174,9 +174,9 @@ window.EnhancedDashboardComponent = {
                 </div>
 
                 <!-- Fixed Subjects Grid -->
-                <div class="bg-green-50 rounded-xl p-6 border border-green-200 shadow-sm">
+                <div class="md-card p-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-green-900">📚 Choose Your Subject</h3>
+                        <h3 class="text-lg font-semibold md-text-primary">📚 Choose Your Subject</h3>
                         <span class="text-sm bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
                             {{ store.state.subjects.length }} Available
                         </span>
@@ -208,8 +208,8 @@ window.EnhancedDashboardComponent = {
             <!-- Sidebar -->
             <div class="space-y-6">
                 <!-- Quick Actions -->
-                <div class="bg-purple-50 rounded-xl p-6 border border-purple-200 shadow-sm">
-                    <h3 class="text-lg font-semibold text-purple-900 mb-4">🚀 Quick Actions</h3>
+                <div class="md-elevated-card p-6">
+                    <h3 class="text-lg font-semibold md-text-primary mb-4">🚀 Quick Actions</h3>
                     <div class="space-y-3">
                         <!-- Upload Materials -->
                         <button
@@ -289,8 +289,8 @@ window.EnhancedDashboardComponent = {
                 </div>
 
                 <!-- AI Status -->
-                <div class="bg-yellow-50 rounded-xl p-6 border border-yellow-200 shadow-sm">
-                    <h3 class="text-lg font-semibold text-yellow-900 mb-4">🤖 AI Status</h3>
+                <div class="md-card p-6">
+                    <h3 class="text-lg font-semibold md-text-primary mb-4">🤖 AI Status</h3>
                     
                     <!-- OpenAI Status -->
                     <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-3">

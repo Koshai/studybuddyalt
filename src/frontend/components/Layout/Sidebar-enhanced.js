@@ -1,28 +1,28 @@
 // components/Layout/Sidebar-enhanced.js - Sidebar with Subscription Info
 window.EnhancedSidebarComponent = {
     template: `
-    <aside class="w-64 sidebar-lime-green border-r border-lime-400 flex flex-col h-full">
+    <aside class="w-64 md-sidebar flex flex-col h-full">
         <!-- Logo/Brand -->
-        <div class="p-6 border-b border-gray-200">
+        <div class="p-6" style="border-bottom: 1px solid var(--md-sys-color-outline-variant);">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-brain text-white text-lg"></i>
+                <div class="w-10 h-10 md-primary rounded-lg flex items-center justify-center">
+                    <i class="fas fa-brain text-lg"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold text-white">Jaquizy</h1>
-                    <p class="text-xs text-lime-100">AI-Powered Learning</p>
+                    <h1 class="text-xl font-bold md-text-primary">Jaquizy</h1>
+                    <p class="text-xs md-text-secondary">AI-Powered Learning</p>
                 </div>
             </div>
         </div>
 
         <!-- User Info Section -->
-        <div v-if="store.state.isAuthenticated" class="p-4 border-b border-lime-600 bg-lime-600/20">
+        <div v-if="store.state.isAuthenticated" class="p-4 md-surface-container-high" style="border-bottom: 1px solid var(--md-sys-color-outline-variant);">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
-                    <span class="text-white font-bold text-sm">{{ getUserInitials }}</span>
+                <div class="w-10 h-10 md-primary rounded-full flex items-center justify-center">
+                    <span class="font-bold text-sm" style="color: var(--md-sys-color-on-primary);">{{ getUserInitials }}</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-white truncate">{{ store.state.user?.firstName }} {{ store.state.user?.lastName }}</p>
+                    <p class="text-sm font-medium md-text-primary truncate">{{ store.state.user?.firstName }} {{ store.state.user?.lastName }}</p>
                     <div class="flex items-center space-x-2">
                         <span :class="[
                             'px-2 py-1 text-xs font-medium rounded-full',
@@ -40,14 +40,14 @@ window.EnhancedSidebarComponent = {
         </div>
 
         <!-- Quick Usage Overview -->
-        <div v-if="store.state.isAuthenticated" class="p-4 border-b border-lime-600">
-            <h4 class="text-xs font-semibold text-white mb-3">USAGE THIS MONTH</h4>
+        <div v-if="store.state.isAuthenticated" class="p-4" style="border-bottom: 1px solid var(--md-sys-color-outline-variant);">
+            <h4 class="text-xs font-semibold md-text-primary mb-3">USAGE THIS MONTH</h4>
             <div class="space-y-3">
                 <!-- Questions -->
                 <div>
                     <div class="flex items-center justify-between text-xs mb-1">
-                        <span class="text-lime-100">Questions</span>
-                        <span class="font-medium" :class="questionsUsagePercentage > 80 ? 'text-red-300' : 'text-white'">
+                        <span class="md-text-secondary">Questions</span>
+                        <span class="font-medium" :class="questionsUsagePercentage > 80 ? 'text-red-600' : 'md-text-primary'">
                             {{ store.state.usage?.questions?.used || 0 }}/{{ store.state.usage?.questions?.limit || 50 }}
                         </span>
                     </div>
@@ -61,8 +61,8 @@ window.EnhancedSidebarComponent = {
                 <!-- Storage -->
                 <div>
                     <div class="flex items-center justify-between text-xs mb-1">
-                        <span class="text-lime-100">Storage</span>
-                        <span class="font-medium" :class="storageUsagePercentage > 80 ? 'text-red-300' : 'text-white'">
+                        <span class="md-text-secondary">Storage</span>
+                        <span class="font-medium" :class="storageUsagePercentage > 80 ? 'text-red-600' : 'md-text-primary'">
                             {{ storageUsedMB }}MB/{{ storageUsageLimitMB }}MB
                         </span>
                     </div>
@@ -76,8 +76,8 @@ window.EnhancedSidebarComponent = {
                 <!-- Topics -->
                 <div>
                     <div class="flex items-center justify-between text-xs mb-1">
-                        <span class="text-lime-100">Topics</span>
-                        <span class="font-medium" :class="topicsUsagePercentage >= 100 ? 'text-red-300' : 'text-white'">
+                        <span class="md-text-secondary">Topics</span>
+                        <span class="font-medium" :class="topicsUsagePercentage >= 100 ? 'text-red-600' : 'md-text-primary'">
                             {{ store.state.usage?.topics?.used || 0 }}/{{ store.state.usage?.topics?.limit || 3 }}
                         </span>
                     </div>

@@ -1,7 +1,7 @@
 // components/Subjects/TopicsList-simplified.js - Simplified Topics Management
 window.TopicsListSimplifiedComponent = {
     template: `
-    <div class="animate-fade-in space-y-8 dashboard-content">
+    <div class="animate-fade-in space-y-8 md-dashboard p-6">
         <!-- Header with Navigation -->
         <div class="flex items-center mb-8">
             <button
@@ -16,10 +16,10 @@ window.TopicsListSimplifiedComponent = {
                         <i :class="store.state.selectedSubject?.icon || 'fas fa-book'"></i>
                     </div>
                     <div>
-                        <h2 class="text-2xl md:text-3xl font-bold text-gray-900">
+                        <h2 class="text-2xl md:text-3xl font-bold md-text-primary">
                             {{ store.state.selectedSubject?.name || 'Subject' }} Topics
                         </h2>
-                        <p class="text-gray-700">{{ store.state.selectedSubject?.description || 'Manage your learning topics' }}</p>
+                        <p class="md-text-secondary">{{ store.state.selectedSubject?.description || 'Manage your learning topics' }}</p>
                     </div>
                 </div>
             </div>
@@ -88,7 +88,7 @@ window.TopicsListSimplifiedComponent = {
                 <div
                     v-for="topic in topics"
                     :key="topic.id"
-                    class="bg-orange-50 rounded-2xl shadow-lg border border-orange-200 overflow-hidden hover:shadow-xl transition-all duration-300"
+                    class="md-elevated-card overflow-hidden hover:shadow-xl transition-all duration-300"
                 >
                     <!-- Topic Header -->
                     <div class="p-6 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">

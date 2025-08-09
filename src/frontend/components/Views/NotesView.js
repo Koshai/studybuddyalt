@@ -1,9 +1,9 @@
 // components/Views/NotesView.js - Complete Notes Management View
 window.NotesViewComponent = {
     template: `
-    <div class="space-y-8 dashboard-content">
+    <div class="space-y-8 md-dashboard p-6">
         <!-- Header -->
-        <div class="bg-cyan-50 rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div class="md-elevated-card p-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900 flex items-center">
@@ -91,7 +91,7 @@ window.NotesViewComponent = {
         </div>
 
         <!-- Search and Filter -->
-        <div v-if="currentView === 'all'" class="bg-cyan-50 rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div v-if="currentView === 'all'" class="md-elevated-card p-6">
             <div class="flex flex-col md:flex-row md:items-center gap-4">
                 <!-- Search -->
                 <div class="flex-1">
@@ -166,7 +166,7 @@ window.NotesViewComponent = {
 
             <!-- Recent Activity Sidebar (Create View) -->
             <div v-if="currentView === 'create'" class="lg:col-span-1">
-                <div class="bg-cyan-50 rounded-2xl shadow-lg border border-gray-100 p-6">
+                <div class="md-elevated-card p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
                         <i class="fas fa-history mr-2 text-gray-600"></i>
                         Recent Notes

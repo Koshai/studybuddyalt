@@ -62,85 +62,271 @@
     <!-- Tailwind CSS via CDN with immediate styles -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Emergency fallback CSS for text colors if Tailwind fails to load -->
+    <!-- Material Design 3 Color System -->
     <style>
-        /* CUSTOM LAYOUT COLOR SYSTEM */
-        
-        /* Header - Dark Blue with Gradient */
-        .header-dark-blue {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%) !important;
-            color: white !important;
+        /* MATERIAL DESIGN 3 COLOR SYSTEM */
+        :root {
+            /* Light Theme - Material Design 3 */
+            --md-sys-color-primary: #6750a4;
+            --md-sys-color-on-primary: #ffffff;
+            --md-sys-color-primary-container: #eaddff;
+            --md-sys-color-on-primary-container: #21005d;
+            
+            --md-sys-color-secondary: #625b71;
+            --md-sys-color-on-secondary: #ffffff;
+            --md-sys-color-secondary-container: #e8def8;
+            --md-sys-color-on-secondary-container: #1d192b;
+            
+            --md-sys-color-tertiary: #7d5260;
+            --md-sys-color-on-tertiary: #ffffff;
+            --md-sys-color-tertiary-container: #ffd8e4;
+            --md-sys-color-on-tertiary-container: #31111d;
+            
+            --md-sys-color-error: #ba1a1a;
+            --md-sys-color-on-error: #ffffff;
+            --md-sys-color-error-container: #ffdad6;
+            --md-sys-color-on-error-container: #410002;
+            
+            --md-sys-color-background: #fffbfe;
+            --md-sys-color-on-background: #1c1b1f;
+            --md-sys-color-surface: #fffbfe;
+            --md-sys-color-on-surface: #1c1b1f;
+            --md-sys-color-surface-variant: #e7e0ec;
+            --md-sys-color-on-surface-variant: #49454f;
+            
+            --md-sys-color-outline: #79757f;
+            --md-sys-color-outline-variant: #cac4d0;
+            --md-sys-color-shadow: #000000;
+            --md-sys-color-scrim: #000000;
+            --md-sys-color-inverse-surface: #313033;
+            --md-sys-color-inverse-on-surface: #f4eff4;
+            --md-sys-color-inverse-primary: #d0bcff;
+            
+            /* Surface containers */
+            --md-sys-color-surface-container-lowest: #ffffff;
+            --md-sys-color-surface-container-low: #f7f2fa;
+            --md-sys-color-surface-container: #f3edf7;
+            --md-sys-color-surface-container-high: #ece6f0;
+            --md-sys-color-surface-container-highest: #e6e0e9;
+            
+            /* Success, Warning, Info colors following Material guidelines */
+            --md-sys-color-success: #2e7d32;
+            --md-sys-color-on-success: #ffffff;
+            --md-sys-color-success-container: #c8e6c9;
+            --md-sys-color-on-success-container: #1b5e20;
+            
+            --md-sys-color-warning: #ef6c00;
+            --md-sys-color-on-warning: #ffffff;
+            --md-sys-color-warning-container: #fff3e0;
+            --md-sys-color-on-warning-container: #e65100;
+            
+            --md-sys-color-info: #0277bd;
+            --md-sys-color-on-info: #ffffff;
+            --md-sys-color-info-container: #b3e5fc;
+            --md-sys-color-on-info-container: #01579b;
         }
         
-        /* Sidebar - Lime Green with Gradient */
-        .sidebar-lime-green {
-            background: linear-gradient(180deg, #65a30d 0%, #84cc16 100%) !important;
-            color: white !important;
+        /* Dark Theme Override */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --md-sys-color-primary: #d0bcff;
+                --md-sys-color-on-primary: #371e73;
+                --md-sys-color-primary-container: #4f378b;
+                --md-sys-color-on-primary-container: #eaddff;
+                
+                --md-sys-color-secondary: #ccc2dc;
+                --md-sys-color-on-secondary: #332d41;
+                --md-sys-color-secondary-container: #4a4458;
+                --md-sys-color-on-secondary-container: #e8def8;
+                
+                --md-sys-color-tertiary: #efb8c8;
+                --md-sys-color-on-tertiary: #492532;
+                --md-sys-color-tertiary-container: #633b48;
+                --md-sys-color-on-tertiary-container: #ffd8e4;
+                
+                --md-sys-color-error: #ffb4ab;
+                --md-sys-color-on-error: #690005;
+                --md-sys-color-error-container: #93000a;
+                --md-sys-color-on-error-container: #ffdad6;
+                
+                --md-sys-color-background: #10121f;
+                --md-sys-color-on-background: #e6e1e5;
+                --md-sys-color-surface: #10121f;
+                --md-sys-color-on-surface: #e6e1e5;
+                --md-sys-color-surface-variant: #49454f;
+                --md-sys-color-on-surface-variant: #cac4d0;
+                
+                --md-sys-color-outline: #938f99;
+                --md-sys-color-outline-variant: #49454f;
+                --md-sys-color-inverse-surface: #e6e1e5;
+                --md-sys-color-inverse-on-surface: #313033;
+                --md-sys-color-inverse-primary: #6750a4;
+                
+                --md-sys-color-surface-container-lowest: #0b0e1b;
+                --md-sys-color-surface-container-low: #1c1b1f;
+                --md-sys-color-surface-container: #201f23;
+                --md-sys-color-surface-container-high: #2b2930;
+                --md-sys-color-surface-container-highest: #36343b;
+                
+                --md-sys-color-success: #4caf50;
+                --md-sys-color-on-success: #1b5e20;
+                --md-sys-color-success-container: #2e7d32;
+                --md-sys-color-on-success-container: #c8e6c9;
+                
+                --md-sys-color-warning: #ff9800;
+                --md-sys-color-on-warning: #e65100;
+                --md-sys-color-warning-container: #ef6c00;
+                --md-sys-color-on-warning-container: #fff3e0;
+                
+                --md-sys-color-info: #2196f3;
+                --md-sys-color-on-info: #01579b;
+                --md-sys-color-info-container: #0277bd;
+                --md-sys-color-on-info-container: #b3e5fc;
+            }
         }
         
-        /* Sidebar text overrides */
-        .sidebar-lime-green * {
-            color: white !important;
+        /* Apply Material Design colors to body */
+        body {
+            background-color: var(--md-sys-color-background) !important;
+            color: var(--md-sys-color-on-background) !important;
         }
         
-        .sidebar-lime-green .text-gray-600,
-        .sidebar-lime-green .text-gray-700,
-        .sidebar-lime-green .text-gray-500 {
-            color: #d4edda !important;
+        /* Material Design Component Classes */
+        .md-surface {
+            background-color: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
         }
         
-        /* Dashboard - Little Dark Grey */
-        .dashboard-dark-grey {
-            background: #374151 !important;
-            color: #f9fafb !important;
-            min-height: 100vh;
-            padding: 1.5rem;
+        .md-surface-container {
+            background-color: var(--md-sys-color-surface-container);
+            color: var(--md-sys-color-on-surface);
         }
         
-        /* Dashboard cards need to stand out against dark grey */
-        .dashboard-dark-grey .bg-blue-50 {
-            background: #dbeafe !important;
-            color: #1e40af !important;
+        .md-surface-container-high {
+            background-color: var(--md-sys-color-surface-container-high);
+            color: var(--md-sys-color-on-surface);
         }
         
-        .dashboard-dark-grey .bg-green-50 {
-            background: #dcfce7 !important;
-            color: #166534 !important;
+        .md-surface-container-highest {
+            background-color: var(--md-sys-color-surface-container-highest);
+            color: var(--md-sys-color-on-surface);
         }
         
-        .dashboard-dark-grey .bg-purple-50 {
-            background: #f3e8ff !important;
-            color: #7c2d92 !important;
+        .md-primary-container {
+            background-color: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
         }
         
-        .dashboard-dark-grey .bg-yellow-50 {
-            background: #fefce8 !important;
-            color: #a16207 !important;
+        .md-secondary-container {
+            background-color: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
         }
         
-        /* Standard Notification Colors */
-        .notification-success {
-            background: #10b981 !important;
-            color: white !important;
-            border-color: #059669 !important;
+        .md-tertiary-container {
+            background-color: var(--md-sys-color-tertiary-container);
+            color: var(--md-sys-color-on-tertiary-container);
         }
         
-        .notification-error {
-            background: #ef4444 !important;
-            color: white !important;
-            border-color: #dc2626 !important;
+        .md-primary {
+            background-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
         }
         
-        .notification-warning {
-            background: #f59e0b !important;
-            color: white !important;
-            border-color: #d97706 !important;
+        .md-secondary {
+            background-color: var(--md-sys-color-secondary);
+            color: var(--md-sys-color-on-secondary);
         }
         
-        .notification-info {
-            background: #3b82f6 !important;
-            color: white !important;
-            border-color: #2563eb !important;
+        /* Header Material Design */
+        .md-header {
+            background-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            box-shadow: 0 2px 4px -1px rgba(0,0,0,0.2), 0 4px 5px 0 rgba(0,0,0,0.14), 0 1px 10px 0 rgba(0,0,0,0.12);
+        }
+        
+        /* Sidebar Material Design */
+        .md-sidebar {
+            background-color: var(--md-sys-color-surface-container-high);
+            color: var(--md-sys-color-on-surface);
+            border-right: 1px solid var(--md-sys-color-outline-variant);
+        }
+        
+        /* Dashboard Material Design */
+        .md-dashboard {
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-background);
+        }
+        
+        /* Notification Material Design */
+        .md-notification-success {
+            background-color: var(--md-sys-color-success);
+            color: var(--md-sys-color-on-success);
+            border: 1px solid var(--md-sys-color-success-container);
+        }
+        
+        .md-notification-error {
+            background-color: var(--md-sys-color-error);
+            color: var(--md-sys-color-on-error);
+            border: 1px solid var(--md-sys-color-error-container);
+        }
+        
+        .md-notification-warning {
+            background-color: var(--md-sys-color-warning);
+            color: var(--md-sys-color-on-warning);
+            border: 1px solid var(--md-sys-color-warning-container);
+        }
+        
+        .md-notification-info {
+            background-color: var(--md-sys-color-info);
+            color: var(--md-sys-color-on-info);
+            border: 1px solid var(--md-sys-color-info-container);
+        }
+        
+        /* Card Material Design */
+        .md-card {
+            background-color: var(--md-sys-color-surface-container);
+            color: var(--md-sys-color-on-surface);
+            border-radius: 12px;
+            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+        
+        .md-elevated-card {
+            background-color: var(--md-sys-color-surface-container-low);
+            color: var(--md-sys-color-on-surface);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px 0 rgba(0,0,0,0.3), 0 4px 8px 3px rgba(0,0,0,0.15);
+            border: none;
+        }
+        
+        /* Text color utilities */
+        .md-text-primary {
+            color: var(--md-sys-color-on-surface) !important;
+        }
+        
+        .md-text-secondary {
+            color: var(--md-sys-color-on-surface-variant) !important;
+        }
+        
+        .md-text-disabled {
+            color: var(--md-sys-color-outline) !important;
+        }
+        
+        /* Button Material Design */
+        .md-button-primary {
+            background-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: none;
+            border-radius: 20px;
+            padding: 10px 24px;
+        }
+        
+        .md-button-secondary {
+            background-color: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+            border: none;
+            border-radius: 20px;
+            padding: 10px 24px;
         }
         
         /* COLORED BACKGROUND SYSTEM - No more white/black backgrounds */

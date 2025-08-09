@@ -1,14 +1,14 @@
 // components/Layout/Header-enhanced.js - Header with User Stats Integration
 window.EnhancedHeaderComponent = {
     template: `
-    <header class="header-dark-blue shadow-lg px-6 py-4" @click="closeUserMenu">
+    <header class="md-header px-6 py-4" @click="closeUserMenu">
         <div class="flex items-center justify-between">
             <!-- Left Section -->
             <div>
-                <h2 class="text-2xl font-semibold text-white">
+                <h2 class="text-2xl font-semibold" style="color: var(--md-sys-color-on-primary);">
                     {{ pageTitle }}
                 </h2>
-                <p class="text-white/80 text-sm mt-1">
+                <p class="text-sm mt-1 opacity-80" style="color: var(--md-sys-color-on-primary);">
                     {{ pageDescription }}
                 </p>
             </div>

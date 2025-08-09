@@ -1,11 +1,11 @@
 // components/Upload/UploadForm-enhanced.js - Upload with Usage Integration
 window.EnhancedUploadFormComponent = {
     template: `
-    <div class="animate-fade-in space-y-6 dashboard-content">
+    <div class="animate-fade-in space-y-6 md-dashboard p-6">
         <!-- Header Section with Usage Info -->
         <div class="mb-8">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-2xl font-bold text-pink-900 flex items-center">
+                <h2 class="text-2xl font-bold md-text-primary flex items-center">
                     <i class="fas fa-upload mr-3 text-primary-500"></i>
                     Upload Study Materials
                 </h2>
@@ -43,7 +43,7 @@ window.EnhancedUploadFormComponent = {
         </div>
 
         <div class="max-w-2xl mx-auto">
-            <div class="bg-pink-50 rounded-2xl shadow-lg border border-pink-200 overflow-hidden">
+            <div class="md-elevated-card overflow-hidden">
                 <!-- Header with Subscription Info -->
                 <div class="p-6 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
                     <div class="flex items-center justify-between mb-4">
