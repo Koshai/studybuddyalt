@@ -1,7 +1,7 @@
 // components/Views/NotesView.js - Complete Notes Management View
 window.NotesViewComponent = {
     template: `
-    <div class="space-y-8">
+    <div class="space-y-8 dashboard-content">
         <!-- Header -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
             <div class="flex items-center justify-between mb-4">

@@ -1,7 +1,7 @@
 // components/Layout/Sidebar-enhanced.js - Sidebar with Subscription Info
 window.EnhancedSidebarComponent = {
     template: `
-    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col h-full">
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col h-full dashboard-content">
         <!-- Logo/Brand -->
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center space-x-3">

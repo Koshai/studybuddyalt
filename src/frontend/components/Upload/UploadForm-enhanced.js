@@ -1,7 +1,7 @@
 // components/Upload/UploadForm-enhanced.js - Upload with Usage Integration
 window.EnhancedUploadFormComponent = {
     template: `
-    <div class="animate-fade-in space-y-6">
+    <div class="animate-fade-in space-y-6 dashboard-content">
         <!-- Header Section with Usage Info -->
         <div class="mb-8">
             <div class="flex items-center justify-between mb-4">

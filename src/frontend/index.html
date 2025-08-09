@@ -59,8 +59,102 @@
         });
     </script>
     
-    <!-- Tailwind CSS via CDN -->
+    <!-- Tailwind CSS via CDN with immediate styles -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Emergency fallback CSS for text colors if Tailwind fails to load -->
+    <style>
+        /* Emergency text color fixes */
+        .text-gray-900 { color: #111827 !important; }
+        .text-gray-800 { color: #1f2937 !important; }
+        .text-gray-700 { color: #374151 !important; }
+        .text-gray-600 { color: #4b5563 !important; }
+        .text-gray-500 { color: #6b7280 !important; }
+        .text-gray-400 { color: #9ca3af !important; }
+        .text-white { color: #ffffff !important; }
+        .bg-white { background-color: #ffffff !important; }
+        .bg-gray-50 { background-color: #f9fafb !important; }
+        .bg-gray-100 { background-color: #f3f4f6 !important; }
+        .bg-primary-50 { background-color: #eff6ff !important; }
+        .bg-secondary-50 { background-color: #faf5ff !important; }
+        .bg-green-50 { background-color: #ecfdf5 !important; }
+        .bg-orange-50 { background-color: #fff7ed !important; }
+        .bg-yellow-50 { background-color: #fefce8 !important; }
+        
+        /* Text color for primary elements */
+        .text-primary-600 { color: #2563eb !important; }
+        .text-secondary-600 { color: #9333ea !important; }
+        .text-green-600 { color: #16a34a !important; }
+        .text-orange-600 { color: #ea580c !important; }
+        
+        /* Card backgrounds */
+        .rounded-xl { border-radius: 0.75rem !important; }
+        .rounded-lg { border-radius: 0.5rem !important; }
+        .border { border-width: 1px !important; }
+        .border-gray-200 { border-color: #e5e7eb !important; }
+        .shadow-sm { box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important; }
+        
+        /* Ensure text is readable */
+        .dashboard-content { color: #111827 !important; }
+        .dashboard-content h1, 
+        .dashboard-content h2, 
+        .dashboard-content h3, 
+        .dashboard-content h4 { color: #111827 !important; }
+        .dashboard-content p { color: #4b5563 !important; }
+        .dashboard-content span { color: #4b5563 !important; }
+        .dashboard-content div { color: #4b5563 !important; }
+        
+        /* Override specific text classes within dashboard-content */
+        .dashboard-content .text-gray-900 { color: #111827 !important; }
+        .dashboard-content .text-gray-800 { color: #1f2937 !important; }
+        .dashboard-content .text-gray-700 { color: #374151 !important; }
+        .dashboard-content .text-gray-600 { color: #4b5563 !important; }
+        .dashboard-content .text-gray-500 { color: #6b7280 !important; }
+        
+        /* Preserve white text on colored backgrounds */
+        .dashboard-content .text-white { color: #ffffff !important; }
+        .dashboard-content .bg-gradient-to-r .text-white { color: #ffffff !important; }
+        .dashboard-content .bg-primary-500 .text-white { color: #ffffff !important; }
+        .dashboard-content .bg-secondary-500 .text-white { color: #ffffff !important; }
+        
+        /* Button text colors */
+        .dashboard-content button { color: #111827 !important; }
+        .dashboard-content .btn-gradient { color: #ffffff !important; }
+        
+        /* Link colors */
+        .dashboard-content a { color: #2563eb !important; }
+        .dashboard-content a:hover { color: #1d4ed8 !important; }
+        
+        /* Global text contrast fixes for all components */
+        body { color: #111827 !important; }
+        
+        /* Ensure readable text on white backgrounds */
+        .bg-white * { color: #111827; }
+        .bg-gray-50 * { color: #111827; }
+        .bg-gray-100 * { color: #111827; }
+        
+        /* Fix text visibility issues with important specificity */
+        .text-black { color: #000000 !important; }
+        .text-white { color: #ffffff !important; }
+        
+        /* Component-specific overrides */
+        .animate-fade-in { color: #111827 !important; }
+        .space-y-8 { color: inherit; }
+        .space-y-6 { color: inherit; }
+        
+        /* Make sure all Vue component root elements have proper text color */
+        #app > * { color: #111827; }
+        
+        /* Card content should be dark on light backgrounds */
+        .rounded-xl { color: #111827; }
+        .rounded-lg { color: #111827; }
+        .border { color: inherit; }
+        
+        /* Override any problematic text colors */
+        *:not(.text-white):not(.bg-gradient-to-r *):not([class*="bg-primary"]):not([class*="bg-secondary"]):not([class*="bg-accent"]) {
+            color: #111827;
+        }
+    </style>
     
     <!-- Tailwind Configuration -->
     <script>
