@@ -1,7 +1,7 @@
 // components/Dashboard/Dashboard-enhanced.js - Dashboard with Usage Integration
 window.EnhancedDashboardComponent = {
     template: `
-    <div class="animate-fade-in dashboard-content">
+    <div class="animate-fade-in dashboard-dark-grey">
         <!-- Welcome Header with User Info -->
         <div class="bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl text-white p-8 mb-8">
             <!-- User Greeting -->

@@ -1,7 +1,7 @@
 // components/Layout/Header-enhanced.js - Header with User Stats Integration
 window.EnhancedHeaderComponent = {
     template: `
-    <header class="bg-gradient-to-r from-primary-500 to-secondary-500 shadow-lg px-6 py-4" @click="closeUserMenu">
+    <header class="header-dark-blue shadow-lg px-6 py-4" @click="closeUserMenu">
         <div class="flex items-center justify-between">
             <!-- Left Section -->
             <div>

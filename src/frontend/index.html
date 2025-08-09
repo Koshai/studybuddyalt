@@ -64,6 +64,85 @@
     
     <!-- Emergency fallback CSS for text colors if Tailwind fails to load -->
     <style>
+        /* CUSTOM LAYOUT COLOR SYSTEM */
+        
+        /* Header - Dark Blue with Gradient */
+        .header-dark-blue {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%) !important;
+            color: white !important;
+        }
+        
+        /* Sidebar - Lime Green with Gradient */
+        .sidebar-lime-green {
+            background: linear-gradient(180deg, #65a30d 0%, #84cc16 100%) !important;
+            color: white !important;
+        }
+        
+        /* Sidebar text overrides */
+        .sidebar-lime-green * {
+            color: white !important;
+        }
+        
+        .sidebar-lime-green .text-gray-600,
+        .sidebar-lime-green .text-gray-700,
+        .sidebar-lime-green .text-gray-500 {
+            color: #d4edda !important;
+        }
+        
+        /* Dashboard - Little Dark Grey */
+        .dashboard-dark-grey {
+            background: #374151 !important;
+            color: #f9fafb !important;
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+        
+        /* Dashboard cards need to stand out against dark grey */
+        .dashboard-dark-grey .bg-blue-50 {
+            background: #dbeafe !important;
+            color: #1e40af !important;
+        }
+        
+        .dashboard-dark-grey .bg-green-50 {
+            background: #dcfce7 !important;
+            color: #166534 !important;
+        }
+        
+        .dashboard-dark-grey .bg-purple-50 {
+            background: #f3e8ff !important;
+            color: #7c2d92 !important;
+        }
+        
+        .dashboard-dark-grey .bg-yellow-50 {
+            background: #fefce8 !important;
+            color: #a16207 !important;
+        }
+        
+        /* Standard Notification Colors */
+        .notification-success {
+            background: #10b981 !important;
+            color: white !important;
+            border-color: #059669 !important;
+        }
+        
+        .notification-error {
+            background: #ef4444 !important;
+            color: white !important;
+            border-color: #dc2626 !important;
+        }
+        
+        .notification-warning {
+            background: #f59e0b !important;
+            color: white !important;
+            border-color: #d97706 !important;
+        }
+        
+        .notification-info {
+            background: #3b82f6 !important;
+            color: white !important;
+            border-color: #2563eb !important;
+        }
+        
         /* COLORED BACKGROUND SYSTEM - No more white/black backgrounds */
         .text-gray-900 { color: #111827 !important; }
         .text-gray-800 { color: #1f2937 !important; }
