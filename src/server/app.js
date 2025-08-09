@@ -52,8 +52,8 @@ app.use(cors({
 // ROUTES
 // =============================================================================
 
-// Health check
-app.get('/', (req, res) => {
+// API Health check (moved to /api/health)
+app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'OK', 
         message: 'Jaquizy API Server', 
