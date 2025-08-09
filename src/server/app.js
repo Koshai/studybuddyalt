@@ -13,6 +13,8 @@ const subjectRoutes = require('./routes/subject-routes');
 const topicRoutes = require('./routes/topic-routes');
 const adminRoutes = require('./routes/admin-routes');
 const desktopRoutes = require('./routes/desktop-routes');
+const userRoutes = require('./routes/user-routes');
+const dashboardRoutes = require('./routes/dashboard-routes');
 
 // Import middleware
 const securityMiddleware = require('./middleware/security-middleware');
@@ -114,6 +116,36 @@ app.use('/api/subjects', subjectRoutes);
 app.use('/api/topics', topicRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/desktop', desktopRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/activity', dashboardRoutes);
+
+// Health check routes (separate from main API health)
+app.get('/api/health/ai', require('./middleware/auth-middleware').authenticateToken, async (req, res) => {
+    try {
+        const ServiceFactory = require('./services/service-factory');
+        const serviceStatus = await ServiceFactory.getServiceStatus();
+        
+        res.json({
+            success: true,
+            aiService: {
+                available: true,
+                primary: 'openai',
+                status: 'online'
+            }
+        });
+    } catch (error) {
+        res.json({
+            success: true,
+            aiService: {
+                available: false,
+                primary: 'openai', 
+                status: 'offline',
+                error: error.message
+            }
+        });
+    }
+});
 
 // Static file serving
 app.use(express.static(path.join(__dirname, '../frontend')));

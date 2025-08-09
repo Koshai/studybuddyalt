@@ -1,0 +1,1 @@
+Redirecting to /vue@3.5.18/dist/vue.global.prod.js

@@ -12,7 +12,9 @@ function apply(app) {
                     "'unsafe-inline'", 
                     "https://cdnjs.cloudflare.com",
                     "https://unpkg.com",
-                    "https://cdn.jsdelivr.net"
+                    "https://cdn.jsdelivr.net",
+                    "https://fonts.googleapis.com",
+                    "https://cdn.tailwindcss.com"
                 ],
                 scriptSrc: [
                     "'self'", 
@@ -20,14 +22,17 @@ function apply(app) {
                     "'unsafe-eval'",
                     "https://cdnjs.cloudflare.com",
                     "https://unpkg.com",
-                    "https://cdn.jsdelivr.net"
+                    "https://cdn.jsdelivr.net",
+                    "https://cdn.tailwindcss.com",
+                    "https://pagead2.googlesyndication.com"
                 ],
                 imgSrc: ["'self'", "data:", "blob:", "https:"],
                 fontSrc: [
                     "'self'",
                     "https://cdnjs.cloudflare.com",
                     "https://unpkg.com", 
-                    "https://cdn.jsdelivr.net"
+                    "https://cdn.jsdelivr.net",
+                    "https://fonts.gstatic.com"
                 ],
                 connectSrc: [
                     "'self'",

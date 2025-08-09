@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jaquizy - AI-Powered Study Platform</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Transform your study materials into interactive quiz questions with AI. Upload PDFs, images, or notes and let Jaquizy generate personalized practice questions instantly.">
+    <meta name="keywords" content="AI study tool, quiz generator, study app, flashcards, AI education, learning platform, quiz maker, study assistant">
+    <meta name="author" content="Jaquizy">
+    
+    <!-- Open Graph (Facebook, LinkedIn) Meta Tags -->
+    <meta property="og:title" content="Jaquizy - Turn Your Notes Into Smart Quiz Questions">
+    <meta property="og:description" content="AI-powered study platform that transforms your notes into personalized quiz questions. Upload materials, get instant quizzes, practice smarter.">
+    <meta property="og:image" content="https://jaquizy.com/images/jaquizy-social-preview.png">
+    <meta property="og:image:alt" content="Jaquizy AI Study Platform - Dashboard Screenshot">
+    <meta property="og:url" content="https://jaquizy.com">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Jaquizy">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Jaquizy - AI-Powered Study Platform">
+    <meta name="twitter:description" content="Transform your study materials into interactive quiz questions with AI. Free to start, upgrade for unlimited questions.">
+    <meta name="twitter:image" content="https://jaquizy.com/images/jaquizy-social-preview.png">
+    <meta name="twitter:image:alt" content="Jaquizy AI Study Platform Dashboard">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://jaquizy.com">
+    
+    <!-- Local Dependencies for Offline Support -->
+    <script src="./lib/tailwind/tailwind.min.js"></script>
+    <script src="./lib/vue/vue.global.js"></script>
+    <link href="./lib/fontawesome/all.min.css" rel="stylesheet">
+    
+    <!-- Quill.js Rich Text Editor (Local for Offline Support) -->
+    <link href="./lib/quill/quill.snow.css" rel="stylesheet">
+    <script src="./lib/quill/quill.min.js"></script>
+    
+    <!-- Quill.js Loading Verification -->
+    <script>
+        // Debug Quill loading
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                console.log('🔍 Quill loading check:', {
+                    windowQuill: typeof window.Quill,
+                    quillAvailable: !!window.Quill,
+                    quillVersion: window.Quill ? window.Quill.version : 'not loaded'
+                });
+                
+                if (!window.Quill) {
+                    console.error('❌ Quill.js failed to load! Check CSP and network.');
+                } else {
+                    console.log('✅ Quill.js loaded successfully!');
+                }
+            }, 1000);
+        });
+    </script>
+    
+    <!-- Tailwind Configuration -->
+    <script>
+        // Check if tailwind is available
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            'inter': ['Inter', 'sans-serif'],
+                        },
+                        colors: {
+                            'primary': {
+                                50: '#f0f9ff',
+                                100: '#e0f2fe',
+                                200: '#bae6fd',
+                                300: '#7dd3fc',
+                                400: '#38bdf8',
+                                500: '#0ea5e9',
+                                600: '#0284c7',
+                                700: '#0369a1',
+                                800: '#075985',
+                                900: '#0c4a6e',
+                            },
+                            'secondary': {
+                                50: '#faf5ff',
+                                100: '#f3e8ff',
+                                200: '#e9d5ff',
+                                300: '#d8b4fe',
+                                400: '#c084fc',
+                                500: '#a855f7',
+                                600: '#9333ea',
+                                700: '#7c3aed',
+                                800: '#6b21a8',
+                                900: '#581c87',
+                            },
+                            'accent': {
+                                50: '#ecfdf5',
+                                100: '#d1fae5',
+                                200: '#a7f3d0',
+                                300: '#6ee7b7',
+                                400: '#34d399',
+                                500: '#10b981',
+                                600: '#059669',
+                                700: '#047857',
+                                800: '#065f46',
+                                900: '#064e3b',
+                            }
+                        },
+                        animation: {
+                            'fade-in': 'fadeIn 0.5s ease-in-out',
+                            'slide-up': 'slideUp 0.3s ease-out',
+                            'scale-in': 'scaleIn 0.2s ease-out',
+                            'bounce-slow': 'bounce 2s infinite',
+                            'pulse-slow': 'pulse 3s infinite',
+                        },
+                        keyframes: {
+                            fadeIn: {
+                                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                                '100%': { opacity: '1', transform: 'translateY(0)' },
+                            },
+                            slideUp: {
+                                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                                '100%': { opacity: '1', transform: 'translateY(0)' },
+                            },
+                            scaleIn: {
+                                '0%': { opacity: '0', transform: 'scale(0.8)' },
+                                '100%': { opacity: '1', transform: 'scale(1)' },
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            console.warn('⚠️ Tailwind not available, using fallback CSS');
+        }
+    </script>
+    
+    <!-- Application Styles -->
+    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="./css/components.css">
+    <link rel="stylesheet" href="./css/animations.css">
+</head>
+<body>
+    <!-- Vue App Mount Point -->
+    <div id="app"></div>
+
+    <!-- Application Scripts (Load in correct order) -->
+    <!-- Use simplified API and store -->
+    <script src="./js/api-simplified.js"></script>
+    <script src="./js/store-simplified.js"></script>
+    <script src="./js/config-manager.js"></script>
+    <script src="./js/utils.js"></script>
+    
+    <!-- Layout Components (Enhanced) -->
+    <script src="./components/Layout/Header-enhanced.js"></script>
+    <script src="./components/Layout/Sidebar-enhanced.js"></script>
+    <script src="./components/Layout/Notifications.js"></script>
+    
+    <!-- Dashboard Components (Simplified) -->
+    <script src="./components/Dashboard/Dashboard-enhanced.js"></script>
+    
+    <!-- Subject Components (Simplified - Fixed Subjects) -->
+    <script src="./components/Subjects/FixedSubjectsList.js"></script>
+    <script src="./components/Subjects/TopicsList-simplified.js"></script>
+    
+    <!-- Upload Components (Enhanced) -->
+    <script src="./components/Upload/UploadForm-enhanced.js"></script>
+    <script src="./components/Upload/FileDropzone.js"></script>
+    
+    <!-- Notes Components -->
+    <script src="./components/Notes/NotesDisplay.js"></script>
+    
+    <!-- Practice Components (Simplified) -->
+    <script src="./components/Practice/PracticeSetup-enhanced.js"></script>
+    <script src="./components/Practice/PracticeSession.js"></script>
+    <script src="./components/Practice/BrowsePracticeTopics.js"></script>
+    <script src="./components/Practice/MCQQuestionCard.js"></script>
+
+    <!-- Form Validation Components -->
+    <script src="./js/validation-utils.js"></script>
+    <script src="./components/Forms/ValidatedInput.js"></script>
+    
+    <!-- Authentication Components (Simplified) -->
+    <script src="./components/Auth/LoginForm.js"></script>
+    <script src="./components/Auth/RegisterForm.js"></script>
+    <script src="./components/Auth/EmailConfirmation.js"></script>
+    <script src="./components/Auth/UsageIndicator.js"></script>
+    
+    <!-- Modal Components -->
+    <script src="./components/Modals/ModalBase.js"></script>
+    <script src="./components/Modals/CreateTopic.js"></script>
+    <script src="./components/Modals/ConfirmationModal.js"></script>
+    
+    <!-- State Components -->
+    <script src="./components/States/ErrorState.js"></script>
+    
+    <!-- Loading Components -->
+    <script src="./components/Loading/SkeletonLoader.js"></script>
+    
+    <!-- Setup Components -->
+    <script src="./components/Setup/OfflineSetup.js"></script>
+    
+    <!-- UI Components -->
+    <script src="./components/UI/BetaBadge.js"></script>
+    <script src="./components/UI/AdComponent.js"></script>
+    
+    <!-- Settings Components -->
+    <script src="./components/Settings/UserSettings.js"></script>
+    
+    <!-- Note Editing Components -->
+    <script src="./components/Modals/NoteEditorModal.js"></script>
+    <script src="./components/Forms/QuickNoteCreator.js"></script>
+    <script src="./components/Views/NotesView.js"></script>
+    
+    <!-- Page Components -->
+    <script src="./components/Pages/LandingPage.js"></script>
+    <script src="./components/Pages/AdminDashboard.js"></script>
+    
+    <!-- Main Application (Simplified) -->
+    <script src="./js/main-simplified.js"></script>
+    
+    <!-- Development Tools (Remove in production) -->
+    <script>
+        // Development console helpers
+        if (window.location.hostname === 'localhost' || window.location.hostname.includes('desktop')) {
+            console.log('🔧 Development/Desktop mode detected');
+            console.log('📋 Available commands: studyAI.help()');
+            
+            // Hot reload helper for development
+            window.reloadComponents = () => {
+                location.reload();
+            };
+            
+            // Debug helper
+            window.debugStore = () => {
+                return window.store ? window.store.getState() : 'Store not available';
+            };
+        }
+    </script>
+</body>
+</html>
