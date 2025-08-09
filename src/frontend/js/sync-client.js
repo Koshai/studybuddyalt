@@ -8,7 +8,7 @@ window.SyncClient = {
         try {
             const response = await fetch('/api/sync/status', {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -31,7 +31,7 @@ window.SyncClient = {
             const response = await fetch('/api/sync/auto', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -86,7 +86,7 @@ window.SyncClient = {
             const response = await fetch('/api/sync/pull', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -137,7 +137,7 @@ window.SyncClient = {
             const response = await fetch('/api/sync/push', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -181,7 +181,7 @@ window.SyncClient = {
             const response = await fetch('/api/sync/background', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -209,7 +209,7 @@ window.SyncClient = {
             const response = await fetch('/api/sync/emergency', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ tableName })
@@ -275,7 +275,7 @@ window.SyncClient = {
         window.addEventListener('beforeunload', () => {
             // Use sendBeacon for reliability during page unload
             if (navigator.sendBeacon && window.store && window.store.state.isAuthenticated) {
-                const token = localStorage.getItem('auth_token');
+                const token = localStorage.getItem('access_token');
                 if (token) {
                     // sendBeacon doesn't support custom headers, so we'll use a different endpoint
                     // or skip this for now since it's causing authentication issues
