@@ -3,11 +3,8 @@ const express = require('express');
 const router = express.Router();
 
 // Import services
-const SimplifiedDatabaseService = require('../services/database-simplified');
+const ServiceFactory = require('../services/service-factory');
 const authMiddleware = require('../middleware/auth-middleware');
-
-// Initialize services
-const db = new SimplifiedDatabaseService();
 
 /**
  * GET /api/subjects
@@ -15,7 +12,8 @@ const db = new SimplifiedDatabaseService();
  */
 router.get('/', async (req, res) => {
     try {
-        const subjects = await db.getSubjects();
+        const storage = ServiceFactory.getStorageService();
+        const subjects = await storage.getSubjects();
         res.json(subjects);
     } catch (error) {
         console.error('❌ Get subjects error:', error);
@@ -33,7 +31,8 @@ router.get('/', async (req, res) => {
 router.get('/:subjectId', async (req, res) => {
     try {
         const { subjectId } = req.params;
-        const subject = await db.getSubjectById(subjectId);
+        const storage = ServiceFactory.getStorageService();
+        const subject = await storage.getSubjectById(subjectId);
         
         if (!subject) {
             return res.status(404).json({ error: 'Subject not found' });
@@ -60,7 +59,8 @@ router.get('/:subjectId/topics', authMiddleware.authenticateToken, async (req, r
         
         console.log(`🔍 Getting topics for subject ${subjectId}, user ${userId}`);
         
-        const topics = await db.getTopicsForSubject(subjectId, userId);
+        const storage = ServiceFactory.getStorageService();
+        const topics = await storage.getTopicsForUser(userId, subjectId);
         res.json(topics);
     } catch (error) {
         console.error('❌ Get topics for subject error:', error);
@@ -87,7 +87,8 @@ router.post('/:subjectId/topics', authMiddleware.authenticateToken, async (req, 
 
         console.log(`📝 Creating topic "${name}" for subject ${subjectId}, user ${userId}`);
 
-        const topic = await db.createTopic(userId, subjectId, name, description || '');
+        const storage = ServiceFactory.getStorageService();
+        const topic = await storage.createTopic(userId, subjectId, name, description || '');
         res.status(201).json({
             success: true,
             topic: topic,
@@ -109,7 +110,8 @@ router.post('/:subjectId/topics', authMiddleware.authenticateToken, async (req, 
 router.get('/stats', authMiddleware.authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
-        const stats = await db.getSubjectStats(userId);
+        const storage = ServiceFactory.getStorageService();
+        const stats = await storage.getSubjectStatsForUser(userId);
         res.json(stats);
     } catch (error) {
         console.error('❌ Get subject stats error:', error);

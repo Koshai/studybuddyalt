@@ -278,26 +278,51 @@ class WebStorageService {
     // ===== STATISTICS =====
     
     async getDashboardStatsForUser(userId) {
-        const [topics, questions, notes, sessions] = await Promise.all([
-            this.supabase.from('topics').select('id', { count: 'exact' }).eq('user_id', userId),
-            this.supabase.from('questions').select('id', { count: 'exact' })
-                .in('topic_id', this.supabase.from('topics').select('id').eq('user_id', userId)),
-            this.supabase.from('notes').select('id', { count: 'exact' })
-                .in('topic_id', this.supabase.from('topics').select('id').eq('user_id', userId)),
-            this.supabase.from('practice_sessions').select('accuracy_rate').eq('user_id', userId)
-        ]);
-        
-        const avgAccuracy = sessions.data?.length > 0 
-            ? sessions.data.reduce((sum, s) => sum + s.accuracy_rate, 0) / sessions.data.length
-            : 0;
-        
-        return {
-            total_topics: topics.count || 0,
-            total_questions: questions.count || 0,
-            total_notes: notes.count || 0,
-            total_practice_sessions: sessions.data?.length || 0,
-            overall_accuracy: Math.round(avgAccuracy)
-        };
+        try {
+            // First get the user's topic IDs
+            const { data: topicIds, error: topicsError } = await this.supabase
+                .from('topics')
+                .select('id')
+                .eq('user_id', userId);
+                
+            if (topicsError) throw topicsError;
+            
+            const topicIdArray = topicIds.map(t => t.id);
+            
+            // Now get stats using the topic IDs
+            const [topics, questions, notes, sessions] = await Promise.all([
+                this.supabase.from('topics').select('id', { count: 'exact' }).eq('user_id', userId),
+                topicIdArray.length > 0 
+                    ? this.supabase.from('questions').select('id', { count: 'exact' }).in('topic_id', topicIdArray)
+                    : { count: 0 },
+                topicIdArray.length > 0 
+                    ? this.supabase.from('notes').select('id', { count: 'exact' }).in('topic_id', topicIdArray)
+                    : { count: 0 },
+                this.supabase.from('practice_sessions').select('accuracy_rate').eq('user_id', userId)
+            ]);
+            
+            const avgAccuracy = sessions.data?.length > 0 
+                ? sessions.data.reduce((sum, s) => sum + s.accuracy_rate, 0) / sessions.data.length
+                : 0;
+            
+            return {
+                total_topics: topics.count || 0,
+                total_questions: questions.count || 0,
+                total_notes: notes.count || 0,
+                total_practice_sessions: sessions.data?.length || 0,
+                overall_accuracy: Math.round(avgAccuracy)
+            };
+        } catch (error) {
+            console.error('Dashboard stats error:', error);
+            // Return zero stats on error
+            return {
+                total_topics: 0,
+                total_questions: 0,
+                total_notes: 0,
+                total_practice_sessions: 0,
+                overall_accuracy: 0
+            };
+        }
     }
 
     async getSubjectStatsForUser(userId) {

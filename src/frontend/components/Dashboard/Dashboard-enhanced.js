@@ -424,7 +424,7 @@ window.EnhancedDashboardComponent = {
         // Check sync status on load
         const checkSyncStatus = async () => {
             try {
-                const status = await window.SyncClient.getSyncStatus();
+                const status = await window.syncClient.getSyncStatus();
                 if (status.success) {
                     syncStatus.value = status.status;
                 }
@@ -439,7 +439,7 @@ window.EnhancedDashboardComponent = {
             
             isSyncing.value = true;
             try {
-                const result = await window.SyncClient.performAutoSync();
+                const result = await window.syncClient.performSync();
                 if (result.success) {
                     // Refresh sync status after successful sync
                     setTimeout(checkSyncStatus, 1000);

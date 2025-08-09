@@ -38,11 +38,21 @@ function apply(app) {
                     "'self'",
                     "https://api.openai.com",
                     "https://*.supabase.co",
+                    "https://*.google.com",
+                    "https://*.googleads.com",
+                    "https://*.googlesyndication.com",
+                    "https://*.doubleclick.net",
                     process.env.RAILWAY_ENVIRONMENT_NAME ? "https://*.railway.app" : "http://localhost:*"
                 ],
                 objectSrc: ["'none'"],
                 mediaSrc: ["'self'"],
-                frameSrc: ["'self'"]
+                frameSrc: [
+                    "'self'",
+                    "https://*.google.com",
+                    "https://*.googleads.com",
+                    "https://*.googlesyndication.com", 
+                    "https://*.doubleclick.net"
+                ]
             },
         },
         crossOriginEmbedderPolicy: false
