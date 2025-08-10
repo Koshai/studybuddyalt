@@ -185,8 +185,19 @@ router.post('/:topicId/generate-questions-openai', authMiddleware.authenticateTo
             return res.status(400).json({ error: 'No study materials found for this topic. Please upload some materials first.' });
         }
         
+        // Combine all notes content for AI generation
+        const combinedContent = notes.map(note => note.content).join('\n\n---\n\n');
+        
+        // Get subject info for context
+        const subject = await storage.getSubjectById(topicData.subject_id);
+        
         // Generate questions using AI service
-        const questions = await aiService.generateQuestionsFromNotes(topicId, notes, count);
+        const questions = await aiService.generateQuestions(
+            combinedContent,
+            count,
+            subject,
+            topicData.name
+        );
         
         // Save questions to database
         const savedQuestions = [];

@@ -254,6 +254,25 @@ class WebStorageService {
     }
 
     async updateNote(noteId, userId, content) {
+        // First verify the note belongs to the user (via topic ownership)
+        const { data: note } = await this.supabase
+            .from('notes')
+            .select(`
+                id,
+                topics!inner(
+                    id,
+                    user_id
+                )
+            `)
+            .eq('id', noteId)
+            .eq('topics.user_id', userId)
+            .single();
+        
+        if (!note) {
+            throw new Error('Note not found or access denied');
+        }
+        
+        // Now update the note
         const { data, error } = await this.supabase
             .from('notes')
             .update({ 
@@ -262,11 +281,6 @@ class WebStorageService {
                 updated_at: new Date().toISOString()
             })
             .eq('id', noteId)
-            .eq('topic_id', this.supabase
-                .from('topics')
-                .select('id')
-                .eq('user_id', userId)
-            )
             .select()
             .single();
             
