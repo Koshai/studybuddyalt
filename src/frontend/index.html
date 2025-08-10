@@ -337,446 +337,149 @@
             color: #1c1b1f !important;
         }
 
-        /* Header Styles */
-        .md-header, .header-dark-blue {
-            background-color: #5179a4 !important;
-            color: #ffffff !important;
+        /* Material Design Component Styling - Using CSS Variables */
+        .md-header {
+            background-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
         }
 
-        .md-header *, .header-dark-blue * {
-            color: #ffffff !important;
+        .md-sidebar {
+            background-color: var(--md-sys-color-surface-container-high);
+            color: var(--md-sys-color-on-surface);
+            border-right-color: var(--md-sys-color-outline-variant);
         }
 
-        /* Sidebar Styles */
-        .md-sidebar, .sidebar-lime-green {
-            background-color: #004794 !important;
-            border-right-color: #cac4d0 !important;
-        }
-
-        .md-sidebar .md-text-primary, .sidebar-lime-green * {
-            color: #ffffff !important;
-        }
-
-        .md-sidebar .md-text-secondary {
-            color: #ffffff !important;
-        }
-
-        /* Dashboard and Cards */
-        .md-dashboard, .dashboard-dark-grey {
-            background-color: #ffffff !important;
-            color: #1c1b1f !important;
+        .md-dashboard {
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-background);
         }
 
         .md-card, .md-elevated-card, .md-surface-container {
-            background-color: #e2dae7 !important;
-            color: #1c1b1f !important;
-            border-color: #cac4d0 !important;
+            background-color: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-on-surface-variant);
+            border-color: var(--md-sys-color-outline-variant);
         }
 
-        .md-card *, .md-elevated-card *, .md-surface-container * {
-            color: #1c1b1f !important;
-        }
-
-        /* Text Colors */
         .md-text-primary {
-            color: #1c1b1f !important;
+            color: var(--md-sys-color-on-surface);
         }
 
         .md-text-secondary {
-            color: #ffffff !important;
+            color: var(--md-sys-color-on-surface-variant);
         }
 
-        /* Stat Card Colors */
         .md-primary-container, .md-primary {
-            background-color: #5179a4 !important;
-            color: white !important;
+            background-color: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
         }
 
         .md-secondary-container, .md-secondary {
-            background-color: #625b71 !important;
-            color: white !important;
+            background-color: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
         }
 
         .md-tertiary-container {
-            background-color: #7d5260 !important;
-            color: white !important;
+            background-color: var(--md-sys-color-tertiary-container);
+            color: var(--md-sys-color-on-tertiary-container);
         }
 
-        /* Button Colors */
+        .md-surface-container-high {
+            background-color: var(--md-sys-color-surface-container-high);
+            color: var(--md-sys-color-on-surface);
+        }
+
         .md-button-primary {
-            background-color: #5179a4 !important;
-            color: white !important;
+            background-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
         }
 
         .md-button-secondary {
-            background-color: #2a70cb !important;
-            color: white !important;
+            background-color: var(--md-sys-color-secondary);
+            color: var(--md-sys-color-on-secondary);
         }
 
-        /* Notification Colors */
         .md-notification-success, .notification-success {
-            background-color: #2563eb !important;
-            color: white !important;
+            background-color: var(--md-sys-color-success);
+            color: var(--md-sys-color-on-success);
         }
 
         .md-notification-error, .notification-error {
-            background-color: #ba1a1a !important;
-            color: white !important;
+            background-color: var(--md-sys-color-error);
+            color: var(--md-sys-color-on-error);
         }
 
         .md-notification-warning, .notification-warning {
-            background-color: #ef6c00 !important;
-            color: white !important;
+            background-color: var(--md-sys-color-warning);
+            color: var(--md-sys-color-on-warning);
         }
 
         .md-notification-info, .notification-info {
-            background-color: #0277bd !important;
-            color: white !important;
+            background-color: var(--md-sys-color-info);
+            color: var(--md-sys-color-on-info);
         }
 
-        /* Fix any remaining white backgrounds */
-        .bg-white {
-            background-color: #e2dae7 !important;
-            color: #1c1b1f !important;
-        }
-
-        .bg-gray-50 {
-            background-color: #004794 !important;
-            color: #ffffff !important;
-        }
-
-        /* Override Tailwind colors that might conflict */
-        .text-gray-900 { color: #1c1b1f !important; }
-        .text-gray-800 { color: #1c1b1f !important; }
-        .text-gray-700 { color: #1c1b1f !important; }
-        .text-gray-600 { color: #ffffff !important; }
-        .text-gray-500 { color: #ffffff !important; }
+        /* CLEAN CSS - NO OVERRIDES - TRUTHFUL COLORS */
         
-        /* Fix specific issues */
+        /* Let Tailwind classes work as intended */
+        /* Text colors should match their names */
+        .text-white { color: #ffffff; }
+        .text-black { color: #000000; }
+        .text-gray-900 { color: #111827; }
+        .text-gray-800 { color: #1f2937; }
+        .text-gray-700 { color: #374151; }
+        .text-gray-600 { color: #4b5563; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-400 { color: #9ca3af; }
+        .text-gray-300 { color: #d1d5db; }
+        .text-gray-200 { color: #e5e7eb; }
+        .text-gray-100 { color: #f3f4f6; }
+        .text-gray-50 { color: #f9fafb; }
         
-        /* 1. Fix ALL green texts to white - COMPREHENSIVE */
-        .text-green-50, .text-green-100, .text-green-200, .text-green-300, 
-        .text-green-400, .text-green-500, .text-green-600, .text-green-700, 
-        .text-green-800, .text-green-900,
-        .text-emerald-50, .text-emerald-100, .text-emerald-200, .text-emerald-300,
-        .text-emerald-400, .text-emerald-500, .text-emerald-600, .text-emerald-700,
-        .text-emerald-800, .text-emerald-900,
-        .text-lime-50, .text-lime-100, .text-lime-200, .text-lime-300,
-        .text-lime-400, .text-lime-500, .text-lime-600, .text-lime-700,
-        .text-lime-800, .text-lime-900 {
-            color: #ffffff !important;
-        }
+        /* Green colors should actually be green */
+        .text-green-900 { color: #14532d; }
+        .text-green-800 { color: #166534; }
+        .text-green-700 { color: #15803d; }
+        .text-green-600 { color: #16a34a; }
+        .text-green-500 { color: #22c55e; }
+        .text-green-400 { color: #4ade80; }
+        .text-green-300 { color: #86efac; }
+        .text-green-200 { color: #bbf7d0; }
+        .text-green-100 { color: #dcfce7; }
+        .text-green-50 { color: #f0fdf4; }
         
-        /* Catch green text in any context - ULTRA COMPREHENSIVE */
-        [class*="text-green"],
-        [class*="text-emerald"],
-        [class*="text-lime"],
-        .green,
-        .text-green,
-        .text-emerald,
-        .text-lime {
-            color: #ffffff !important;
-        }
+        /* Background colors should match their names */
+        .bg-white { background-color: #ffffff; }
+        .bg-gray-50 { background-color: #f9fafb; }
+        .bg-gray-100 { background-color: #f3f4f6; }
+        .bg-gray-200 { background-color: #e5e7eb; }
         
-        /* Fix green icons specifically */
-        .fas.text-green-400, .fas.text-green-500, .fas.text-green-600,
-        .fas.text-green-700, .fas.text-emerald-600, .fas.text-lime-600,
-        i.text-green-400, i.text-green-500, i.text-green-600, i.text-green-700,
-        i[class*="text-green"], i[class*="text-emerald"], i[class*="text-lime"] {
-            color: #ffffff !important;
-        }
+        .bg-green-50 { background-color: #f0fdf4; }
+        .bg-green-100 { background-color: #dcfce7; }
+        .bg-green-500 { background-color: #22c55e; }
         
-        /* Override any green text in specific contexts */
-        .bg-green-50 *, .bg-green-100 *, .bg-green-200 *,
-        .bg-emerald-50 *, .bg-emerald-100 *, .bg-emerald-200 *,
-        .bg-lime-50 *, .bg-lime-100 *, .bg-lime-200 * {
-            color: #000000 !important;
-        }
+        /* Blue colors */
+        .text-blue-600 { color: #2563eb; }
+        .text-blue-700 { color: #1d4ed8; }
+        .bg-blue-50 { background-color: #eff6ff; }
+        .bg-blue-500 { background-color: #3b82f6; }
         
-        /* Success states with green backgrounds need dark text */
-        .bg-green-400, .bg-green-500, .bg-green-600,
-        .bg-emerald-400, .bg-emerald-500, .bg-emerald-600 {
-            color: #ffffff !important;
-        }
+        /* Purple colors */
+        .text-purple-600 { color: #9333ea; }
+        .text-purple-700 { color: #7c3aed; }
+        .bg-purple-50 { background-color: #faf5ff; }
+        .bg-purple-500 { background-color: #a855f7; }
         
-        /* Any element with green in class name gets white text */
-        *[class*="green"] {
-            color: #ffffff !important;
-        }
+        /* Red colors */
+        .text-red-600 { color: #dc2626; }
+        .text-red-700 { color: #b91c1c; }
+        .bg-red-50 { background-color: #fef2f2; }
+        .bg-red-500 { background-color: #ef4444; }
         
-        /* 2. Recent activity section - make texts black */
-        .recent-activity-section,
-        .recent-activity-section *,
-        .recent-activity-section h3,
-        .recent-activity-section h4,
-        .recent-activity-section p,
-        .recent-activity-section span,
-        .recent-activity-section div {
-            color: #1c1b1f !important;
-        }
-        
-        /* 3. Sponsored section - make texts black */
-        .sponsored-section,
-        .sponsored-section *,
-        .sponsored-section h3,
-        .sponsored-section h4,
-        .sponsored-section p,
-        .sponsored-section span,
-        .sponsored-section div,
-        .sponsored-section button,
-        .sponsored-section .text-gray-400,
-        .sponsored-section .text-gray-600,
-        .sponsored-section .text-purple-600 {
-            color: #1c1b1f !important;
-        }
-        
-        /* Ad component specific fixes */
-        .sponsored-section .bg-white {
-            background-color: #e2dae7 !important;
-            color: #1c1b1f !important;
-        }
-        
-        /* 4. Fourth progress card - make it darker */
-        .md-surface-container-high {
-            background-color: #2d4a7c !important;
-            color: #ffffff !important;
-        }
-        
-        .md-surface-container-high * {
-            color: #ffffff !important;
-        }
-        
-        /* 5. Notification texts should be white - ULTRA COMPREHENSIVE */
-        .md-notification-success *,
-        .md-notification-error *,
-        .md-notification-warning *,
-        .md-notification-info *,
-        .notification-success *,
-        .notification-error *,
-        .notification-warning *,
-        .notification-info *,
-        .notification-container *,
-        .toast *,
-        .alert *,
-        .snackbar *,
-        [class*="notification"] *,
-        [class*="toast"] *,
-        [class*="alert"] * {
-            color: #ffffff !important;
-        }
-        
-        /* Also force white text on notification icons and buttons */
-        .notification-success i,
-        .notification-error i,
-        .notification-warning i,
-        .notification-info i,
-        .md-notification-success i,
-        .md-notification-error i,
-        .md-notification-warning i,
-        .md-notification-info i {
-            color: #ffffff !important;
-        }
-        
-        /* SPECIFIC FIXES FOR USER REPORTED ISSUES */
-        
-        /* 1. Pro Coming Soon text in sidebar - WHITE */
-        .text-gray-500 {
-            color: #ffffff !important;
-        }
-        
-        /* 2. Sidebar menu buttons text - WHITE */
-        .text-gray-700 {
-            color: #ffffff !important;
-        }
-        
-        .text-gray-600 {
-            color: #ffffff !important;
-        }
-        
-        /* 3. AI Status text - WHITE when AI Ready */
-        .text-green-700 {
-            color: #ffffff !important;
-        }
-        
-        /* 4. Header bar text - WHITE */
-        .md-header h2,
-        .md-header p,
-        .md-header span {
-            color: #ffffff !important;
-        }
-        
-        /* Force white text on all sidebar navigation elements */
-        nav button,
-        nav button span,
-        nav button i,
-        .md-sidebar button,
-        .md-sidebar button span,
-        .md-sidebar button i {
-            color: #ffffff !important;
-        }
-        
-        /* Quick actions section header */
-        .md-sidebar h4,
-        .md-sidebar .text-xs {
-            color: #ffffff !important;
-        }
-        
-        /* CRITICAL FIX - Force text-white to always be WHITE */
-        .text-white,
-        .text-white *,
-        [class*="text-white"] {
-            color: #ffffff !important;
-        }
-        
-        /* Force white text in notifications */
-        .notification-success .text-white,
-        .notification-error .text-white,
-        .notification-warning .text-white,
-        .notification-info .text-white,
-        .md-notification-success .text-white,
-        .md-notification-error .text-white,
-        .md-notification-warning .text-white,
-        .md-notification-info .text-white {
-            color: #ffffff !important;
-        }
-        
-        /* Additional fixes for any remaining issues */
-        
-        /* Fix any cards that might have light backgrounds */
-        .bg-gray-50, .bg-gray-100, .bg-gray-200 {
-            background-color: #e2dae7 !important;
-            color: #1c1b1f !important;
-        }
-        
-        /* Ensure all stat cards have proper contrast */
-        .stats-card-light {
-            background-color: #2d4a7c !important;
-            color: #ffffff !important;
-        }
-        
-        /* Progress bars should be visible */
-        .progress-bar, .usage-bar {
-            background-color: rgba(255, 255, 255, 0.3) !important;
-        }
-        
-        .progress-fill, .usage-fill {
-            background-color: #ffffff !important;
-        }
-        
-        /* COLORED BACKGROUND SYSTEM - No more white/black backgrounds */
-        .text-gray-900 { color: #111827 !important; }
-        .text-gray-800 { color: #1f2937 !important; }
-        .text-gray-700 { color: #374151 !important; }
-        .text-gray-600 { color: #4b5563 !important; }
-        .text-gray-500 { color: #6b7280 !important; }
-        .text-gray-400 { color: #9ca3af !important; }
-        .text-white { color: #ffffff !important; }
-        
-        /* Replace white backgrounds with light colored alternatives */
-        .bg-white { background-color: #f0f9ff !important; } /* Light blue */
-        .bg-gray-50 { background-color: #f0fdf4 !important; } /* Light green */
-        .bg-gray-100 { background-color: #fef7ff !important; } /* Light purple */
-        .bg-primary-50 { background-color: #eff6ff !important; }
-        .bg-secondary-50 { background-color: #faf5ff !important; }
-        .bg-green-50 { background-color: #ecfdf5 !important; }
-        .bg-orange-50 { background-color: #fff7ed !important; }
-        .bg-yellow-50 { background-color: #fefce8 !important; }
-        .bg-blue-50 { background-color: #eff6ff !important; }
-        .bg-purple-50 { background-color: #faf5ff !important; }
-        .bg-pink-50 { background-color: #fdf2f8 !important; }
-        .bg-indigo-50 { background-color: #eef2ff !important; }
-        .bg-cyan-50 { background-color: #ecfeff !important; }
-        .bg-emerald-50 { background-color: #ecfdf5 !important; }
-        
-        /* Text color for primary elements */
-        .text-primary-600 { color: #2563eb !important; }
-        .text-secondary-600 { color: #9333ea !important; }
-        .text-green-600 { color: #16a34a !important; }
-        .text-orange-600 { color: #ea580c !important; }
-        .text-yellow-900 { color: #713f12 !important; }
-        .text-blue-900 { color: #1e3a8a !important; }
-        .text-purple-900 { color: #581c87 !important; }
-        .text-pink-900 { color: #831843 !important; }
-        .text-indigo-900 { color: #312e81 !important; }
-        .text-cyan-900 { color: #164e63 !important; }
-        .text-emerald-900 { color: #064e3b !important; }
-        
-        /* Card backgrounds */
-        .rounded-xl { border-radius: 0.75rem !important; }
-        .rounded-lg { border-radius: 0.5rem !important; }
-        .border { border-width: 1px !important; }
-        .border-gray-200 { border-color: #e5e7eb !important; }
-        .shadow-sm { box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important; }
-        
-        /* Ensure text is readable */
-        .dashboard-content { color: #111827 !important; }
-        .dashboard-content h1, 
-        .dashboard-content h2, 
-        .dashboard-content h3, 
-        .dashboard-content h4 { color: #111827 !important; }
-        .dashboard-content p { color: #4b5563 !important; }
-        .dashboard-content span { color: #4b5563 !important; }
-        .dashboard-content div { color: #4b5563 !important; }
-        
-        /* Override specific text classes within dashboard-content */
-        .dashboard-content .text-gray-900 { color: #111827 !important; }
-        .dashboard-content .text-gray-800 { color: #1f2937 !important; }
-        .dashboard-content .text-gray-700 { color: #374151 !important; }
-        .dashboard-content .text-gray-600 { color: #4b5563 !important; }
-        .dashboard-content .text-gray-500 { color: #6b7280 !important; }
-        
-        /* Preserve white text on colored backgrounds */
-        .dashboard-content .text-white { color: #ffffff !important; }
-        .dashboard-content .bg-gradient-to-r .text-white { color: #ffffff !important; }
-        .dashboard-content .bg-primary-500 .text-white { color: #ffffff !important; }
-        .dashboard-content .bg-secondary-500 .text-white { color: #ffffff !important; }
-        
-        /* Button text colors */
-        .dashboard-content button { color: #111827 !important; }
-        .dashboard-content .btn-gradient { color: #ffffff !important; }
-        
-        /* Link colors */
-        .dashboard-content a { color: #2563eb !important; }
-        .dashboard-content a:hover { color: #1d4ed8 !important; }
-        
-        /* Global text contrast fixes for all components */
-        body { color: #111827 !important; }
-        
-        /* Ensure readable text on colored backgrounds */
-        .bg-white * { color: #1e40af !important; } /* Dark blue on light blue */
-        .bg-gray-50 * { color: #166534 !important; } /* Dark green on light green */
-        .bg-gray-100 * { color: #7c2d92 !important; } /* Dark purple on light purple */
-        .bg-blue-50 * { color: #1e40af !important; }
-        .bg-green-50 * { color: #166534 !important; }
-        .bg-purple-50 * { color: #7c2d92 !important; }
-        .bg-pink-50 * { color: #be185d !important; }
-        .bg-yellow-50 * { color: #a16207 !important; }
-        .bg-orange-50 * { color: #c2410c !important; }
-        .bg-indigo-50 * { color: #3730a3 !important; }
-        .bg-cyan-50 * { color: #0e7490 !important; }
-        .bg-emerald-50 * { color: #065f46 !important; }
-        
-        /* Fix text visibility issues with important specificity */
-        .text-black { color: #000000 !important; }
-        .text-white { color: #ffffff !important; }
-        
-        /* Component-specific overrides */
-        .animate-fade-in { color: #111827 !important; }
-        .space-y-8 { color: inherit; }
-        .space-y-6 { color: inherit; }
-        
-        /* Make sure all Vue component root elements have proper text color */
-        #app > * { color: #111827; }
-        
-        /* Card content should be dark on light backgrounds */
-        .rounded-xl { color: #111827; }
-        .rounded-lg { color: #111827; }
-        .border { color: inherit; }
-        
-        /* Override any problematic text colors */
-        *:not(.text-white):not(.bg-gradient-to-r *):not([class*="bg-primary"]):not([class*="bg-secondary"]):not([class*="bg-accent"]) {
-            color: #111827;
-        }
+        /* Yellow colors */
+        .text-yellow-600 { color: #ca8a04; }
+        .text-yellow-700 { color: #a16207; }
+        .bg-yellow-50 { background-color: #fefce8; }
+        .bg-yellow-500 { background-color: #eab308; }
     </style>
     
     <!-- Tailwind Configuration -->
