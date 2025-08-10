@@ -158,6 +158,59 @@ router.get('/:topicId/random-questions', authMiddleware.authenticateToken, async
 });
 
 /**
+ * POST /api/topics/:topicId/generate-questions-openai
+ * Generate questions for a topic using OpenAI
+ */
+router.post('/:topicId/generate-questions-openai', authMiddleware.authenticateToken, async (req, res) => {
+    try {
+        const { topicId } = req.params;
+        const { count = 5, subjectCategory, topic } = req.body;
+        const userId = req.user.id;
+        
+        console.log(`🤖 Generating ${count} questions for topic ${topicId} using OpenAI`);
+        
+        const ServiceFactory = require('../services/service-factory');
+        const aiService = ServiceFactory.getAIService();
+        
+        // Get topic and notes for context
+        const storage = ServiceFactory.getStorageService();
+        const topicData = await storage.getTopicById(topicId);
+        const notes = await storage.getNotesForUser(userId, topicId);
+        
+        if (!topicData) {
+            return res.status(404).json({ error: 'Topic not found' });
+        }
+        
+        if (notes.length === 0) {
+            return res.status(400).json({ error: 'No study materials found for this topic. Please upload some materials first.' });
+        }
+        
+        // Generate questions using AI service
+        const questions = await aiService.generateQuestionsFromNotes(topicId, notes, count);
+        
+        // Save questions to database
+        const savedQuestions = [];
+        for (const questionData of questions) {
+            try {
+                const savedQuestion = await storage.createQuestion(userId, topicId, questionData);
+                savedQuestions.push(savedQuestion);
+            } catch (error) {
+                console.warn('Failed to save question:', error);
+            }
+        }
+        
+        console.log(`✅ Generated and saved ${savedQuestions.length} questions`);
+        res.json(savedQuestions);
+    } catch (error) {
+        console.error('❌ Generate questions error:', error);
+        res.status(500).json({
+            error: 'Failed to generate questions',
+            details: error.message
+        });
+    }
+});
+
+/**
  * GET /api/topics/:topicId/stats
  * Get statistics for a specific topic
  */

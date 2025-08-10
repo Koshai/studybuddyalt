@@ -13,19 +13,68 @@ router.get('/usage', authMiddleware.authenticateToken, async (req, res) => {
         const userId = req.user.id;
         const storage = ServiceFactory.getStorageService();
         
+        console.log(`📊 Calculating usage stats for user ${userId}`);
+        
         // Get current month usage
         const currentMonth = new Date().toISOString().slice(0, 7);
+        const currentMonthStart = new Date(currentMonth + '-01');
+        const nextMonth = new Date(currentMonthStart);
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
         
-        // For now, return mock data since we're using web-only architecture
+        // Calculate actual usage
+        const [allTopics, allQuestions, allNotes] = await Promise.all([
+            storage.getTopicsForUser(userId, 'all'),
+            storage.getAllQuestionsForUser ? storage.getAllQuestionsForUser(userId) : [],
+            storage.getAllNotesForUser(userId)
+        ]);
+        
+        // Filter by current month for monthly limits
+        const currentMonthTopics = allTopics.filter(t => 
+            new Date(t.created_at) >= currentMonthStart && new Date(t.created_at) < nextMonth
+        );
+        
+        const currentMonthQuestions = allQuestions.filter(q => 
+            new Date(q.created_at) >= currentMonthStart && new Date(q.created_at) < nextMonth
+        );
+        
+        // Calculate storage used (rough estimate based on content length)
+        const storageUsed = allNotes.reduce((total, note) => {
+            return total + (note.content ? note.content.length : 0);
+        }, 0);
+        
         const usageStats = {
-            questionsUsed: 0,
-            questionsLimit: req.user.subscriptionTier === 'free' ? 50 : 1000,
-            storageUsed: 0,
-            storageLimit: req.user.subscriptionTier === 'free' ? 100 * 1024 * 1024 : 1024 * 1024 * 1024, // 100MB for free, 1GB for pro
-            topicsCreated: 0,
+            questions: {
+                used: currentMonthQuestions.length,
+                limit: req.user.subscriptionTier === 'free' ? 50 : 1500,
+                percentage: req.user.subscriptionTier === 'free' 
+                    ? Math.round((currentMonthQuestions.length / 50) * 100)
+                    : Math.round((currentMonthQuestions.length / 1500) * 100)
+            },
+            storage: {
+                used: storageUsed,
+                limit: req.user.subscriptionTier === 'free' ? 100 * 1024 * 1024 : 1024 * 1024 * 1024,
+                percentage: req.user.subscriptionTier === 'free'
+                    ? Math.round((storageUsed / (100 * 1024 * 1024)) * 100)
+                    : Math.round((storageUsed / (1024 * 1024 * 1024)) * 100),
+                usedMB: Math.round(storageUsed / (1024 * 1024)),
+                limitMB: req.user.subscriptionTier === 'free' ? 100 : 1024
+            },
+            topics: {
+                used: currentMonthTopics.length,
+                limit: req.user.subscriptionTier === 'free' ? 3 : 50,
+                percentage: req.user.subscriptionTier === 'free'
+                    ? Math.round((currentMonthTopics.length / 3) * 100)
+                    : Math.round((currentMonthTopics.length / 50) * 100)
+            },
             monthYear: currentMonth,
-            tier: req.user.subscriptionTier
+            tier: req.user.subscriptionTier || 'free'
         };
+        
+        console.log('✅ Usage stats calculated:', {
+            questions: `${usageStats.questions.used}/${usageStats.questions.limit}`,
+            topics: `${usageStats.topics.used}/${usageStats.topics.limit}`,
+            storage: `${usageStats.storage.usedMB}MB/${usageStats.storage.limitMB}MB`
+        });
         
         res.json(usageStats);
         
