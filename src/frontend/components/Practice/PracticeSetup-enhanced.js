@@ -503,7 +503,17 @@ window.EnhancedPracticeSetupComponent = {
         };
 
         const startPractice = (topic) => {
-            store.selectSubject(store.getSubjectById(topic.subjectId));
+            // Handle both field names for compatibility
+            const subjectId = topic.subjectId || topic.subject_id;
+            const subject = store.getSubjectById(subjectId);
+            
+            if (!subject) {
+                console.error('Subject not found for topic:', topic);
+                store.showNotification('Subject not found for this topic', 'error');
+                return;
+            }
+            
+            store.selectSubject(subject);
             store.selectTopic(topic);
             store.setCurrentView('practice-session');
         };

@@ -117,11 +117,11 @@ window.NotesDisplayComponent = {
                             <div class="flex items-center space-x-4">
                                 <span class="flex items-center">
                                     <i class="fas fa-folder mr-1"></i>
-                                    {{ getSubjectName(note.subject_id) }}
+                                    {{ getSubjectName(note) }}
                                 </span>
                                 <span class="flex items-center">
                                     <i class="fas fa-tag mr-1"></i>
-                                    {{ getTopicName(note.topic_id) }}
+                                    {{ getTopicName(note) }}
                                 </span>
                             </div>
                             <div class="flex space-x-2">
@@ -354,42 +354,69 @@ window.NotesDisplayComponent = {
         const subjects = Vue.ref([]);
         const allTopics = Vue.ref([]);
 
-        const getSubjectName = (subjectId) => {
-            const subject = subjects.value.find(s => s.id === subjectId);
+        const getSubjectName = (note) => {
+            // Use subject_name from note data if available, fallback to lookup
+            if (note.subject_name) {
+                return note.subject_name;
+            }
+            if (note.subject && note.subject.name) {
+                return note.subject.name;
+            }
+            // Fallback to ID-based lookup
+            const subject = subjects.value.find(s => s.id === note.subject_id);
             return subject ? subject.name : 'Unknown Subject';
         };
 
-        const getTopicName = (topicId) => {
-            const topic = allTopics.value.find(t => t.id === topicId);
+        const getTopicName = (note) => {
+            // Use topic_name from note data if available, fallback to lookup  
+            if (note.topic_name) {
+                return note.topic_name;
+            }
+            // Fallback to ID-based lookup
+            const topic = allTopics.value.find(t => t.id === note.topic_id);
             return topic ? topic.name : 'Loading...';
         };
 
         // Load subjects and topics for proper name display
         const loadSubjectsAndTopics = async () => {
             try {
-                // Load subjects - hardcoded list like before
-                subjects.value = [
-                    { id: 'mathematics', name: 'Mathematics' },
-                    { id: 'natural-sciences', name: 'Natural Sciences' },
-                    { id: 'literature', name: 'Literature & Writing' },
-                    { id: 'social-studies', name: 'Social Studies' },
-                    { id: 'language-arts', name: 'Language Arts' },
-                    { id: 'computer-science', name: 'Computer Science' },
-                    { id: 'arts', name: 'Arts & Creative' },
-                    { id: 'other', name: 'Other Subjects' }
-                ];
+                // Use subjects from store to ensure consistency
+                if (window.store && window.store.state.subjects) {
+                    subjects.value = [...window.store.state.subjects];
+                } else {
+                    // Fallback to complete subject list matching the store
+                    subjects.value = [
+                        { id: 'mathematics', name: 'Mathematics' },
+                        { id: 'natural-sciences', name: 'Natural Sciences' },
+                        { id: 'literature', name: 'Literature & Writing' },
+                        { id: 'history', name: 'History & Social Studies' },
+                        { id: 'languages', name: 'Foreign Languages' },
+                        { id: 'arts', name: 'Arts & Humanities' },
+                        { id: 'computer-science', name: 'Computer Science' },
+                        { id: 'business', name: 'Business & Economics' },
+                        { id: 'health-medicine', name: 'Health & Medicine' },
+                        { id: 'other', name: 'General Studies' }
+                    ];
+                }
 
-                // Load all topics from all subjects
+                // Load all topics from all subjects (but be more resilient to errors)
                 const loadedTopics = [];
                 for (const subject of subjects.value) {
                     try {
                         const topics = await window.api.getTopics(subject.id);
-                        loadedTopics.push(...topics);
+                        if (Array.isArray(topics)) {
+                            loadedTopics.push(...topics);
+                        }
                     } catch (error) {
                         console.warn(`Failed to load topics for ${subject.name}:`, error);
+                        // Continue with other subjects instead of failing completely
                     }
                 }
                 allTopics.value = loadedTopics;
+                console.log('📚 Loaded subjects and topics for notes display:', {
+                    subjects: subjects.value.length,
+                    topics: allTopics.value.length
+                });
             } catch (error) {
                 console.error('Failed to load subjects and topics:', error);
             }

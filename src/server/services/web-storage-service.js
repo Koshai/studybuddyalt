@@ -371,14 +371,29 @@ class WebStorageService {
             
         if (error) throw error;
         
+        if (!data || data.length === 0) {
+            return [];
+        }
+        
         // Shuffle and take count
         const shuffled = data.sort(() => 0.5 - Math.random());
         const selected = shuffled.slice(0, count);
         
-        return selected.map(q => ({
-            ...q,
-            options: q.options ? JSON.parse(q.options) : null
-        }));
+        return selected.map(q => {
+            let options = null;
+            if (q.options) {
+                try {
+                    options = JSON.parse(q.options);
+                } catch (parseError) {
+                    console.error('❌ Failed to parse question options:', parseError);
+                    options = null;
+                }
+            }
+            return {
+                ...q,
+                options: options
+            };
+        });
     }
 
     // ===== PRACTICE SESSIONS =====
