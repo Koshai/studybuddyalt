@@ -100,7 +100,7 @@ window.NotesDisplayComponent = {
                         </div>
                         
                         <!-- Read More/Less -->
-                        <div v-if="note.content.length > 300" class="mt-3 pt-3 border-t border-gray-200">
+                        <div v-if="note.content && note.content.length > 300" class="mt-3 pt-3 border-t border-gray-200">
                             <button 
                                 @click="toggleExpanded(note.id)"
                                 class="text-sm text-purple-600 hover:text-purple-700 font-medium transition-colors"

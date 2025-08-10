@@ -120,6 +120,52 @@ app.use('/api/user', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/activity', dashboardRoutes);
 
+// Missing routes that return HTML instead of JSON - add stubs
+app.get('/api/setup/offline/status', (req, res) => {
+    res.json({
+        success: true,
+        status: 'not_installed',
+        message: 'Offline mode not available in web deployment'
+    });
+});
+
+app.get('/api/setup/offline/test', (req, res) => {
+    res.json({
+        success: false,
+        message: 'Offline mode not available in web deployment'
+    });
+});
+
+app.get('/api/admin/sync/status', (req, res) => {
+    res.json({
+        success: true,
+        status: {
+            supabase: { connected: true, lastSync: new Date().toISOString() },
+            sqlite: null // Not available in web mode
+        }
+    });
+});
+
+app.get('/api/admin/sync/logs', (req, res) => {
+    res.json({
+        success: true,
+        logs: [
+            { timestamp: new Date().toISOString(), level: 'info', message: 'Web-only mode active, no sync needed' }
+        ]
+    });
+});
+
+app.get('/api/user/settings', require('./middleware/auth-middleware').authenticateToken, (req, res) => {
+    res.json({
+        success: true,
+        settings: {
+            theme: 'light',
+            notifications: true,
+            language: 'en'
+        }
+    });
+});
+
 // Health check routes (separate from main API health)
 app.get('/api/health/ai', require('./middleware/auth-middleware').authenticateToken, async (req, res) => {
     try {

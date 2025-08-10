@@ -25,6 +25,26 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * GET /api/subjects/stats
+ * Get subject-wise statistics (requires authentication)
+ */
+router.get('/stats', authMiddleware.authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        console.log('📊 Getting subject stats for user:', userId);
+        const storage = ServiceFactory.getStorageService();
+        const stats = await storage.getSubjectStatsForUser(userId);
+        res.json(stats);
+    } catch (error) {
+        console.error('❌ Get subject stats error:', error);
+        res.status(500).json({
+            error: 'Failed to fetch subject statistics',
+            details: error.message
+        });
+    }
+});
+
+/**
  * GET /api/subjects/:subjectId
  * Get specific subject by ID
  */
@@ -98,25 +118,6 @@ router.post('/:subjectId/topics', authMiddleware.authenticateToken, async (req, 
         console.error('❌ Create topic error:', error);
         res.status(500).json({
             error: 'Failed to create topic',
-            details: error.message
-        });
-    }
-});
-
-/**
- * GET /api/subjects/stats
- * Get subject-wise statistics (requires authentication)
- */
-router.get('/stats', authMiddleware.authenticateToken, async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const storage = ServiceFactory.getStorageService();
-        const stats = await storage.getSubjectStatsForUser(userId);
-        res.json(stats);
-    } catch (error) {
-        console.error('❌ Get subject stats error:', error);
-        res.status(500).json({
-            error: 'Failed to fetch subject statistics',
             details: error.message
         });
     }

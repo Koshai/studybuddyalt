@@ -282,11 +282,11 @@ const AdminDashboard = {
                         <!-- SQLite Database Status -->
                         <div class="bg-gray-50 rounded-lg p-4">
                             <h3 class="font-semibold text-gray-800 mb-3">📄 SQLite Database</h3>
-                            <div class="text-xs text-gray-600 mb-3">{{ syncStatus.sqlite.dbPath }}</div>
+                            <div class="text-xs text-gray-600 mb-3">{{ syncStatus?.sqlite?.dbPath || 'Database path not available' }}</div>
                             
                             <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                                 <div 
-                                    v-for="(table, tableName) in syncStatus.sqlite.tables" 
+                                    v-for="(table, tableName) in (syncStatus?.sqlite?.tables || {})" 
                                     :key="tableName"
                                     class="bg-white rounded p-3 border"
                                 >
