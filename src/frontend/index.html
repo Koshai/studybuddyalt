@@ -454,8 +454,53 @@
         
         /* Fix specific issues */
         
-        /* 1. Fix green texts to white */
-        .text-green-600, .text-green-500, .text-green-700 {
+        /* 1. Fix ALL green texts to white - COMPREHENSIVE */
+        .text-green-50, .text-green-100, .text-green-200, .text-green-300, 
+        .text-green-400, .text-green-500, .text-green-600, .text-green-700, 
+        .text-green-800, .text-green-900,
+        .text-emerald-50, .text-emerald-100, .text-emerald-200, .text-emerald-300,
+        .text-emerald-400, .text-emerald-500, .text-emerald-600, .text-emerald-700,
+        .text-emerald-800, .text-emerald-900,
+        .text-lime-50, .text-lime-100, .text-lime-200, .text-lime-300,
+        .text-lime-400, .text-lime-500, .text-lime-600, .text-lime-700,
+        .text-lime-800, .text-lime-900 {
+            color: #ffffff !important;
+        }
+        
+        /* Catch green text in any context - ULTRA COMPREHENSIVE */
+        [class*="text-green"],
+        [class*="text-emerald"],
+        [class*="text-lime"],
+        .green,
+        .text-green,
+        .text-emerald,
+        .text-lime {
+            color: #ffffff !important;
+        }
+        
+        /* Fix green icons specifically */
+        .fas.text-green-400, .fas.text-green-500, .fas.text-green-600,
+        .fas.text-green-700, .fas.text-emerald-600, .fas.text-lime-600,
+        i.text-green-400, i.text-green-500, i.text-green-600, i.text-green-700,
+        i[class*="text-green"], i[class*="text-emerald"], i[class*="text-lime"] {
+            color: #ffffff !important;
+        }
+        
+        /* Override any green text in specific contexts */
+        .bg-green-50 *, .bg-green-100 *, .bg-green-200 *,
+        .bg-emerald-50 *, .bg-emerald-100 *, .bg-emerald-200 *,
+        .bg-lime-50 *, .bg-lime-100 *, .bg-lime-200 * {
+            color: #000000 !important;
+        }
+        
+        /* Success states with green backgrounds need dark text */
+        .bg-green-400, .bg-green-500, .bg-green-600,
+        .bg-emerald-400, .bg-emerald-500, .bg-emerald-600 {
+            color: #ffffff !important;
+        }
+        
+        /* Any element with green in class name gets white text */
+        *[class*="green"] {
             color: #ffffff !important;
         }
         
@@ -501,7 +546,7 @@
             color: #ffffff !important;
         }
         
-        /* 5. Notification texts should be white */
+        /* 5. Notification texts should be white - ULTRA COMPREHENSIVE */
         .md-notification-success *,
         .md-notification-error *,
         .md-notification-warning *,
@@ -509,7 +554,26 @@
         .notification-success *,
         .notification-error *,
         .notification-warning *,
-        .notification-info * {
+        .notification-info *,
+        .notification-container *,
+        .toast *,
+        .alert *,
+        .snackbar *,
+        [class*="notification"] *,
+        [class*="toast"] *,
+        [class*="alert"] * {
+            color: #ffffff !important;
+        }
+        
+        /* Also force white text on notification icons and buttons */
+        .notification-success i,
+        .notification-error i,
+        .notification-warning i,
+        .notification-info i,
+        .md-notification-success i,
+        .md-notification-error i,
+        .md-notification-warning i,
+        .md-notification-info i {
             color: #ffffff !important;
         }
         
