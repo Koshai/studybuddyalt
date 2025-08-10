@@ -327,10 +327,21 @@ class WebStorageService {
             
         if (error) throw error;
         
-        return data.map(q => ({
-            ...q,
-            options: q.options ? JSON.parse(q.options) : null
-        }));
+        return data.map(q => {
+            let options = null;
+            if (q.options) {
+                try {
+                    options = JSON.parse(q.options);
+                } catch (parseError) {
+                    console.error('❌ Failed to parse question options:', parseError);
+                    options = null;
+                }
+            }
+            return {
+                ...q,
+                options: options
+            };
+        });
     }
 
     async getRandomQuestionsForUser(userId, topicId, count = 5) {
@@ -624,10 +635,21 @@ class WebStorageService {
             
         if (error) throw error;
         
-        return data.map(q => ({
-            ...q,
-            options: q.options ? JSON.parse(q.options) : null
-        }));
+        return data.map(q => {
+            let options = null;
+            if (q.options) {
+                try {
+                    options = JSON.parse(q.options);
+                } catch (parseError) {
+                    console.error('❌ Failed to parse question options:', parseError);
+                    options = null;
+                }
+            }
+            return {
+                ...q,
+                options: options
+            };
+        });
     }
 
     async getAllPracticeSessionsForUser(userId) {

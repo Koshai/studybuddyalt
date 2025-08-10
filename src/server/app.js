@@ -166,6 +166,25 @@ app.get('/api/user/settings', require('./middleware/auth-middleware').authentica
     });
 });
 
+// Missing notes routes (should be in dedicated notes-routes.js file)
+app.get('/api/notes', require('./middleware/auth-middleware').authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const ServiceFactory = require('./services/service-factory');
+        const storage = ServiceFactory.getStorageService();
+        
+        const notes = await storage.getAllNotesForUser(userId);
+        console.log(`📄 Retrieved ${notes.length} notes for user ${userId}`);
+        res.json(notes);
+    } catch (error) {
+        console.error('❌ Get all notes error:', error);
+        res.status(500).json({
+            error: 'Failed to fetch notes',
+            details: error.message
+        });
+    }
+});
+
 // Health check routes (separate from main API health)
 app.get('/api/health/ai', require('./middleware/auth-middleware').authenticateToken, async (req, res) => {
     try {
