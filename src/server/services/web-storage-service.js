@@ -88,13 +88,33 @@ class WebStorageService {
     // ===== SUBJECTS =====
     
     async getSubjects() {
-        // Return hardcoded subjects instead of querying Supabase
-        return [...this.FIXED_SUBJECTS];
+        const { data, error } = await this.supabase
+            .from('subjects')
+            .select('*')
+            .order('name');
+            
+        if (error) {
+            console.error('❌ Error fetching subjects:', error);
+            // Fallback to hardcoded subjects if Supabase query fails
+            return [...this.FIXED_SUBJECTS];
+        }
+        return data;
     }
 
     async getSubjectById(subjectId) {
-        const subject = this.FIXED_SUBJECTS.find(s => s.id === subjectId);
-        return subject || null;
+        const { data, error } = await this.supabase
+            .from('subjects')
+            .select('*')
+            .eq('id', subjectId)
+            .single();
+            
+        if (error) {
+            console.error('❌ Error fetching subject:', error);
+            // Fallback to hardcoded subject
+            const subject = this.FIXED_SUBJECTS.find(s => s.id === subjectId);
+            return subject || null;
+        }
+        return data;
     }
 
     // ===== TOPICS =====
@@ -204,7 +224,13 @@ class WebStorageService {
             .from('notes')
             .select(`
                 *,
-                topics!inner(user_id, name, subject_id)
+                topics!inner(
+                    id,
+                    name,
+                    subject_id,
+                    user_id,
+                    subjects(id, name, icon, color)
+                )
             `)
             .eq('topic_id', topicId)
             .eq('topics.user_id', userId)
@@ -212,16 +238,14 @@ class WebStorageService {
             
         if (error) throw error;
         
-        // Add subject information from fixed subjects
-        return data.map(note => {
-            const subject = this.FIXED_SUBJECTS.find(s => s.id === note.topics.subject_id);
-            return {
-                ...note,
-                subject_id: note.topics.subject_id,
-                topic_name: note.topics.name,
-                subject_name: subject ? subject.name : 'Unknown Subject'
-            };
-        });
+        // Add subject information from the join
+        return data.map(note => ({
+            ...note,
+            subject_id: note.topics.subject_id,
+            topic_name: note.topics.name,
+            subject_name: note.topics.subjects.name,
+            subject: note.topics.subjects
+        }));
     }
 
     // Add method to get all notes (needed by NotesDisplay component)
@@ -407,96 +431,135 @@ class WebStorageService {
         try {
             console.log('📊 Getting subject stats for user:', userId);
             
-            // Get topics for user with separate queries to avoid complex joins
-            const { data: topics, error: topicsError } = await this.supabase
-                .from('topics')
-                .select('id, subject_id')
-                .eq('user_id', userId);
-                
-            if (topicsError) throw topicsError;
+            // Get all subjects first
+            const subjects = await this.getSubjects();
+            console.log('📋 Available subjects:', subjects.length);
             
-            console.log('📋 Found topics for user:', topics.length);
-            
-            // Group topics by subject_id
-            const subjectMap = {};
-            const topicIds = topics.map(t => t.id);
-            
-            // Initialize all subjects with zero counts
-            for (const subject of this.FIXED_SUBJECTS) {
-                subjectMap[subject.id] = {
-                    subject: subject,
-                    topic_count: 0,
-                    question_count: 0,
-                    note_count: 0,
-                    avg_accuracy: 0
-                };
-            }
-            
-            // Count topics by subject
-            topics.forEach(topic => {
-                if (subjectMap[topic.subject_id]) {
-                    subjectMap[topic.subject_id].topic_count++;
-                }
-            });
-            
-            // Get question counts if there are topics
-            if (topicIds.length > 0) {
-                const { count: questionCount } = await this.supabase
-                    .from('questions')
-                    .select('id', { count: 'exact' })
-                    .in('topic_id', topicIds);
-                    
-                const { count: noteCount } = await this.supabase
-                    .from('notes')
-                    .select('id', { count: 'exact' })
-                    .in('topic_id', topicIds);
-                
-                const { data: sessions } = await this.supabase
-                    .from('practice_sessions')
-                    .select('accuracy_rate, topic_id')
-                    .eq('user_id', userId);
-                
-                // Distribute counts proportionally or aggregate (simplified approach)
-                // For now, we'll aggregate across all subjects with data
-                const subjectsWithData = topics.reduce((acc, topic) => {
-                    if (!acc.includes(topic.subject_id)) {
-                        acc.push(topic.subject_id);
-                    }
-                    return acc;
-                }, []);
-                
-                if (subjectsWithData.length > 0) {
-                    // For simplicity, distribute totals across subjects with topics
-                    const avgQuestions = Math.floor((questionCount || 0) / subjectsWithData.length);
-                    const avgNotes = Math.floor((noteCount || 0) / subjectsWithData.length);
-                    const avgAccuracy = sessions?.length > 0 
-                        ? Math.round(sessions.reduce((sum, s) => sum + s.accuracy_rate, 0) / sessions.length)
-                        : 0;
-                    
-                    subjectsWithData.forEach(subjectId => {
-                        if (subjectMap[subjectId]) {
-                            subjectMap[subjectId].question_count = avgQuestions;
-                            subjectMap[subjectId].note_count = avgNotes;
-                            subjectMap[subjectId].avg_accuracy = avgAccuracy;
-                        }
-                    });
-                }
-            }
-            
-            const result = Object.values(subjectMap);
-            console.log('📊 Returning subject stats:', result.length, 'subjects');
-            return result;
-            
-        } catch (error) {
-            console.error('❌ Subject stats error:', error);
-            // Return all subjects with zero counts on error
-            return this.FIXED_SUBJECTS.map(subject => ({
+            // Initialize result with all subjects at zero
+            const subjectStats = subjects.map(subject => ({
                 subject: subject,
                 topic_count: 0,
                 question_count: 0,
                 note_count: 0,
                 avg_accuracy: 0
             }));
+            
+            // Get user's topics with counts
+            const { data: userTopics, error: topicsError } = await this.supabase
+                .from('topics')
+                .select('id, subject_id')
+                .eq('user_id', userId);
+                
+            if (topicsError) throw topicsError;
+            console.log('📝 User topics found:', userTopics.length);
+            
+            if (userTopics.length === 0) {
+                return subjectStats; // Return all zeros if no topics
+            }
+            
+            // Group topics by subject and count them
+            const topicsBySubject = {};
+            const allTopicIds = [];
+            
+            userTopics.forEach(topic => {
+                if (!topicsBySubject[topic.subject_id]) {
+                    topicsBySubject[topic.subject_id] = [];
+                }
+                topicsBySubject[topic.subject_id].push(topic.id);
+                allTopicIds.push(topic.id);
+            });
+            
+            // Get counts for questions and notes
+            const [questionsResult, notesResult, sessionsResult] = await Promise.all([
+                this.supabase
+                    .from('questions')
+                    .select('topic_id')
+                    .in('topic_id', allTopicIds),
+                this.supabase
+                    .from('notes')
+                    .select('topic_id')
+                    .in('topic_id', allTopicIds),
+                this.supabase
+                    .from('practice_sessions')
+                    .select('accuracy_rate, topic_id')
+                    .eq('user_id', userId)
+            ]);
+            
+            if (questionsResult.error) throw questionsResult.error;
+            if (notesResult.error) throw notesResult.error;
+            if (sessionsResult.error) throw sessionsResult.error;
+            
+            // Count questions and notes by subject
+            const questionsBySubject = {};
+            const notesBySubject = {};
+            const sessionsBySubject = {};
+            
+            // Group questions by subject
+            questionsResult.data.forEach(q => {
+                const topic = userTopics.find(t => t.id === q.topic_id);
+                if (topic) {
+                    if (!questionsBySubject[topic.subject_id]) questionsBySubject[topic.subject_id] = 0;
+                    questionsBySubject[topic.subject_id]++;
+                }
+            });
+            
+            // Group notes by subject
+            notesResult.data.forEach(n => {
+                const topic = userTopics.find(t => t.id === n.topic_id);
+                if (topic) {
+                    if (!notesBySubject[topic.subject_id]) notesBySubject[topic.subject_id] = 0;
+                    notesBySubject[topic.subject_id]++;
+                }
+            });
+            
+            // Group sessions by subject for accuracy calculation
+            sessionsResult.data.forEach(s => {
+                const topic = userTopics.find(t => t.id === s.topic_id);
+                if (topic) {
+                    if (!sessionsBySubject[topic.subject_id]) sessionsBySubject[topic.subject_id] = [];
+                    sessionsBySubject[topic.subject_id].push(s.accuracy_rate);
+                }
+            });
+            
+            // Update stats for each subject
+            subjectStats.forEach(stat => {
+                const subjectId = stat.subject.id;
+                
+                // Topic count
+                stat.topic_count = topicsBySubject[subjectId] ? topicsBySubject[subjectId].length : 0;
+                
+                // Question count
+                stat.question_count = questionsBySubject[subjectId] || 0;
+                
+                // Note count
+                stat.note_count = notesBySubject[subjectId] || 0;
+                
+                // Average accuracy
+                if (sessionsBySubject[subjectId] && sessionsBySubject[subjectId].length > 0) {
+                    const accuracies = sessionsBySubject[subjectId];
+                    stat.avg_accuracy = Math.round(accuracies.reduce((sum, acc) => sum + acc, 0) / accuracies.length);
+                }
+            });
+            
+            console.log('📊 Subject stats calculated successfully');
+            return subjectStats;
+            
+        } catch (error) {
+            console.error('❌ Subject stats error:', error);
+            // Fallback: get subjects and return zeros
+            try {
+                const subjects = await this.getSubjects();
+                return subjects.map(subject => ({
+                    subject: subject,
+                    topic_count: 0,
+                    question_count: 0,
+                    note_count: 0,
+                    avg_accuracy: 0
+                }));
+            } catch (fallbackError) {
+                console.error('❌ Subject stats fallback error:', fallbackError);
+                return [];
+            }
         }
     }
 
@@ -526,23 +589,27 @@ class WebStorageService {
             .from('notes')
             .select(`
                 *,
-                topics!inner(user_id, name, subject_id)
+                topics!inner(
+                    id,
+                    name,
+                    subject_id,
+                    user_id,
+                    subjects(id, name, icon, color)
+                )
             `)
             .eq('topics.user_id', userId)
             .order('created_at', { ascending: false });
             
         if (error) throw error;
         
-        // Add subject information from fixed subjects
-        return data.map(note => {
-            const subject = this.FIXED_SUBJECTS.find(s => s.id === note.topics.subject_id);
-            return {
-                ...note,
-                subject_id: note.topics.subject_id,
-                topic_name: note.topics.name,
-                subject_name: subject ? subject.name : 'Unknown Subject'
-            };
-        });
+        // Add subject information from the join
+        return data.map(note => ({
+            ...note,
+            subject_id: note.topics.subject_id,
+            topic_name: note.topics.name,
+            subject_name: note.topics.subjects.name,
+            subject: note.topics.subjects
+        }));
     }
 
     async getAllQuestionsForUser(userId) {
