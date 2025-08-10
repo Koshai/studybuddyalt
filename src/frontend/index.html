@@ -67,14 +67,24 @@
         /* CUSTOM JAQUIZY COLOR SYSTEM */
         :root {
             /* Custom Theme Colors */
+            --jaquizy-header-bg: #5179a4;
+            --jaquizy-header-text: #ffffff;
+            --jaquizy-sidebar-bg: #004794;
+            --jaquizy-sidebar-text: #ffffff;
+            --jaquizy-button-primary: #51a45a;
+            --jaquizy-button-primary-text: #ffffff;
+            --jaquizy-button-secondary: #2a70cb;
+            --jaquizy-button-secondary-text: #ffffff;
+            
+            /* Material Design Colors - Updated */
             --md-sys-color-primary: #5179a4;
             --md-sys-color-on-primary: #ffffff;
             --md-sys-color-primary-container: #5179a4;
             --md-sys-color-on-primary-container: #ffffff;
             
-            --md-sys-color-secondary: #625b71;
+            --md-sys-color-secondary: #2a70cb;
             --md-sys-color-on-secondary: #ffffff;
-            --md-sys-color-secondary-container: #625b71;
+            --md-sys-color-secondary-container: #2a70cb;
             --md-sys-color-on-secondary-container: #ffffff;
             
             --md-sys-color-tertiary: #7d5260;
@@ -129,15 +139,25 @@
         /* Dark Theme Override */
         @media (prefers-color-scheme: dark) {
             :root {
-                --md-sys-color-primary: #d0bcff;
-                --md-sys-color-on-primary: #371e73;
-                --md-sys-color-primary-container: #4f378b;
-                --md-sys-color-on-primary-container: #eaddff;
+                /* Keep Jaquizy theme consistent in dark mode */
+                --jaquizy-header-bg: #5179a4;
+                --jaquizy-header-text: #ffffff;
+                --jaquizy-sidebar-bg: #004794;
+                --jaquizy-sidebar-text: #ffffff;
+                --jaquizy-button-primary: #51a45a;
+                --jaquizy-button-primary-text: #ffffff;
+                --jaquizy-button-secondary: #2a70cb;
+                --jaquizy-button-secondary-text: #ffffff;
                 
-                --md-sys-color-secondary: #ccc2dc;
-                --md-sys-color-on-secondary: #332d41;
-                --md-sys-color-secondary-container: #4a4458;
-                --md-sys-color-on-secondary-container: #e8def8;
+                --md-sys-color-primary: #5179a4;
+                --md-sys-color-on-primary: #ffffff;
+                --md-sys-color-primary-container: #5179a4;
+                --md-sys-color-on-primary-container: #ffffff;
+                
+                --md-sys-color-secondary: #2a70cb;
+                --md-sys-color-on-secondary: #ffffff;
+                --md-sys-color-secondary-container: #2a70cb;
+                --md-sys-color-on-secondary-container: #ffffff;
                 
                 --md-sys-color-tertiary: #efb8c8;
                 --md-sys-color-on-tertiary: #492532;
@@ -337,16 +357,26 @@
             color: #1c1b1f !important;
         }
 
-        /* Material Design Component Styling - Using CSS Variables */
+        /* Jaquizy Theme Components */
         .md-header {
-            background-color: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
+            background-color: var(--jaquizy-header-bg);
+            color: var(--jaquizy-header-text);
         }
 
         .md-sidebar {
-            background-color: var(--md-sys-color-surface-container-high);
-            color: var(--md-sys-color-on-surface);
+            background-color: var(--jaquizy-sidebar-bg);
+            color: var(--jaquizy-sidebar-text);
             border-right-color: var(--md-sys-color-outline-variant);
+        }
+
+        /* Sidebar button text should be white */
+        .md-sidebar button,
+        .md-sidebar button span,
+        .md-sidebar button i,
+        .md-sidebar nav button,
+        .md-sidebar nav button span,
+        .md-sidebar nav button i {
+            color: var(--jaquizy-sidebar-text);
         }
 
         .md-dashboard {
@@ -389,13 +419,28 @@
         }
 
         .md-button-primary {
-            background-color: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
+            background-color: var(--jaquizy-button-primary);
+            color: var(--jaquizy-button-primary-text);
         }
 
         .md-button-secondary {
-            background-color: var(--md-sys-color-secondary);
-            color: var(--md-sys-color-on-secondary);
+            background-color: var(--jaquizy-button-secondary);
+            color: var(--jaquizy-button-secondary-text);
+        }
+
+        /* General button styling */
+        button.bg-primary-500,
+        button.bg-green-500,
+        .btn-primary {
+            background-color: var(--jaquizy-button-primary);
+            color: var(--jaquizy-button-primary-text);
+        }
+
+        button.bg-secondary-500,
+        button.bg-blue-500,
+        .btn-secondary {
+            background-color: var(--jaquizy-button-secondary);
+            color: var(--jaquizy-button-secondary-text);
         }
 
         .md-notification-success, .notification-success {
