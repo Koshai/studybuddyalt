@@ -115,13 +115,16 @@ window.FixedSubjectsListComponent = {
                 store.setLoading(true);
                 
                 // Load statistics
-                const dashboardStats = await window.api.getDashboardStats();
+                const dashboardResponse = await window.api.getDashboardStats();
+                const dashboardStats = dashboardResponse.stats || dashboardResponse; // Handle both response formats
                 stats.value = {
                     totalTopics: dashboardStats.total_topics || 0,
                     totalQuestions: dashboardStats.total_questions || 0,
                     totalNotes: dashboardStats.total_notes || 0,
                     overallAccuracy: dashboardStats.overall_accuracy || 0
                 };
+                
+                console.log('📊 Dashboard stats loaded:', dashboardStats, 'Formatted:', stats.value);
 
                 // Load subject-wise topic counts
                 const subjectStats = await window.api.getSubjectStats();
