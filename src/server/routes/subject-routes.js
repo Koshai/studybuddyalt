@@ -81,7 +81,29 @@ router.get('/:subjectId/topics', authMiddleware.authenticateToken, async (req, r
         
         const storage = ServiceFactory.getStorageService();
         const topics = await storage.getTopicsForUser(userId, subjectId);
-        res.json(topics);
+        
+        // Add note counts to each topic
+        const topicsWithCounts = await Promise.all(topics.map(async (topic) => {
+            try {
+                const notes = await storage.getNotesForUser(userId, topic.id);
+                const questions = await storage.getQuestionsForUser(userId, topic.id);
+                return {
+                    ...topic,
+                    notesCount: notes.length,
+                    questionsCount: questions.length
+                };
+            } catch (error) {
+                console.warn(`Failed to get counts for topic ${topic.id}:`, error);
+                return {
+                    ...topic,
+                    notesCount: 0,
+                    questionsCount: 0
+                };
+            }
+        }));
+        
+        console.log(`📊 Topics with counts:`, topicsWithCounts.length);
+        res.json(topicsWithCounts);
     } catch (error) {
         console.error('❌ Get topics for subject error:', error);
         res.status(500).json({

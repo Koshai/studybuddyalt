@@ -134,6 +134,30 @@ router.get('/:topicId/notes', authMiddleware.authenticateToken, async (req, res)
 });
 
 /**
+ * GET /api/topics/:topicId/random-questions
+ * Get random questions for practice from a specific topic
+ */
+router.get('/:topicId/random-questions', authMiddleware.authenticateToken, async (req, res) => {
+    try {
+        const { topicId } = req.params;
+        const userId = req.user.id;
+        const count = parseInt(req.query.count) || 5;
+        
+        const storage = ServiceFactory.getStorageService();
+        const questions = await storage.getRandomQuestionsForUser(userId, topicId, count);
+        
+        console.log(`🎲 Retrieved ${questions.length} random questions for topic ${topicId}`);
+        res.json(questions);
+    } catch (error) {
+        console.error('❌ Get random questions error:', error);
+        res.status(500).json({
+            error: 'Failed to fetch random questions for topic',
+            details: error.message
+        });
+    }
+});
+
+/**
  * GET /api/topics/:topicId/stats
  * Get statistics for a specific topic
  */
