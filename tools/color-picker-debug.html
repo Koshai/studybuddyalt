@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jaquizy - Color Picker Debug Tool</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0;
+        }
+        .color-input {
+            width: 40px;
+            height: 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .component-preview {
+            border: 2px dashed #ccc;
+            margin: 10px 0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .css-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .control-panel {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            width: 300px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .preview-area {
+            margin-right: 320px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <h3 style="margin: 0 0 20px 0; font-size: 18px; font-weight: bold;">🎨 Color Picker Tool</h3>
+            
+            <!-- Body/Background Colors -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="font-weight: bold; margin-bottom: 10px;">📄 Body & Background</h4>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Background:</label>
+                    <input type="color" class="color-input" v-model="colors.body.background" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.body.background }}</span>
+                </div>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Text:</label>
+                    <input type="color" class="color-input" v-model="colors.body.text" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.body.text }}</span>
+                </div>
+            </div>
+
+            <!-- Header Colors -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="font-weight: bold; margin-bottom: 10px;">🔵 Header</h4>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Background:</label>
+                    <input type="color" class="color-input" v-model="colors.header.background" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.header.background }}</span>
+                </div>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Text:</label>
+                    <input type="color" class="color-input" v-model="colors.header.text" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.header.text }}</span>
+                </div>
+            </div>
+
+            <!-- Sidebar Colors -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="font-weight: bold; margin-bottom: 10px;">🟢 Sidebar</h4>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Background:</label>
+                    <input type="color" class="color-input" v-model="colors.sidebar.background" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.sidebar.background }}</span>
+                </div>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Text Primary:</label>
+                    <input type="color" class="color-input" v-model="colors.sidebar.textPrimary" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.sidebar.textPrimary }}</span>
+                </div>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Text Secondary:</label>
+                    <input type="color" class="color-input" v-model="colors.sidebar.textSecondary" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.sidebar.textSecondary }}</span>
+                </div>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Border:</label>
+                    <input type="color" class="color-input" v-model="colors.sidebar.border" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.sidebar.border }}</span>
+                </div>
+            </div>
+
+            <!-- Dashboard Cards -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="font-weight: bold; margin-bottom: 10px;">📊 Dashboard Cards</h4>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Card Background:</label>
+                    <input type="color" class="color-input" v-model="colors.cards.background" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.cards.background }}</span>
+                </div>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Card Text:</label>
+                    <input type="color" class="color-input" v-model="colors.cards.text" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.cards.text }}</span>
+                </div>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Card Border:</label>
+                    <input type="color" class="color-input" v-model="colors.cards.border" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.cards.border }}</span>
+                </div>
+            </div>
+
+            <!-- Stat Cards -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="font-weight: bold; margin-bottom: 10px;">📈 Stat Cards</h4>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Primary Stat:</label>
+                    <input type="color" class="color-input" v-model="colors.stats.primary" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.stats.primary }}</span>
+                </div>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Secondary Stat:</label>
+                    <input type="color" class="color-input" v-model="colors.stats.secondary" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.stats.secondary }}</span>
+                </div>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Tertiary Stat:</label>
+                    <input type="color" class="color-input" v-model="colors.stats.tertiary" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.stats.tertiary }}</span>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="font-weight: bold; margin-bottom: 10px;">🔘 Buttons</h4>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Primary Btn:</label>
+                    <input type="color" class="color-input" v-model="colors.buttons.primary" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.buttons.primary }}</span>
+                </div>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Secondary Btn:</label>
+                    <input type="color" class="color-input" v-model="colors.buttons.secondary" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.buttons.secondary }}</span>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="font-weight: bold; margin-bottom: 10px;">🔔 Notifications</h4>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Success:</label>
+                    <input type="color" class="color-input" v-model="colors.notifications.success" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.notifications.success }}</span>
+                </div>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Error:</label>
+                    <input type="color" class="color-input" v-model="colors.notifications.error" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.notifications.error }}</span>
+                </div>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Warning:</label>
+                    <input type="color" class="color-input" v-model="colors.notifications.warning" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.notifications.warning }}</span>
+                </div>
+                <div class="color-picker-container">
+                    <label style="width: 120px;">Info:</label>
+                    <input type="color" class="color-input" v-model="colors.notifications.info" @input="updateColors">
+                    <span style="font-size: 12px; color: #666;">{{ colors.notifications.info }}</span>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="border-top: 1px solid #eee; padding-top: 15px; margin-top: 20px;">
+                <button @click="resetToDefaults" style="background: #ef4444; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+                    Reset
+                </button>
+                <button @click="copyCSS" style="background: #10b981; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">
+                    Copy CSS
+                </button>
+            </div>
+        </div>
+
+        <!-- Preview Area -->
+        <div class="preview-area" :style="{ backgroundColor: colors.body.background, color: colors.body.text }">
+            <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 30px;">🎨 Jaquizy Component Preview</h1>
+
+            <!-- Header Preview -->
+            <div class="component-preview">
+                <h3 style="margin-bottom: 10px;">Header Component</h3>
+                <header :style="{ 
+                    backgroundColor: colors.header.background, 
+                    color: colors.header.text,
+                    padding: '20px',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h2 style="font-size: 20px; font-weight: bold; margin: 0;">Dashboard</h2>
+                            <p style="margin: 0; opacity: 0.8; font-size: 14px;">Welcome to your learning dashboard</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span style="padding: 4px 8px; background: rgba(255,255,255,0.1); border-radius: 12px; font-size: 12px;">
+                                Questions: 25/50
+                            </span>
+                            <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-user" style="font-size: 14px;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+            </div>
+
+            <!-- Sidebar Preview -->
+            <div class="component-preview">
+                <h3 style="margin-bottom: 10px;">Sidebar Component</h3>
+                <aside :style="{ 
+                    backgroundColor: colors.sidebar.background, 
+                    color: colors.sidebar.textPrimary,
+                    width: '250px',
+                    padding: '20px',
+                    borderRadius: '8px',
+                    border: `1px solid ${colors.sidebar.border}`
+                }">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: `1px solid ${colors.sidebar.border}`;">
+                        <div style="width: 32px; height: 32px; background: colors.header.background; border-radius: '6px'; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-brain" style="color: white; font-size: 14px;"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; font-weight: bold;">Jaquizy</h4>
+                            <p :style="{ margin: 0, fontSize: '11px', color: colors.sidebar.textSecondary }">AI-Powered Learning</p>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <h4 :style="{ fontSize: '11px', fontWeight: 'bold', color: colors.sidebar.textSecondary, marginBottom: '10px' }">USAGE THIS MONTH</h4>
+                        <div style="margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                                <span :style="{ color: colors.sidebar.textSecondary }">Questions</span>
+                                <span>25/50</span>
+                            </div>
+                            <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 4px;">
+                                <div style="width: 50%; height: 100%; background: #10b981; border-radius: 2px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <nav>
+                        <div style="padding: 8px 12px; margin: 4px 0; border-radius: 6px; cursor: pointer; background: rgba(255,255,255,0.1);">
+                            <i class="fas fa-tachometer-alt" style="margin-right: 8px; font-size: 14px;"></i>
+                            Dashboard
+                        </div>
+                        <div style="padding: 8px 12px; margin: 4px 0; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-upload" style="margin-right: 8px; font-size: 14px;"></i>
+                            Upload
+                        </div>
+                    </nav>
+                </aside>
+            </div>
+
+            <!-- Dashboard Cards Preview -->
+            <div class="component-preview">
+                <h3 style="margin-bottom: 10px;">Dashboard Cards</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                    <!-- Main Card -->
+                    <div :style="{ 
+                        backgroundColor: colors.cards.background, 
+                        color: colors.cards.text,
+                        padding: '20px',
+                        borderRadius: '12px',
+                        border: `1px solid ${colors.cards.border}`,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }">
+                        <h4 style="margin: 0 0 15px 0; font-weight: bold;">📊 Your Progress</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div :style="{ 
+                                backgroundColor: colors.stats.primary, 
+                                color: 'white',
+                                padding: '15px', 
+                                borderRadius: '8px', 
+                                textAlign: 'center' 
+                            }">
+                                <div style="font-size: 20px; font-weight: bold;">12</div>
+                                <div style="font-size: 12px; opacity: 0.9;">Topics</div>
+                            </div>
+                            <div :style="{ 
+                                backgroundColor: colors.stats.secondary, 
+                                color: 'white',
+                                padding: '15px', 
+                                borderRadius: '8px', 
+                                textAlign: 'center' 
+                            }">
+                                <div style="font-size: 20px; font-weight: bold;">156</div>
+                                <div style="font-size: 12px; opacity: 0.9;">Questions</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Card -->
+                    <div :style="{ 
+                        backgroundColor: colors.cards.background, 
+                        color: colors.cards.text,
+                        padding: '20px',
+                        borderRadius: '12px',
+                        border: `1px solid ${colors.cards.border}`,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }">
+                        <h4 style="margin: 0 0 15px 0; font-weight: bold;">🚀 Quick Actions</h4>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <button :style="{ 
+                                backgroundColor: colors.buttons.primary, 
+                                color: 'white',
+                                padding: '10px 15px', 
+                                border: 'none', 
+                                borderRadius: '8px', 
+                                cursor: 'pointer',
+                                fontSize: '14px'
+                            }">
+                                <i class="fas fa-upload" style="margin-right: 8px;"></i>
+                                Upload Materials
+                            </button>
+                            <button :style="{ 
+                                backgroundColor: colors.buttons.secondary, 
+                                color: 'white',
+                                padding: '10px 15px', 
+                                border: 'none', 
+                                borderRadius: '8px', 
+                                cursor: 'pointer',
+                                fontSize: '14px'
+                            }">
+                                <i class="fas fa-play" style="margin-right: 8px;"></i>
+                                Start Practice
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications Preview -->
+            <div class="component-preview">
+                <h3 style="margin-bottom: 10px;">Notification Components</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px;">
+                    <div :style="{ 
+                        backgroundColor: colors.notifications.success, 
+                        color: 'white',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                    }">
+                        <i class="fas fa-check-circle"></i>
+                        <span style="font-size: 14px;">Success: Material uploaded!</span>
+                    </div>
+                    <div :style="{ 
+                        backgroundColor: colors.notifications.error, 
+                        color: 'white',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                    }">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span style="font-size: 14px;">Error: Upload failed</span>
+                    </div>
+                    <div :style="{ 
+                        backgroundColor: colors.notifications.warning, 
+                        color: 'white',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                    }">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span style="font-size: 14px;">Warning: Storage 80% full</span>
+                    </div>
+                    <div :style="{ 
+                        backgroundColor: colors.notifications.info, 
+                        color: 'white',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                    }">
+                        <i class="fas fa-info-circle"></i>
+                        <span style="font-size: 14px;">Info: New features available</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CSS Output -->
+            <div class="component-preview">
+                <h3 style="margin-bottom: 10px;">Generated CSS Output</h3>
+                <div class="css-output">{{ generatedCSS }}</div>
+                <button @click="copyCSS" style="margin-top: 10px; background: #10b981; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                    📋 Copy CSS to Clipboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        createApp({
+            setup() {
+                const colors = ref({
+                    body: {
+                        background: '#ffffff',
+                        text: '#1c1b1f'
+                    },
+                    header: {
+                        background: '#6750a4',
+                        text: '#ffffff'
+                    },
+                    sidebar: {
+                        background: '#ece6f0',
+                        textPrimary: '#1c1b1f',
+                        textSecondary: '#49454f',
+                        border: '#cac4d0'
+                    },
+                    cards: {
+                        background: '#f3edf7',
+                        text: '#1c1b1f',
+                        border: '#cac4d0'
+                    },
+                    stats: {
+                        primary: '#6750a4',
+                        secondary: '#625b71',
+                        tertiary: '#7d5260'
+                    },
+                    buttons: {
+                        primary: '#6750a4',
+                        secondary: '#625b71'
+                    },
+                    notifications: {
+                        success: '#2e7d32',
+                        error: '#ba1a1a',
+                        warning: '#ef6c00',
+                        info: '#0277bd'
+                    }
+                });
+
+                const generatedCSS = computed(() => {
+                    return `/* Generated CSS - Copy and paste this into your application */
+
+/* Body and Background */
+body {
+    background-color: ${colors.value.body.background} !important;
+    color: ${colors.value.body.text} !important;
+}
+
+/* Header Styles */
+.md-header, .header-dark-blue {
+    background-color: ${colors.value.header.background} !important;
+    color: ${colors.value.header.text} !important;
+}
+
+.md-header *, .header-dark-blue * {
+    color: ${colors.value.header.text} !important;
+}
+
+/* Sidebar Styles */
+.md-sidebar, .sidebar-lime-green {
+    background-color: ${colors.value.sidebar.background} !important;
+    border-right-color: ${colors.value.sidebar.border} !important;
+}
+
+.md-sidebar .md-text-primary, .sidebar-lime-green * {
+    color: ${colors.value.sidebar.textPrimary} !important;
+}
+
+.md-sidebar .md-text-secondary {
+    color: ${colors.value.sidebar.textSecondary} !important;
+}
+
+/* Dashboard and Cards */
+.md-dashboard, .dashboard-dark-grey {
+    background-color: ${colors.value.body.background} !important;
+    color: ${colors.value.body.text} !important;
+}
+
+.md-card, .md-elevated-card, .md-surface-container {
+    background-color: ${colors.value.cards.background} !important;
+    color: ${colors.value.cards.text} !important;
+    border-color: ${colors.value.cards.border} !important;
+}
+
+.md-card *, .md-elevated-card *, .md-surface-container * {
+    color: ${colors.value.cards.text} !important;
+}
+
+/* Text Colors */
+.md-text-primary {
+    color: ${colors.value.body.text} !important;
+}
+
+.md-text-secondary {
+    color: ${colors.value.sidebar.textSecondary} !important;
+}
+
+/* Stat Card Colors */
+.md-primary-container, .md-primary {
+    background-color: ${colors.value.stats.primary} !important;
+    color: white !important;
+}
+
+.md-secondary-container, .md-secondary {
+    background-color: ${colors.value.stats.secondary} !important;
+    color: white !important;
+}
+
+.md-tertiary-container {
+    background-color: ${colors.value.stats.tertiary} !important;
+    color: white !important;
+}
+
+/* Button Colors */
+.md-button-primary {
+    background-color: ${colors.value.buttons.primary} !important;
+    color: white !important;
+}
+
+.md-button-secondary {
+    background-color: ${colors.value.buttons.secondary} !important;
+    color: white !important;
+}
+
+/* Notification Colors */
+.md-notification-success, .notification-success {
+    background-color: ${colors.value.notifications.success} !important;
+    color: white !important;
+}
+
+.md-notification-error, .notification-error {
+    background-color: ${colors.value.notifications.error} !important;
+    color: white !important;
+}
+
+.md-notification-warning, .notification-warning {
+    background-color: ${colors.value.notifications.warning} !important;
+    color: white !important;
+}
+
+.md-notification-info, .notification-info {
+    background-color: ${colors.value.notifications.info} !important;
+    color: white !important;
+}
+
+/* Fix any remaining white backgrounds */
+.bg-white {
+    background-color: ${colors.value.cards.background} !important;
+    color: ${colors.value.cards.text} !important;
+}
+
+.bg-gray-50 {
+    background-color: ${colors.value.sidebar.background} !important;
+    color: ${colors.value.sidebar.textPrimary} !important;
+}
+
+/* Override Tailwind colors that might conflict */
+.text-gray-900 { color: ${colors.value.body.text} !important; }
+.text-gray-800 { color: ${colors.value.body.text} !important; }
+.text-gray-700 { color: ${colors.value.body.text} !important; }
+.text-gray-600 { color: ${colors.value.sidebar.textSecondary} !important; }
+.text-gray-500 { color: ${colors.value.sidebar.textSecondary} !important; }`;
+                });
+
+                const updateColors = () => {
+                    // This function is called whenever a color input changes
+                    // The reactive system will automatically update the preview
+                };
+
+                const resetToDefaults = () => {
+                    colors.value = {
+                        body: {
+                            background: '#ffffff',
+                            text: '#1c1b1f'
+                        },
+                        header: {
+                            background: '#6750a4',
+                            text: '#ffffff'
+                        },
+                        sidebar: {
+                            background: '#ece6f0',
+                            textPrimary: '#1c1b1f',
+                            textSecondary: '#49454f',
+                            border: '#cac4d0'
+                        },
+                        cards: {
+                            background: '#f3edf7',
+                            text: '#1c1b1f',
+                            border: '#cac4d0'
+                        },
+                        stats: {
+                            primary: '#6750a4',
+                            secondary: '#625b71',
+                            tertiary: '#7d5260'
+                        },
+                        buttons: {
+                            primary: '#6750a4',
+                            secondary: '#625b71'
+                        },
+                        notifications: {
+                            success: '#2e7d32',
+                            error: '#ba1a1a',
+                            warning: '#ef6c00',
+                            info: '#0277bd'
+                        }
+                    };
+                };
+
+                const copyCSS = async () => {
+                    try {
+                        await navigator.clipboard.writeText(generatedCSS.value);
+                        alert('✅ CSS copied to clipboard! You can now paste it into your application.');
+                    } catch (err) {
+                        // Fallback for older browsers
+                        const textArea = document.createElement('textarea');
+                        textArea.value = generatedCSS.value;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        alert('✅ CSS copied to clipboard! You can now paste it into your application.');
+                    }
+                };
+
+                return {
+                    colors,
+                    generatedCSS,
+                    updateColors,
+                    resetToDefaults,
+                    copyCSS
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

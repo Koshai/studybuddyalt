@@ -62,68 +62,68 @@
     <!-- Tailwind CSS via CDN with immediate styles -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Material Design 3 Color System -->
+    <!-- Custom Color System - Generated from Debug Tool -->
     <style>
-        /* MATERIAL DESIGN 3 COLOR SYSTEM */
+        /* CUSTOM JAQUIZY COLOR SYSTEM */
         :root {
-            /* Light Theme - Material Design 3 */
-            --md-sys-color-primary: #6750a4;
+            /* Custom Theme Colors */
+            --md-sys-color-primary: #5179a4;
             --md-sys-color-on-primary: #ffffff;
-            --md-sys-color-primary-container: #eaddff;
-            --md-sys-color-on-primary-container: #21005d;
+            --md-sys-color-primary-container: #51a45a;
+            --md-sys-color-on-primary-container: #ffffff;
             
             --md-sys-color-secondary: #625b71;
             --md-sys-color-on-secondary: #ffffff;
-            --md-sys-color-secondary-container: #e8def8;
-            --md-sys-color-on-secondary-container: #1d192b;
+            --md-sys-color-secondary-container: #625b71;
+            --md-sys-color-on-secondary-container: #ffffff;
             
             --md-sys-color-tertiary: #7d5260;
             --md-sys-color-on-tertiary: #ffffff;
-            --md-sys-color-tertiary-container: #ffd8e4;
-            --md-sys-color-on-tertiary-container: #31111d;
+            --md-sys-color-tertiary-container: #7d5260;
+            --md-sys-color-on-tertiary-container: #ffffff;
             
             --md-sys-color-error: #ba1a1a;
             --md-sys-color-on-error: #ffffff;
-            --md-sys-color-error-container: #ffdad6;
-            --md-sys-color-on-error-container: #410002;
+            --md-sys-color-error-container: #ba1a1a;
+            --md-sys-color-on-error-container: #ffffff;
             
-            --md-sys-color-background: #fffbfe;
+            --md-sys-color-background: #ffffff;
             --md-sys-color-on-background: #1c1b1f;
-            --md-sys-color-surface: #fffbfe;
+            --md-sys-color-surface: #ffffff;
             --md-sys-color-on-surface: #1c1b1f;
-            --md-sys-color-surface-variant: #e7e0ec;
-            --md-sys-color-on-surface-variant: #49454f;
+            --md-sys-color-surface-variant: #e2dae7;
+            --md-sys-color-on-surface-variant: #1c1b1f;
             
-            --md-sys-color-outline: #79757f;
+            --md-sys-color-outline: #cac4d0;
             --md-sys-color-outline-variant: #cac4d0;
             --md-sys-color-shadow: #000000;
             --md-sys-color-scrim: #000000;
-            --md-sys-color-inverse-surface: #313033;
-            --md-sys-color-inverse-on-surface: #f4eff4;
-            --md-sys-color-inverse-primary: #d0bcff;
+            --md-sys-color-inverse-surface: #004794;
+            --md-sys-color-inverse-on-surface: #ffffff;
+            --md-sys-color-inverse-primary: #5179a4;
             
             /* Surface containers */
             --md-sys-color-surface-container-lowest: #ffffff;
-            --md-sys-color-surface-container-low: #f7f2fa;
-            --md-sys-color-surface-container: #f3edf7;
-            --md-sys-color-surface-container-high: #ece6f0;
-            --md-sys-color-surface-container-highest: #e6e0e9;
+            --md-sys-color-surface-container-low: #e2dae7;
+            --md-sys-color-surface-container: #e2dae7;
+            --md-sys-color-surface-container-high: #004794;
+            --md-sys-color-surface-container-highest: #004794;
             
-            /* Success, Warning, Info colors following Material guidelines */
+            /* Success, Warning, Info colors */
             --md-sys-color-success: #2e7d32;
             --md-sys-color-on-success: #ffffff;
-            --md-sys-color-success-container: #c8e6c9;
-            --md-sys-color-on-success-container: #1b5e20;
+            --md-sys-color-success-container: #2e7d32;
+            --md-sys-color-on-success-container: #ffffff;
             
             --md-sys-color-warning: #ef6c00;
             --md-sys-color-on-warning: #ffffff;
-            --md-sys-color-warning-container: #fff3e0;
-            --md-sys-color-on-warning-container: #e65100;
+            --md-sys-color-warning-container: #ef6c00;
+            --md-sys-color-on-warning-container: #ffffff;
             
             --md-sys-color-info: #0277bd;
             --md-sys-color-on-info: #ffffff;
-            --md-sys-color-info-container: #b3e5fc;
-            --md-sys-color-on-info-container: #01579b;
+            --md-sys-color-info-container: #0277bd;
+            --md-sys-color-on-info-container: #ffffff;
         }
         
         /* Dark Theme Override */
@@ -328,6 +328,129 @@
             border-radius: 20px;
             padding: 10px 24px;
         }
+        
+        /* CUSTOM COLOR OVERRIDES FROM DEBUG TOOL */
+        
+        /* Body and Background */
+        body {
+            background-color: #ffffff !important;
+            color: #1c1b1f !important;
+        }
+
+        /* Header Styles */
+        .md-header, .header-dark-blue {
+            background-color: #5179a4 !important;
+            color: #ffffff !important;
+        }
+
+        .md-header *, .header-dark-blue * {
+            color: #ffffff !important;
+        }
+
+        /* Sidebar Styles */
+        .md-sidebar, .sidebar-lime-green {
+            background-color: #004794 !important;
+            border-right-color: #cac4d0 !important;
+        }
+
+        .md-sidebar .md-text-primary, .sidebar-lime-green * {
+            color: #ffffff !important;
+        }
+
+        .md-sidebar .md-text-secondary {
+            color: #ffffff !important;
+        }
+
+        /* Dashboard and Cards */
+        .md-dashboard, .dashboard-dark-grey {
+            background-color: #ffffff !important;
+            color: #1c1b1f !important;
+        }
+
+        .md-card, .md-elevated-card, .md-surface-container {
+            background-color: #e2dae7 !important;
+            color: #1c1b1f !important;
+            border-color: #cac4d0 !important;
+        }
+
+        .md-card *, .md-elevated-card *, .md-surface-container * {
+            color: #1c1b1f !important;
+        }
+
+        /* Text Colors */
+        .md-text-primary {
+            color: #1c1b1f !important;
+        }
+
+        .md-text-secondary {
+            color: #ffffff !important;
+        }
+
+        /* Stat Card Colors */
+        .md-primary-container, .md-primary {
+            background-color: #51a45a !important;
+            color: white !important;
+        }
+
+        .md-secondary-container, .md-secondary {
+            background-color: #625b71 !important;
+            color: white !important;
+        }
+
+        .md-tertiary-container {
+            background-color: #7d5260 !important;
+            color: white !important;
+        }
+
+        /* Button Colors */
+        .md-button-primary {
+            background-color: #51a45a !important;
+            color: white !important;
+        }
+
+        .md-button-secondary {
+            background-color: #2a70cb !important;
+            color: white !important;
+        }
+
+        /* Notification Colors */
+        .md-notification-success, .notification-success {
+            background-color: #2e7d32 !important;
+            color: white !important;
+        }
+
+        .md-notification-error, .notification-error {
+            background-color: #ba1a1a !important;
+            color: white !important;
+        }
+
+        .md-notification-warning, .notification-warning {
+            background-color: #ef6c00 !important;
+            color: white !important;
+        }
+
+        .md-notification-info, .notification-info {
+            background-color: #0277bd !important;
+            color: white !important;
+        }
+
+        /* Fix any remaining white backgrounds */
+        .bg-white {
+            background-color: #e2dae7 !important;
+            color: #1c1b1f !important;
+        }
+
+        .bg-gray-50 {
+            background-color: #004794 !important;
+            color: #ffffff !important;
+        }
+
+        /* Override Tailwind colors that might conflict */
+        .text-gray-900 { color: #1c1b1f !important; }
+        .text-gray-800 { color: #1c1b1f !important; }
+        .text-gray-700 { color: #1c1b1f !important; }
+        .text-gray-600 { color: #ffffff !important; }
+        .text-gray-500 { color: #ffffff !important; }
         
         /* COLORED BACKGROUND SYSTEM - No more white/black backgrounds */
         .text-gray-900 { color: #111827 !important; }
