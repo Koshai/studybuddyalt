@@ -144,10 +144,10 @@ window.EnhancedDashboardComponent = {
                             </div>
                         </div>
                         
-                        <div class="text-center p-4 md-surface-container rounded-lg relative">
+                        <div class="text-center p-4 md-surface-container-high rounded-lg relative">
                             <div class="text-2xl font-bold">{{ storageUsedMB }}MB</div>
                             <div class="text-sm opacity-80">Storage</div>
-                            <div class="text-xs text-gray-500 mt-1">
+                            <div class="text-xs opacity-60 mt-1">
                                 {{ storageUsagePercentage.toFixed(1) }}% of {{ storageUsageLimitMB }}MB
                             </div>
                         </div>
@@ -382,14 +382,16 @@ window.EnhancedDashboardComponent = {
                 </div>
 
                 <!-- Advertisement Placement -->
-                <AdComponent 
-                    placement="dashboard_sidebar"
-                    size="medium"
-                />
+                <div class="sponsored-section">
+                    <AdComponent 
+                        placement="dashboard_sidebar"
+                        size="medium"
+                    />
+                </div>
 
                 <!-- Recent Activity -->
-                <div v-if="recentActivity.length > 0" class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">⏰ Recent Activity</h3>
+                <div v-if="recentActivity.length > 0" class="md-card p-6 recent-activity-section">
+                    <h3 class="text-lg font-semibold mb-4">⏰ Recent Activity</h3>
                     <div class="space-y-3">
                         <div
                             v-for="activity in recentActivity.slice(0, 3)"
