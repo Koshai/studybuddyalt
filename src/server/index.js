@@ -1,4 +1,17 @@
-// src/server/index.js - COMPLETE VERSION with Authentication Integration
+// src/server/index.js - LEGACY FILE - NO LONGER USED
+//
+// ⚠️  WARNING: This file is LEGACY CODE and is NOT being used by the application
+// 
+// CURRENT ARCHITECTURE:
+// - Web Mode: server.js → app.js → ServiceFactory → WebStorageService (Supabase)
+// - Desktop Mode: main.js → server.js → ServiceFactory → SimplifiedDatabaseService (SQLite)
+// 
+// This file contains 1000+ lines of direct SQLite calls that bypass the ServiceFactory
+// architecture. It was replaced by the modular ServiceFactory pattern.
+//
+// TODO: This file can be safely deleted in future cleanup.
+//
+// src/server/index.js - LEGACY VERSION with direct SQLite calls
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');

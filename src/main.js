@@ -166,11 +166,11 @@ function startServer() {
     return;
   }
 
-  // In production, start the backend server
-  const serverPath = path.join(__dirname, 'server', 'index.js');
+  // In production, start the backend server with ServiceFactory architecture
+  const serverPath = path.join(__dirname, 'server', 'server.js');
   serverProcess = spawn('node', [serverPath], {
     stdio: 'inherit',
-    env: { ...process.env, PORT: 3001 }
+    env: { ...process.env, PORT: 3001, STUDYBUDDY_MODE: 'desktop' }
   });
 
   serverProcess.on('error', (err) => {
