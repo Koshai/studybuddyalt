@@ -1277,7 +1277,13 @@ class SimplifiedStore {
     if (!this.state.isAuthenticated) return;
     
     try {
-      const stats = await window.api.getDashboardStats();
+      console.log('🔄 Updating dashboard statistics...');
+      const response = await window.api.getDashboardStats();
+      console.log('📊 Dashboard stats response:', response);
+      
+      // Handle both direct stats and wrapped response
+      const stats = response.stats || response;
+      
       this.state.statistics = {
         totalTopics: stats.total_topics || 0,
         totalQuestions: stats.total_questions || 0,
@@ -1285,8 +1291,18 @@ class SimplifiedStore {
         totalPracticeSessions: stats.total_practice_sessions || 0,
         overallAccuracy: stats.overall_accuracy || 0
       };
+      
+      console.log('✅ Statistics updated:', this.state.statistics);
     } catch (error) {
-      console.error('Failed to update statistics:', error);
+      console.error('❌ Failed to update statistics:', error);
+      // Set zero stats on error
+      this.state.statistics = {
+        totalTopics: 0,
+        totalQuestions: 0,
+        totalNotes: 0,
+        totalPracticeSessions: 0,
+        overallAccuracy: 0
+      };
     }
   }
 
