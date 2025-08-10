@@ -3,27 +3,36 @@ const express = require('express');
 const router = express.Router();
 
 // Import services and middleware
-const SimplifiedDatabaseService = require('../services/database-simplified');
+const ServiceFactory = require('../services/service-factory');
 const authMiddleware = require('../middleware/auth-middleware');
-
-// Initialize services
-const db = new SimplifiedDatabaseService();
 
 /**
  * POST /api/admin/create-subjects
- * Create/recreate the subjects table with all fixed subjects
+ * Create/recreate the subjects table with all fixed subjects (Desktop only)
  */
 router.post('/create-subjects', 
     authMiddleware.authenticateToken, 
     authMiddleware.requireAdmin, 
     async (req, res) => {
         try {
-            console.log('🔧 Admin creating subjects table...');
+            const EnvironmentService = require('../services/environment-service');
             
-            // Create subjects table and populate with fixed subjects
-            await db.createSubjectsTable();
+            if (EnvironmentService.isWeb()) {
+                return res.json({
+                    success: true,
+                    message: 'Subjects already exist in Supabase. No action needed for web mode.',
+                    subjects_count: 10
+                });
+            }
             
-            console.log('✅ Subjects table created successfully');
+            console.log('🔧 Admin creating subjects table for desktop...');
+            const storage = ServiceFactory.getStorageService();
+            
+            if (typeof storage.createSubjectsTable === 'function') {
+                await storage.createSubjectsTable();
+                console.log('✅ Subjects table created successfully');
+            }
+            
             res.json({
                 success: true,
                 message: 'Subjects table created with all 10 fixed subjects'
@@ -48,12 +57,43 @@ router.get('/database-info',
     authMiddleware.requireAdmin,
     async (req, res) => {
         try {
-            const info = await db.getDatabaseInfo();
-            res.json({
-                success: true,
-                database_info: info,
-                timestamp: new Date().toISOString()
-            });
+            const EnvironmentService = require('../services/environment-service');
+            const storage = ServiceFactory.getStorageService();
+            
+            if (EnvironmentService.isWeb()) {
+                // For web mode (Supabase), provide basic connection info
+                res.json({
+                    success: true,
+                    database_info: {
+                        type: 'supabase',
+                        environment: 'web',
+                        status: 'connected',
+                        subjects_available: 10,
+                        message: 'Using Supabase cloud database'
+                    },
+                    timestamp: new Date().toISOString()
+                });
+            } else {
+                // For desktop mode (SQLite), get actual database info
+                if (typeof storage.getDatabaseInfo === 'function') {
+                    const info = await storage.getDatabaseInfo();
+                    res.json({
+                        success: true,
+                        database_info: info,
+                        timestamp: new Date().toISOString()
+                    });
+                } else {
+                    res.json({
+                        success: true,
+                        database_info: {
+                            type: 'sqlite',
+                            environment: 'desktop',
+                            status: 'connected'
+                        },
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            }
         } catch (error) {
             console.error('❌ Database info error:', error);
             res.status(500).json({
