@@ -7,6 +7,27 @@ const ServiceFactory = require('../services/service-factory');
 const authMiddleware = require('../middleware/auth-middleware');
 
 /**
+ * GET /api/notes
+ * Get all notes for authenticated user
+ */
+router.get('/', authMiddleware.authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const storage = ServiceFactory.getStorageService();
+        
+        const notes = await storage.getAllNotesForUser(userId);
+        console.log(`📄 Retrieved ${notes.length} notes for user ${userId}`);
+        res.json(notes);
+    } catch (error) {
+        console.error('❌ Get all notes error:', error);
+        res.status(500).json({
+            error: 'Failed to fetch notes',
+            details: error.message
+        });
+    }
+});
+
+/**
  * GET /api/notes/:noteId
  * Get specific note by ID
  */
