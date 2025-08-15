@@ -189,31 +189,47 @@ window.EnhancedPracticeSetupComponent = {
                             <div
                                 v-for="topic in displayedPracticeTopics"
                                 :key="'practice-' + topic.id"
-                                @click="startPractice(topic)"
-                                class="p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:shadow-md cursor-pointer transition-all duration-300 bg-gradient-to-br from-gray-50 to-white"
+                                class="p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:shadow-md transition-all duration-300 bg-gradient-to-br from-gray-50 to-white"
                             >
-                                <div class="flex items-center justify-between">
-                                    <div class="flex-1">
-                                        <h4 class="font-semibold text-gray-900">{{ topic.name }}</h4>
-                                        <p class="text-sm text-gray-600">{{ topic.subjectName }}</p>
-                                        <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                                            <span>
-                                                <i class="fas fa-question-circle mr-1"></i>
-                                                {{ topic.questionCount }} questions
-                                            </span>
-                                            <span>
-                                                <i class="fas fa-file-alt mr-1"></i>
-                                                {{ topic.notesCount }} files
-                                            </span>
-                                            <span>
-                                                <i class="fas fa-clock mr-1"></i>
-                                                Last practiced {{ formatTimeAgo(topic.lastPracticed) }}
-                                            </span>
+                                <div class="space-y-4">
+                                    <!-- Topic Info -->
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex-1">
+                                            <h4 class="font-semibold text-gray-900">{{ topic.name }}</h4>
+                                            <p class="text-sm text-gray-600">{{ topic.subjectName }}</p>
+                                            <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                                                <span>
+                                                    <i class="fas fa-question-circle mr-1"></i>
+                                                    {{ topic.questionCount }} questions
+                                                </span>
+                                                <span>
+                                                    <i class="fas fa-file-alt mr-1"></i>
+                                                    {{ topic.notesCount }} files
+                                                </span>
+                                                <span>
+                                                    <i class="fas fa-clock mr-1"></i>
+                                                    Last practiced {{ formatTimeAgo(topic.lastPracticed) }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-lg font-bold text-primary-600">{{ topic.bestScore || 0 }}%</div>
+                                            <div class="text-xs text-gray-500">Best Score</div>
                                         </div>
                                     </div>
-                                    <div class="text-right">
-                                        <div class="text-lg font-bold text-primary-600">{{ topic.bestScore || 0 }}%</div>
-                                        <div class="text-xs text-gray-500">Best Score</div>
+                                    
+                                    <!-- Practice Mode Selection -->
+                                    <div class="flex space-x-2">
+                                        <button @click="startPractice(topic)"
+                                                class="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-md transition-all duration-300 transform hover:scale-105">
+                                            <i class="fas fa-play mr-2"></i>
+                                            Classic Mode
+                                        </button>
+                                        <button @click="startGameshow(topic)"
+                                                class="flex-1 bg-gradient-to-r from-yellow-500 to-pink-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-md transition-all duration-300 transform hover:scale-105">
+                                            <i class="fas fa-trophy mr-2"></i>
+                                            Gameshow Mode
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -516,6 +532,27 @@ window.EnhancedPracticeSetupComponent = {
             store.selectSubject(subject);
             store.selectTopic(topic);
             store.setCurrentView('practice-session');
+        };
+
+        const startGameshow = (topic) => {
+            // Handle both field names for compatibility
+            const subjectId = topic.subjectId || topic.subject_id;
+            const subject = store.getSubjectById(subjectId);
+            
+            if (!subject) {
+                console.error('Subject not found for topic:', topic);
+                store.showNotification('Subject not found for this topic', 'error');
+                return;
+            }
+            
+            if (!topic.questionCount || topic.questionCount < 5) {
+                store.showNotification('Gameshow mode requires at least 5 questions. Generate more questions first!', 'warning');
+                return;
+            }
+            
+            store.selectSubject(subject);
+            store.selectTopic(topic);
+            store.setCurrentView('practice-gameshow');
         };
 
         const showAllTopics = () => {

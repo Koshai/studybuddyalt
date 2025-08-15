@@ -276,6 +276,11 @@ window.EnhancedSidebarComponent = {
             </div>
         </nav>
 
+        <!-- Sidebar Ad Placement (for free tier users) -->
+        <div v-if="store.state.subscriptionTier === 'free'" class="p-4">
+            <AdComponent placement="dashboard_sidebar" size="medium" />
+        </div>
+
         <!-- AI Status Footer -->
         <div class="p-4 border-t border-gray-200">
             <div class="flex items-center justify-between text-sm">

@@ -261,6 +261,13 @@ const App = {
             <!-- Topic Creation Modal -->
             <CreateTopicModal v-if="safeStore.state.showCreateTopicModal" />
 
+            <!-- Upgrade Modal -->
+            <UpgradeModalComponent 
+                :show="showUpgradeModalState"
+                :reason="upgradeModalReason"
+                @close="closeUpgradeModal"
+            />
+
             <!-- Enhanced Notifications -->
             <NotificationsComponent />
             
@@ -305,6 +312,10 @@ const App = {
         
         const showMobileUsage = Vue.ref(false);
         const showDesktopUsage = Vue.ref(false);
+        
+        // Upgrade modal state
+        const showUpgradeModalState = Vue.ref(false);
+        const upgradeModalReason = Vue.ref('general');
         
         // Login form state
         const loginEmail = Vue.ref('');
@@ -498,8 +509,18 @@ const App = {
             store.showNotification('Email confirmed! Please sign in now.', 'success');
         };
 
-        const showUpgradeModal = () => {
-            store.showNotification('Upgrade to Pro for unlimited usage and premium features! Contact support for Pro access.', 'info');
+        const showUpgradeModal = (reason = 'general') => {
+            upgradeModalReason.value = reason;
+            showUpgradeModalState.value = true;
+        };
+        
+        // Expose showUpgradeModal globally for components to use
+        window.app = window.app || {};
+        window.app.showUpgradeModal = showUpgradeModal;
+
+        const closeUpgradeModal = () => {
+            showUpgradeModalState.value = false;
+            upgradeModalReason.value = 'general';
         };
 
         // Clear login error when user starts typing
@@ -652,6 +673,9 @@ const App = {
             onRegisterSuccess,
             onEmailConfirmed,
             showUpgradeModal,
+            closeUpgradeModal,
+            showUpgradeModalState,
+            upgradeModalReason,
             handleConfirmationConfirm,
             handleConfirmationCancel
         };

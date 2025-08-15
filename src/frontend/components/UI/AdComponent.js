@@ -86,8 +86,10 @@ window.AdComponent = {
     setup(props) {
         const store = window.store;
         
-        // Ad configuration
-        const adClient = 'ca-pub-your-publisher-id'; // Replace with actual AdSense publisher ID
+        // Ad configuration - Replace with your actual AdSense publisher ID
+        const adClient = process.env.NODE_ENV === 'production' 
+            ? 'ca-pub-XXXXXXXXXXXXXXXXX' // Replace with actual AdSense publisher ID
+            : 'ca-pub-test-client-id';
         const adLoading = Vue.ref(true);
         const adBlocked = Vue.ref(false);
         
@@ -102,11 +104,16 @@ window.AdComponent = {
         });
 
         const adSlotId = Vue.computed(() => {
-            // Different ad slots for different placements
-            switch (props.placement) {
-                case 'dashboard_sidebar': return 'your-sidebar-ad-slot-id';
-                case 'practice_completion': return 'your-completion-ad-slot-id';
-                default: return 'your-default-ad-slot-id';
+            // Different ad slots for different placements - Replace with your actual slot IDs
+            if (process.env.NODE_ENV === 'production') {
+                switch (props.placement) {
+                    case 'dashboard_sidebar': return 'XXXXXXXXXX'; // Replace with actual sidebar slot ID
+                    case 'practice_completion': return 'XXXXXXXXXX'; // Replace with actual completion slot ID
+                    default: return 'XXXXXXXXXX'; // Replace with actual default slot ID
+                }
+            } else {
+                // Test slot IDs for development
+                return 'test-slot-id';
             }
         });
 
@@ -186,10 +193,16 @@ window.AdComponent = {
 
         // User actions
         const showUpgradeModal = () => {
-            store.showNotification(
-                'Upgrade to StudyBuddy Pro for an ad-free experience! Contact support for details.',
-                'info'
-            );
+            // Call the main app's upgrade modal function with reason
+            if (window.app && window.app.showUpgradeModal) {
+                window.app.showUpgradeModal(`ad_${props.placement}`);
+            } else {
+                // Fallback notification
+                store.showNotification(
+                    'Upgrade to StudyBuddy Pro for an ad-free experience! Contact support for details.',
+                    'info'
+                );
+            }
             
             // Track upgrade interest for analytics
             trackEvent('ad_upgrade_click', {

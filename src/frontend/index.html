@@ -604,6 +604,24 @@
         }
     </script>
     
+    <!-- Additional CSS for animations -->
+    <style>
+        .animate-scale-in {
+            animation: scaleIn 0.2s ease-out;
+        }
+        
+        @keyframes scaleIn {
+            0% { 
+                opacity: 0; 
+                transform: scale(0.8); 
+            }
+            100% { 
+                opacity: 1; 
+                transform: scale(1); 
+            }
+        }
+    </style>
+    
     <!-- Application Styles -->
     <link rel="stylesheet" href="./css/main.css">
     <link rel="stylesheet" href="./css/components.css">
@@ -643,6 +661,7 @@
     <!-- Practice Components (Simplified) -->
     <script src="./components/Practice/PracticeSetup-enhanced.js"></script>
     <script src="./components/Practice/PracticeSession.js"></script>
+    <script src="./components/Practice/GameshowPractice.js"></script>
     <script src="./components/Practice/BrowsePracticeTopics.js"></script>
     <script src="./components/Practice/MCQQuestionCard.js"></script>
 
@@ -660,6 +679,7 @@
     <script src="./components/Modals/ModalBase.js"></script>
     <script src="./components/Modals/CreateTopic.js"></script>
     <script src="./components/Modals/ConfirmationModal.js"></script>
+    <script src="./components/Modals/UpgradeModal.js"></script>
     
     <!-- State Components -->
     <script src="./components/States/ErrorState.js"></script>
