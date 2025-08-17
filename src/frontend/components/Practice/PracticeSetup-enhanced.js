@@ -618,6 +618,7 @@ window.EnhancedPracticeSetupComponent = {
             handleSubjectChange,
             generateQuestions,
             startPractice,
+            startGameshow,
             showAllTopics,
             showUpgradeModal,
             formatTimeAgo

@@ -158,6 +158,14 @@ const App = {
                         <!-- Practice Session View -->
                         <PracticeSessionComponent v-if="safeStore.state.currentView === 'practice-session'" />
                         
+                        <!-- Gameshow Practice View -->
+                        <GameshowPracticeComponent 
+                            v-if="safeStore.state.currentView === 'practice-gameshow'" 
+                            :topic="safeStore.state.selectedTopic"
+                            :questions="safeStore.state.questions"
+                            @exit-gameshow="() => safeStore.state.currentView = 'practice'"
+                        />
+                        
                         <!-- Browse Practice Topics View -->
                         <BrowsePracticeTopicsComponent v-if="safeStore.state.currentView === 'browse-practice'" />
                         
@@ -702,6 +710,7 @@ app.component('TopicsListSimplifiedComponent', window.TopicsListSimplifiedCompon
 app.component('UploadFormSimplifiedComponent', window.EnhancedUploadFormComponent);
 app.component('PracticeSetupSimplifiedComponent', window.EnhancedPracticeSetupComponent);
 app.component('PracticeSessionComponent', window.PracticeSessionComponent);
+app.component('GameshowPracticeComponent', window.GameshowPracticeComponent);
 app.component('BrowsePracticeTopicsComponent', window.BrowsePracticeTopicsComponent);
 app.component('NotesDisplayComponent', window.NotesDisplayComponent);
 app.component('NotesViewComponent', window.NotesViewComponent);
