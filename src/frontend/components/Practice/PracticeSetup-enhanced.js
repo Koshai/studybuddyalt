@@ -545,7 +545,9 @@ window.EnhancedPracticeSetupComponent = {
                 return;
             }
             
-            if (!topic.questionCount || topic.questionCount < 5) {
+            // Check for questions using both possible field names
+            const questionCount = topic.questionCount || topic.questionsCount || 0;
+            if (!questionCount || questionCount < 5) {
                 store.showNotification('Gameshow mode requires at least 5 questions. Generate more questions first!', 'warning');
                 return;
             }

@@ -281,12 +281,73 @@ window.PracticeSessionComponent = {
         const submitTextAnswer = () => {
             if (!textAnswer.value.trim() || answered.value) return;
             
-            // For text answers, we'll compare with the correct answer (simplified)
+            // Improved text answer validation with multiple criteria
             const userAnswer = textAnswer.value.trim().toLowerCase();
             const correctAnswer = currentQuestion.value.answer.toLowerCase();
-            const isMatch = userAnswer.includes(correctAnswer) || correctAnswer.includes(userAnswer);
+            
+            // Multiple validation strategies
+            let isMatch = false;
+            
+            // 1. Exact match (case insensitive)
+            if (userAnswer === correctAnswer) {
+                isMatch = true;
+            }
+            // 2. User answer contains correct answer (for longer responses)
+            else if (userAnswer.includes(correctAnswer)) {
+                isMatch = true;
+            }
+            // 3. Correct answer contains user answer (for shorter responses)
+            else if (correctAnswer.includes(userAnswer) && userAnswer.length >= 3) {
+                isMatch = true;
+            }
+            // 4. Remove common words and compare key terms
+            else {
+                const cleanUserAnswer = userAnswer.replace(/\b(the|a|an|is|are|was|were|in|on|at|to|for|of|with|by)\b/g, '').trim();
+                const cleanCorrectAnswer = correctAnswer.replace(/\b(the|a|an|is|are|was|were|in|on|at|to|for|of|with|by)\b/g, '').trim();
+                
+                if (cleanUserAnswer && cleanCorrectAnswer) {
+                    isMatch = cleanUserAnswer.includes(cleanCorrectAnswer) || cleanCorrectAnswer.includes(cleanUserAnswer);
+                }
+            }
+            // 5. Check for similar words (simple similarity)
+            if (!isMatch && userAnswer.length > 4 && correctAnswer.length > 4) {
+                const similarity = calculateSimilarity(userAnswer, correctAnswer);
+                isMatch = similarity > 0.7; // 70% similarity threshold
+            }
             
             checkAnswer(userAnswer, isMatch);
+        };
+
+        // Simple similarity function using Levenshtein distance
+        const calculateSimilarity = (str1, str2) => {
+            const len1 = str1.length;
+            const len2 = str2.length;
+            const matrix = [];
+
+            for (let i = 0; i <= len2; i++) {
+                matrix[i] = [i];
+            }
+
+            for (let j = 0; j <= len1; j++) {
+                matrix[0][j] = j;
+            }
+
+            for (let i = 1; i <= len2; i++) {
+                for (let j = 1; j <= len1; j++) {
+                    if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+
+            const maxLen = Math.max(len1, len2);
+            return maxLen === 0 ? 1 : (maxLen - matrix[len2][len1]) / maxLen;
         };
 
         const checkAnswer = (userAnswer, forceCorrect = null) => {
