@@ -127,16 +127,21 @@ const App = {
             <BetaBadgeComponent />
             
             <!-- Enhanced Sidebar -->
-            <SidebarSimplifiedComponent />
+            <SidebarSimplifiedComponent 
+                :is-mobile-open="isMobileSidebarOpen"
+                @close-sidebar="isMobileSidebarOpen = false"
+            />
 
             <!-- Main Content -->
             <div class="flex-1 flex flex-col overflow-hidden">
                 <!-- Enhanced Header -->
-                <HeaderSimplifiedComponent />
+                <HeaderSimplifiedComponent 
+                    @toggle-sidebar="isMobileSidebarOpen = !isMobileSidebarOpen"
+                />
 
                 <!-- Content Area -->
                 <main class="flex-1 overflow-auto">
-                    <div class="p-6">
+                    <div class="p-3 sm:p-4 md:p-6">
                         <!-- Enhanced Dashboard View -->
                         <DashboardSimplifiedComponent v-if="safeStore.state.currentView === 'dashboard'" />
                         
@@ -320,6 +325,24 @@ const App = {
         
         const showMobileUsage = Vue.ref(false);
         const showDesktopUsage = Vue.ref(false);
+        
+        // Mobile sidebar state
+        const isMobileSidebarOpen = Vue.ref(false);
+        
+        // Close mobile sidebar when clicking outside or on escape
+        Vue.onMounted(() => {
+            const handleEscape = (e) => {
+                if (e.key === 'Escape') {
+                    isMobileSidebarOpen.value = false;
+                }
+            };
+            document.addEventListener('keydown', handleEscape);
+            
+            // Cleanup
+            Vue.onUnmounted(() => {
+                document.removeEventListener('keydown', handleEscape);
+            });
+        });
         
         // Upgrade modal state
         const showUpgradeModalState = Vue.ref(false);
@@ -663,6 +686,7 @@ const App = {
             authMode,
             showMobileUsage,
             showDesktopUsage,
+            isMobileSidebarOpen,
             loginEmail,
             loginPassword,
             loginLoading,

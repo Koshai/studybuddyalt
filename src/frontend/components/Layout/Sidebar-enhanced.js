@@ -1,25 +1,44 @@
 // components/Layout/Sidebar-enhanced.js - Sidebar with Subscription Info
 window.EnhancedSidebarComponent = {
     template: `
-    <aside class="w-64 md-sidebar flex flex-col h-full">
-        <!-- Logo/Brand -->
-        <div class="p-6" style="border-bottom: 1px solid var(--md-sys-color-outline-variant);">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 md-primary rounded-lg flex items-center justify-center">
-                    <i class="fas fa-brain text-lg"></i>
+    <!-- Mobile Overlay (when sidebar is open) -->
+    <div v-if="isMobileOpen" 
+         @click="$emit('close-sidebar')"
+         class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden">
+    </div>
+    
+    <!-- Sidebar -->
+    <aside :class="[
+        'md-sidebar flex flex-col h-full transition-transform duration-300 ease-in-out z-50',
+        'fixed md:static inset-y-0 left-0',
+        'w-72 sm:w-80 md:w-64',
+        isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+    ]">
+        <!-- Logo/Brand with Close Button -->
+        <div class="p-4 sm:p-6" style="border-bottom: 1px solid var(--md-sys-color-outline-variant);">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 md-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-brain text-base sm:text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-bold md-text-primary">Jaquizy</h1>
+                        <p class="text-xs md-text-secondary">AI-Powered Learning</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-xl font-bold md-text-primary">Jaquizy</h1>
-                    <p class="text-xs md-text-secondary">AI-Powered Learning</p>
-                </div>
+                <!-- Mobile Close Button -->
+                <button @click="$emit('close-sidebar')" 
+                        class="md:hidden p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-times text-gray-600"></i>
+                </button>
             </div>
         </div>
 
         <!-- User Info Section -->
-        <div v-if="store.state.isAuthenticated" class="p-4 md-surface-container-high" style="border-bottom: 1px solid var(--md-sys-color-outline-variant);">
+        <div v-if="store.state.isAuthenticated" class="p-3 sm:p-4 md-surface-container-high" style="border-bottom: 1px solid var(--md-sys-color-outline-variant);">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 md-primary rounded-full flex items-center justify-center">
-                    <span class="font-bold text-sm" style="color: var(--md-sys-color-on-primary);">{{ getUserInitials }}</span>
+                <div class="w-8 h-8 sm:w-10 sm:h-10 md-primary rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="font-bold text-xs sm:text-sm" style="color: var(--md-sys-color-on-primary);">{{ getUserInitials }}</span>
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium md-text-primary truncate">{{ store.state.user?.firstName }} {{ store.state.user?.lastName }}</p>
@@ -31,7 +50,7 @@ window.EnhancedSidebarComponent = {
                             {{ store.state.subscriptionTier?.toUpperCase() || 'FREE' }}
                         </span>
                         <span v-if="store.state.subscriptionTier === 'free'" 
-                              class="text-xs text-gray-500">
+                              class="text-xs text-gray-500 hidden sm:inline">
                             Pro Coming Soon
                         </span>
                     </div>
@@ -40,7 +59,7 @@ window.EnhancedSidebarComponent = {
         </div>
 
         <!-- Quick Usage Overview -->
-        <div v-if="store.state.isAuthenticated" class="p-4" style="border-bottom: 1px solid var(--md-sys-color-outline-variant);">
+        <div v-if="store.state.isAuthenticated" class="p-3 sm:p-4" style="border-bottom: 1px solid var(--md-sys-color-outline-variant);">
             <h4 class="text-xs font-semibold md-text-primary mb-3">USAGE THIS MONTH</h4>
             <div class="space-y-3">
                 <!-- Questions -->
@@ -104,7 +123,7 @@ window.EnhancedSidebarComponent = {
             <div class="space-y-2">
                 <!-- Dashboard -->
                 <button
-                    @click="setCurrentView('dashboard')"
+                    @click="navigateTo('dashboard')"
                     :class="[
                         'w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors',
                         store.state.currentView === 'dashboard' 
@@ -118,7 +137,7 @@ window.EnhancedSidebarComponent = {
 
                 <!-- Subjects -->
                 <button
-                    @click="setCurrentView('subjects')"
+                    @click="navigateTo('subjects')"
                     :class="[
                         'w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors',
                         store.state.currentView === 'subjects' 
@@ -282,7 +301,7 @@ window.EnhancedSidebarComponent = {
         </div>
 
         <!-- AI Status Footer -->
-        <div class="p-4 border-t border-gray-200">
+        <div class="p-3 sm:p-4 border-t border-gray-200">
             <div class="flex items-center justify-between text-sm">
                 <div class="flex items-center space-x-2">
                     <div :class="[
@@ -309,13 +328,14 @@ window.EnhancedSidebarComponent = {
         </div>
 
         <!-- Upgrade Banner (Free Users Only) -->
-        <div v-if="store.state.subscriptionTier === 'free'" class="p-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white">
+        <div v-if="store.state.subscriptionTier === 'free'" class="p-3 sm:p-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white">
             <div class="text-center">
-                <i class="fas fa-crown text-yellow-300 text-lg mb-2"></i>
+                <i class="fas fa-crown text-yellow-300 text-base sm:text-lg mb-2"></i>
                 <h4 class="font-bold text-sm mb-1">Upgrade to Pro</h4>
-                <p class="text-xs text-white/90 mb-3">1500 questions/month, unlimited topics, 5GB storage</p>
+                <p class="text-xs text-white/90 mb-3 hidden sm:block">1500 questions/month, unlimited topics, 5GB storage</p>
+                <p class="text-xs text-white/90 mb-3 sm:hidden">More questions & storage</p>
                 <button @click="showUpgradeModal" 
-                        class="w-full bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg text-xs font-medium transition-colors">
+                        class="w-full bg-white/20 hover:bg-white/30 text-white py-2 px-3 sm:px-4 rounded-lg text-xs font-medium transition-colors">
                     Learn More
                 </button>
             </div>
@@ -323,7 +343,16 @@ window.EnhancedSidebarComponent = {
     </aside>
     `,
 
-    setup() {
+    props: {
+        isMobileOpen: {
+            type: Boolean,
+            default: false
+        }
+    },
+    
+    emits: ['close-sidebar'],
+    
+    setup(props, { emit }) {
         const store = window.store;
 
         // Usage calculations
@@ -499,6 +528,36 @@ window.EnhancedSidebarComponent = {
             }
         };
 
+        // Navigation with mobile sidebar auto-close
+        const navigateTo = (view) => {
+            store.setCurrentView(view);
+            if (window.innerWidth < 768) { // md breakpoint
+                emit('close-sidebar');
+            }
+        };
+
+        // Update existing handlers to include mobile close
+        const handleUploadClick = () => {
+            if (canUpload.value) {
+                navigateTo('upload');
+            } else {
+                store.showNotification('Storage limit reached! Upgrade to Pro for more storage.', 'warning');
+            }
+        };
+
+        const handlePracticeClick = () => {
+            if (canGenerate.value) {
+                if (store.state.statistics?.totalNotes > 0) {
+                    navigateTo('practice');
+                } else {
+                    store.showNotification('Upload study materials first to generate questions!', 'info');
+                    navigateTo('upload');
+                }
+            } else {
+                store.showNotification('Question limit reached! Upgrade to Pro for more questions.', 'warning');
+            }
+        };
+
         return {
             store,
             questionsUsagePercentage,
@@ -514,6 +573,7 @@ window.EnhancedSidebarComponent = {
             getUserInitials,
             isAdminUser,
             setCurrentView,
+            navigateTo,
             handleUploadClick,
             handlePracticeClick,
             handleGenerateClick,

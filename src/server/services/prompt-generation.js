@@ -7,43 +7,48 @@ class PromptGenerator {
   }
 
   /**
-   * Main entry point for creating subject-specific prompts
+   * Main entry point for creating subject-specific prompts with question type distribution
    */
-  createSubjectPrompt(content, count, subjectCategory, topicName) {
+  createSubjectPrompt(content, count, subjectCategory, topicName, questionTypeSequence = null) {
     const subjectId = subjectCategory.id;
     const baseContent = content.substring(0, 2000);
     
+    // If no sequence provided, default to all MCQ (backwards compatibility)
+    if (!questionTypeSequence) {
+      questionTypeSequence = Array(count).fill('multiple_choice');
+    }
+    
     switch (subjectId) {
       case 'mathematics':
-        return this.createMathPrompt(baseContent, count, topicName);
+        return this.createMathPrompt(baseContent, count, topicName, questionTypeSequence);
         
       case 'natural-sciences':
-        return this.createSciencePrompt(baseContent, count, topicName);
+        return this.createSciencePrompt(baseContent, count, topicName, questionTypeSequence);
         
       case 'literature':
-        return this.createLiteraturePrompt(baseContent, count, topicName);
+        return this.createLiteraturePrompt(baseContent, count, topicName, questionTypeSequence);
         
       case 'history':
-        return this.createHistoryPrompt(baseContent, count, topicName);
+        return this.createHistoryPrompt(baseContent, count, topicName, questionTypeSequence);
         
       case 'computer-science':
-        return this.createComputerSciencePrompt(baseContent, count, topicName);
+        return this.createComputerSciencePrompt(baseContent, count, topicName, questionTypeSequence);
         
       case 'languages':
-        return this.createLanguagePrompt(baseContent, count, topicName);
+        return this.createLanguagePrompt(baseContent, count, topicName, questionTypeSequence);
         
       case 'business':
-        return this.createBusinessPrompt(baseContent, count, topicName);
+        return this.createBusinessPrompt(baseContent, count, topicName, questionTypeSequence);
         
       case 'arts':
-        return this.createArtsPrompt(baseContent, count, topicName);
+        return this.createArtsPrompt(baseContent, count, topicName, questionTypeSequence);
         
       case 'health-medicine':
-        return this.createHealthPrompt(baseContent, count, topicName);
+        return this.createHealthPrompt(baseContent, count, topicName, questionTypeSequence);
         
       case 'other':
       default:
-        return this.createGeneralPrompt(baseContent, count, topicName, subjectCategory.name);
+        return this.createGeneralPrompt(baseContent, count, topicName, subjectCategory.name, questionTypeSequence);
     }
   }
 
@@ -126,10 +131,14 @@ Continue for all ${count} questions. Focus on scientific understanding!`;
   }
 
   /**
-   * Literature prompt - ENHANCED
+   * Literature prompt - ENHANCED for analysis with mixed question types
    */
-  createLiteraturePrompt(content, count, topicName) {
+  createLiteraturePrompt(content, count, topicName, questionTypeSequence) {
+    const mcqCount = questionTypeSequence.filter(type => type === 'multiple_choice').length;
+    const textCount = questionTypeSequence.filter(type => type === 'text_based').length;
+    
     return `You are a LITERATURE teacher creating ${count} analytical questions for "${topicName}".
+Distribution: ${mcqCount} multiple choice, ${textCount} text-based questions.
 
 STUDY MATERIAL:
 ${content}
@@ -152,18 +161,30 @@ LITERATURE QUESTION GUIDELINES:
 ❌ Don't ask about events not covered in the material
 ❌ Don't require knowledge of other works not mentioned
 
-Create exactly ${count} multiple choice questions in this format:
+QUESTION TYPES:
+- Multiple Choice: Good for literary device identification, character analysis, theme recognition
+- Text-Based: Perfect for interpretation, personal response, detailed analysis, explaining significance
 
-QUESTION 1:
-[Literary analysis question based on the material]
-A) [Analytical option A]
-B) [Analytical option B]
-C) [Analytical option C]
-D) [Analytical option D]
+Generate questions in this exact sequence: ${questionTypeSequence.join(', ')}
+
+FORMAT FOR MULTIPLE CHOICE:
+QUESTION [N]:
+[Literary analysis question]
+A) [Option A]
+B) [Option B]
+C) [Option C]
+D) [Option D]
 CORRECT: [A/B/C/D]
-EXPLANATION: [Literary analysis explanation with textual reasoning]
+EXPLANATION: [Literary analysis explanation]
 
-Continue for all ${count} questions. Focus on literary analysis and critical thinking!`;
+FORMAT FOR TEXT-BASED:
+QUESTION [N]:
+[Open-ended analytical question requiring explanation]
+TYPE: TEXT_BASED
+ANSWER: [Expected answer showing depth of analysis - accept varied interpretations that demonstrate understanding]
+EXPLANATION: [What you're looking for in student responses]
+
+Create exactly ${count} questions following the sequence. Focus on literary analysis and critical thinking!`;
   }
 
   /**

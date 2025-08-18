@@ -1,22 +1,30 @@
 // components/Layout/Header-enhanced.js - Header with User Stats Integration
 window.EnhancedHeaderComponent = {
     template: `
-    <header class="md-header px-6 py-4" @click="closeUserMenu">
+    <header class="md-header px-3 sm:px-4 md:px-6 py-3 md:py-4" @click="closeUserMenu">
         <div class="flex items-center justify-between">
+            <!-- Mobile Menu Button -->
+            <button 
+                @click.stop="$emit('toggle-sidebar')"
+                class="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors mr-3"
+            >
+                <i class="fas fa-bars text-white text-lg"></i>
+            </button>
+            
             <!-- Left Section -->
-            <div>
-                <h2 class="text-2xl font-semibold" style="color: var(--md-sys-color-on-primary);">
+            <div class="flex-1 min-w-0">
+                <h2 class="text-lg sm:text-xl md:text-2xl font-semibold truncate" style="color: var(--md-sys-color-on-primary);">
                     {{ pageTitle }}
                 </h2>
-                <p class="text-sm mt-1 opacity-80" style="color: var(--md-sys-color-on-primary);">
+                <p class="text-xs sm:text-sm mt-1 opacity-80 truncate" style="color: var(--md-sys-color-on-primary);">
                     {{ pageDescription }}
                 </p>
             </div>
             
             <!-- Right Section with User Info -->
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2 sm:space-x-4">
                 <!-- Usage Indicators (Desktop Only) -->
-                <div class="hidden lg:flex items-center space-x-3 text-sm">
+                <div class="hidden xl:flex items-center space-x-3 text-sm">
                     <!-- Questions Usage -->
                     <div class="flex items-center space-x-2 px-3 py-1 bg-white/10 backdrop-blur-sm rounded-lg" 
                          :title="'Questions used this month: ' + (store.state.usage?.questions?.used || 0) + '/' + (store.state.usage?.questions?.limit || 50)">
@@ -43,14 +51,14 @@ window.EnhancedHeaderComponent = {
                 <div class="relative" v-if="store.state.isAuthenticated">
                     <button 
                         @click.stop="showUserMenu = !showUserMenu"
-                        class="flex items-center space-x-2 px-3 py-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-colors"
+                        class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-colors"
                     >
-                        <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                            <i class="fas fa-user text-white text-sm"></i>
+                        <div class="w-6 h-6 sm:w-8 sm:h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-user text-white text-xs sm:text-sm"></i>
                         </div>
-                        <div class="hidden md:block text-left">
-                            <p class="text-white text-sm font-medium">{{ store.state.user?.firstName || 'User' }}</p>
-                            <p class="text-white/70 text-xs">{{ store.state.user?.email || '' }}</p>
+                        <div class="hidden lg:block text-left min-w-0">
+                            <p class="text-white text-sm font-medium truncate">{{ store.state.user?.firstName || 'User' }}</p>
+                            <p class="text-white/70 text-xs truncate">{{ store.state.user?.email || '' }}</p>
                         </div>
                         <i class="fas fa-chevron-down text-white/70 text-xs transition-transform duration-200" 
                            :class="{ 'rotate-180': showUserMenu }"></i>
@@ -58,7 +66,7 @@ window.EnhancedHeaderComponent = {
                     
                     <!-- User Dropdown Menu -->
                     <div v-if="showUserMenu" 
-                         class="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50"
+                         class="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50"
                          @click.stop>
                         <!-- User Info -->
                         <div class="px-4 py-3 border-b border-gray-200">

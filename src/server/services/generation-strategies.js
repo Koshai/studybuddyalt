@@ -1,12 +1,15 @@
 // src/server/services/generation-strategies.js
 // Handles different question generation strategies and batch size calculations
 
+const QuestionTypeManager = require('./question-type-manager');
+
 class GenerationStrategies {
   constructor(ollama, defaultModel, responseParser) {
     this.ollama = ollama;
     this.defaultModel = defaultModel;
     this.responseParser = responseParser;
-    console.log('🎯 GenerationStrategies initialized');
+    this.questionTypeManager = new QuestionTypeManager();
+    console.log('🎯 GenerationStrategies initialized with QuestionTypeManager');
   }
 
   /**
@@ -40,14 +43,18 @@ class GenerationStrategies {
   }
 
   /**
-   * Generate with subject context (Attempt 1) - Primary strategy
+   * Generate with subject context (Attempt 1) - Primary strategy with question type distribution
    */
   async generateWithSubjectContext(content, count, subjectCategory, topicName, promptGenerator) {
     const subjectId = subjectCategory.id;
     
     console.log(`🎯 Generating with ${subjectId} context`);
     
-    const prompt = promptGenerator.createSubjectPrompt(content, count, subjectCategory, topicName);
+    // Get optimal question type distribution for this subject
+    const questionTypeSequence = this.questionTypeManager.generateQuestionTypeSequence(subjectId, count);
+    console.log(`📊 Using question type sequence for ${subjectId}:`, questionTypeSequence);
+    
+    const prompt = promptGenerator.createSubjectPrompt(content, count, subjectCategory, topicName, questionTypeSequence);
     
     try {
       const response = await this.ollama.generate({
@@ -57,7 +64,7 @@ class GenerationStrategies {
         options: {
           temperature: subjectId === 'mathematics' ? 0.3 : 0.7,
           top_p: 0.9,
-          num_predict: Math.max(800, count * 120),
+          num_predict: Math.max(800, count * 150), // Increased for text-based questions
           stop: ["END_QUESTIONS", "---"]
         }
       });
@@ -66,7 +73,17 @@ class GenerationStrategies {
         return [];
       }
 
-      return this.responseParser.parseQuestions(response.response, count);
+      const questions = this.responseParser.parseQuestions(response.response, count);
+      
+      // Add question type information to each question
+      questions.forEach((question, index) => {
+        if (index < questionTypeSequence.length) {
+          question.type = questionTypeSequence[index];
+          question.subjectOptimized = true;
+        }
+      });
+      
+      return questions;
       
     } catch (error) {
       console.error(`❌ ${subjectId} generation failed:`, error);
