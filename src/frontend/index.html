@@ -563,27 +563,7 @@
             }
         }
         
-        /* Mobile sidebar transforms */
-        @media (max-width: 767px) {
-            .md-sidebar.hidden {
-                transform: translateX(-100%);
-            }
-            
-            .md-sidebar.block {
-                transform: translateX(0);
-            }
-            
-            .md-sidebar {
-                transition: transform 0.3s ease-in-out;
-            }
-        }
-        
-        /* Desktop sidebar should never have transforms */
-        @media (min-width: 768px) {
-            .md-sidebar {
-                transform: none !important;
-            }
-        }
+        /* Clean sidebar styles - no conflicting transforms */
     </style>
     
     <!-- Tailwind Configuration -->
@@ -701,6 +681,8 @@
     <!-- Layout Components (Enhanced) -->
     <script src="./components/Layout/Header-enhanced.js"></script>
     <script src="./components/Layout/Sidebar-enhanced.js"></script>
+    <script src="./components/Layout/Sidebar-clean.js"></script>
+    <script src="./components/Layout/Footer.js"></script>
     <script src="./components/Layout/Notifications.js"></script>
     
     <!-- Dashboard Components (Simplified) -->

@@ -126,22 +126,20 @@ const App = {
             <!-- Beta Badge -->
             <BetaBadgeComponent />
             
-            <!-- Enhanced Sidebar -->
-            <SidebarSimplifiedComponent 
-                :is-mobile-open="isMobileSidebarOpen"
-                @close-sidebar="isMobileSidebarOpen = false"
+            <!-- Clean Sidebar -->
+            <CleanSidebarComponent 
+                :is-open="isMobileSidebarOpen"
+                @close="isMobileSidebarOpen = false"
             />
 
-            <!-- Main Content - full width on mobile, account for sidebar on desktop -->
-            <div class="flex-1 flex flex-col overflow-hidden w-full">
-                <!-- Enhanced Header -->
-                <HeaderSimplifiedComponent 
-                    @toggle-sidebar="isMobileSidebarOpen = !isMobileSidebarOpen"
-                />
+            <!-- Main Content Area -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <!-- Header -->
+                <EnhancedHeaderComponent />
 
-                <!-- Content Area -->
-                <main class="flex-1 overflow-auto bg-white min-h-0">
-                    <div class="p-3 sm:p-4 md:p-6 min-h-full">
+                <!-- Content -->
+                <main class="flex-1 overflow-auto bg-white">
+                    <div class="p-4 lg:p-6">
                         <!-- Debug Info (remove in production) -->
                         <div v-if="showDebugInfo" class="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded text-sm">
                             <strong>Debug:</strong> 
@@ -208,6 +206,9 @@ const App = {
                         </div>
                     </div>
                 </main>
+
+                <!-- Footer -->
+                <FooterComponent />
                 
                 <!-- Usage Indicator (Floating) - Desktop Collapsible -->
                 <div class="fixed bottom-4 right-4 z-40 hidden xl:block">
@@ -356,7 +357,17 @@ const App = {
         // Debug mode for development
         const showDebugInfo = Vue.ref(window.location.hostname === 'localhost');
         
-        // Close mobile sidebar when clicking outside or on escape
+        // Mobile sidebar toggle function
+        const toggleMobileSidebar = () => {
+            console.log('Toggling mobile sidebar from:', isMobileSidebarOpen.value);
+            isMobileSidebarOpen.value = !isMobileSidebarOpen.value;
+            console.log('Mobile sidebar now:', isMobileSidebarOpen.value);
+        };
+        
+        // Expose globally for header to access
+        window.toggleMobileSidebar = toggleMobileSidebar;
+        
+        // Close mobile sidebar on escape
         Vue.onMounted(() => {
             const handleEscape = (e) => {
                 if (e.key === 'Escape') {
@@ -364,19 +375,12 @@ const App = {
                 }
             };
             
-            const handleToggleSidebar = (e) => {
-                console.log('Main app: Received toggle-sidebar event');
-                isMobileSidebarOpen.value = !isMobileSidebarOpen.value;
-                console.log('Mobile sidebar open:', isMobileSidebarOpen.value);
-            };
-            
             document.addEventListener('keydown', handleEscape);
-            document.addEventListener('toggle-sidebar', handleToggleSidebar);
             
             // Cleanup
             Vue.onUnmounted(() => {
                 document.removeEventListener('keydown', handleEscape);
-                document.removeEventListener('toggle-sidebar', handleToggleSidebar);
+                delete window.toggleMobileSidebar;
             });
         });
         
@@ -761,7 +765,9 @@ app.component('UsageIndicatorComponent', window.UsageIndicatorComponent);
 
 // Enhanced Layout components
 app.component('SidebarSimplifiedComponent', window.EnhancedSidebarComponent);
-app.component('HeaderSimplifiedComponent', window.EnhancedHeaderComponent);
+app.component('CleanSidebarComponent', window.CleanSidebarComponent);
+app.component('FooterComponent', window.FooterComponent);
+app.component('EnhancedHeaderComponent', window.EnhancedHeaderComponent);
 app.component('NotificationsComponent', window.NotificationsComponent);
 
 // Enhanced Main page components

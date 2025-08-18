@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test New Architecture</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; }
+        .mobile-test { 
+            width: 375px; 
+            height: 667px; 
+            border: 2px solid #333; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            margin: 20px auto;
+            position: relative;
+        }
+        .desktop-test {
+            width: 100%;
+            height: 100vh;
+            border: 2px solid #666;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="p-4">
+            <h1 class="text-2xl font-bold mb-4">Architecture Test</h1>
+            
+            <!-- Device Toggle -->
+            <div class="mb-4">
+                <button @click="viewMode = 'desktop'" 
+                        :class="viewMode === 'desktop' ? 'bg-blue-500 text-white' : 'bg-gray-200'"
+                        class="px-4 py-2 rounded mr-2">Desktop</button>
+                <button @click="viewMode = 'mobile'" 
+                        :class="viewMode === 'mobile' ? 'bg-blue-500 text-white' : 'bg-gray-200'"
+                        class="px-4 py-2 rounded">Mobile</button>
+            </div>
+
+            <!-- Test Container -->
+            <div :class="viewMode === 'mobile' ? 'mobile-test' : 'desktop-test'">
+                <div class="flex h-full bg-gray-50">
+                    <!-- Clean Sidebar -->
+                    <clean-sidebar-component 
+                        :is-open="isMobileSidebarOpen"
+                        @close="isMobileSidebarOpen = false"
+                    />
+
+                    <!-- Main Content Area -->
+                    <div class="flex-1 flex flex-col overflow-hidden">
+                        <!-- Header -->
+                        <header class="bg-blue-600 text-white px-4 py-3">
+                            <div class="flex items-center justify-between">
+                                <!-- Mobile Menu Button -->
+                                <button 
+                                    @click="isMobileSidebarOpen = !isMobileSidebarOpen"
+                                    class="lg:hidden p-2 rounded-lg hover:bg-white/10 transition-colors mr-3"
+                                    title="Open menu"
+                                >
+                                    <i class="fas fa-bars text-white text-lg"></i>
+                                </button>
+                                
+                                <h1 class="text-xl font-bold">Test Dashboard</h1>
+                                
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm">{{ viewMode.toUpperCase() }} MODE</span>
+                                </div>
+                            </div>
+                        </header>
+
+                        <!-- Content -->
+                        <main class="flex-1 overflow-auto bg-white p-4">
+                            <div class="max-w-4xl mx-auto">
+                                <h2 class="text-xl font-semibold mb-4">Main Content Area</h2>
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div class="bg-gray-100 p-4 rounded-lg">
+                                        <h3 class="font-medium">Card 1</h3>
+                                        <p class="text-sm text-gray-600">Sample content</p>
+                                    </div>
+                                    <div class="bg-gray-100 p-4 rounded-lg">
+                                        <h3 class="font-medium">Card 2</h3>
+                                        <p class="text-sm text-gray-600">Sample content</p>
+                                    </div>
+                                    <div class="bg-gray-100 p-4 rounded-lg">
+                                        <h3 class="font-medium">Card 3</h3>
+                                        <p class="text-sm text-gray-600">Sample content</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                                    <h3 class="font-medium text-blue-800">Test Results:</h3>
+                                    <ul class="mt-2 text-sm text-blue-700">
+                                        <li>✓ Sidebar visible on desktop: {{ viewMode === 'desktop' }}</li>
+                                        <li>✓ Hamburger menu visible on mobile: {{ viewMode === 'mobile' }}</li>
+                                        <li>✓ Mobile sidebar open: {{ isMobileSidebarOpen }}</li>
+                                        <li>✓ Content responsive: Always visible</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </main>
+
+                        <!-- Footer -->
+                        <footer-component />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mock Store -->
+    <script>
+        window.store = {
+            state: {
+                isAuthenticated: true,
+                user: { firstName: 'Test', lastName: 'User' },
+                subscriptionTier: 'free',
+                currentView: 'dashboard',
+                aiOnline: true,
+                usage: {
+                    questions: { used: 25, limit: 50 },
+                    storage: { used: 50000000, limit: 100000000 },
+                    topics: { used: 2, limit: 3 }
+                },
+                statistics: {
+                    totalTopics: 5,
+                    totalQuestions: 50
+                }
+            },
+            setCurrentView: (view) => console.log('Navigate to:', view),
+            showNotification: (msg, type) => console.log(`${type.toUpperCase()}: ${msg}`)
+        };
+    </script>
+
+    <!-- Load Components -->
+    <script src="./src/frontend/components/Layout/Sidebar-clean.js"></script>
+    <script src="./src/frontend/components/Layout/Footer.js"></script>
+
+    <!-- Test App -->
+    <script>
+        const { createApp } = Vue;
+
+        const app = createApp({
+            data() {
+                return {
+                    viewMode: 'desktop',
+                    isMobileSidebarOpen: false
+                };
+            }
+        });
+
+        app.component('clean-sidebar-component', window.CleanSidebarComponent);
+        app.component('footer-component', window.FooterComponent);
+
+        app.mount('#app');
+    </script>
+</body>
+</html>

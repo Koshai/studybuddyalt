@@ -484,12 +484,13 @@ window.EnhancedHeaderComponent = {
             }
         };
 
-        // Mobile sidebar toggle
+        // Mobile sidebar toggle - use Vue emit instead of DOM events
         const toggleMobileSidebar = () => {
             console.log('Header: Toggling mobile sidebar');
-            // Emit the toggle event to parent component
-            const event = new CustomEvent('toggle-sidebar');
-            document.dispatchEvent(event);
+            // Use Vue event bus or direct method call to parent
+            if (window.toggleMobileSidebar) {
+                window.toggleMobileSidebar();
+            }
         };
 
         // Close menu when clicking outside
