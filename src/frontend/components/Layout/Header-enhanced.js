@@ -5,8 +5,9 @@ window.EnhancedHeaderComponent = {
         <div class="flex items-center justify-between">
             <!-- Mobile Menu Button -->
             <button 
-                @click.stop="$emit('toggle-sidebar')"
+                @click.stop="toggleMobileSidebar"
                 class="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors mr-3"
+                title="Open menu"
             >
                 <i class="fas fa-bars text-white text-lg"></i>
             </button>
@@ -483,6 +484,14 @@ window.EnhancedHeaderComponent = {
             }
         };
 
+        // Mobile sidebar toggle
+        const toggleMobileSidebar = () => {
+            console.log('Header: Toggling mobile sidebar');
+            // Emit the toggle event to parent component
+            const event = new CustomEvent('toggle-sidebar');
+            document.dispatchEvent(event);
+        };
+
         // Close menu when clicking outside
         Vue.onMounted(() => {
             document.addEventListener('click', closeUserMenu);
@@ -515,7 +524,8 @@ window.EnhancedHeaderComponent = {
             showUsageHistory,
             exportData,
             logout,
-            getAiStatusText
+            getAiStatusText,
+            toggleMobileSidebar
         };
     }
 };

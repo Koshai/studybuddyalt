@@ -133,15 +133,15 @@ const App = {
             />
 
             <!-- Main Content - full width on mobile, account for sidebar on desktop -->
-            <div class="flex-1 flex flex-col overflow-hidden md:ml-0">
+            <div class="flex-1 flex flex-col overflow-hidden w-full">
                 <!-- Enhanced Header -->
                 <HeaderSimplifiedComponent 
                     @toggle-sidebar="isMobileSidebarOpen = !isMobileSidebarOpen"
                 />
 
                 <!-- Content Area -->
-                <main class="flex-1 overflow-auto bg-white">
-                    <div class="p-3 sm:p-4 md:p-6">
+                <main class="flex-1 overflow-auto bg-white min-h-0">
+                    <div class="p-3 sm:p-4 md:p-6 min-h-full">
                         <!-- Debug Info (remove in production) -->
                         <div v-if="showDebugInfo" class="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded text-sm">
                             <strong>Debug:</strong> 
@@ -363,11 +363,20 @@ const App = {
                     isMobileSidebarOpen.value = false;
                 }
             };
+            
+            const handleToggleSidebar = (e) => {
+                console.log('Main app: Received toggle-sidebar event');
+                isMobileSidebarOpen.value = !isMobileSidebarOpen.value;
+                console.log('Mobile sidebar open:', isMobileSidebarOpen.value);
+            };
+            
             document.addEventListener('keydown', handleEscape);
+            document.addEventListener('toggle-sidebar', handleToggleSidebar);
             
             // Cleanup
             Vue.onUnmounted(() => {
                 document.removeEventListener('keydown', handleEscape);
+                document.removeEventListener('toggle-sidebar', handleToggleSidebar);
             });
         });
         

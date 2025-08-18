@@ -533,6 +533,12 @@
                 overflow-x: hidden;
             }
             
+            /* Fix main app container height on mobile */
+            #app {
+                min-height: 100vh;
+                height: 100vh;
+            }
+            
             /* Make sure text doesn't break layout */
             h1, h2, h3, h4, h5, h6 {
                 word-wrap: break-word;
@@ -549,20 +555,33 @@
             .md-sidebar {
                 z-index: 50;
             }
+            
+            /* Ensure main content takes full height */
+            .flex-1 {
+                min-height: 0;
+                flex: 1 1 0%;
+            }
         }
         
-        /* Mobile sidebar overlay behavior */
+        /* Mobile sidebar transforms */
         @media (max-width: 767px) {
-            .sidebar-mobile-overlay:not(.mobile-open) {
+            .md-sidebar.hidden {
                 transform: translateX(-100%);
             }
             
-            .sidebar-mobile-overlay.mobile-open {
+            .md-sidebar.block {
                 transform: translateX(0);
             }
             
-            .sidebar-mobile-overlay {
+            .md-sidebar {
                 transition: transform 0.3s ease-in-out;
+            }
+        }
+        
+        /* Desktop sidebar should never have transforms */
+        @media (min-width: 768px) {
+            .md-sidebar {
+                transform: none !important;
             }
         }
     </style>
