@@ -1,9 +1,9 @@
 // components/Dashboard/Dashboard-enhanced.js - Dashboard with Usage Integration
 window.EnhancedDashboardComponent = {
     template: `
-    <div class="animate-fade-in md-dashboard p-3 sm:p-4 md:p-6">
+    <div class="min-h-screen bg-gray-50 p-4">
         <!-- Welcome Header with User Info -->
-        <div class="md-primary-container rounded-xl md:rounded-2xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-6 md:mb-8">
+        <div class="bg-blue-600 text-white rounded-xl p-6 mb-6">
             <!-- User Greeting -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-4 sm:space-y-0">
                 <div class="flex-1">
@@ -28,7 +28,7 @@ window.EnhancedDashboardComponent = {
                     </div>
                     
                     <!-- Plan Badge -->
-                    <div class="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                    <div class="bg-white/20 rounded-lg px-4 py-2">
                         <p class="text-sm text-white/80">Current Plan</p>
                         <p class="font-bold text-lg">{{ store.state.subscriptionTier?.toUpperCase() || 'FREE' }}</p>
                     </div>
@@ -36,8 +36,8 @@ window.EnhancedDashboardComponent = {
             </div>
             
             <!-- Usage Summary Bar -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6">
-                <div class="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+                <div class="bg-white/10 rounded-lg p-4">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm text-white/80">Questions Generated</span>
                         <i class="fas fa-question-circle text-white/60"></i>
@@ -51,7 +51,7 @@ window.EnhancedDashboardComponent = {
                     </div>
                 </div>
                 
-                <div class="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                <div class="bg-white/10 rounded-lg p-4">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm text-white/80">Storage Used</span>
                         <i class="fas fa-hdd text-white/60"></i>
@@ -65,7 +65,7 @@ window.EnhancedDashboardComponent = {
                     </div>
                 </div>
                 
-                <div class="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                <div class="bg-white/10 rounded-lg p-4">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm text-white/80">Topics Created</span>
                         <i class="fas fa-folder text-white/60"></i>
@@ -101,10 +101,10 @@ window.EnhancedDashboardComponent = {
         </div>
 
         <!-- Main Content Grid -->
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Enhanced Statistics Cards with Usage Context -->
-            <div class="xl:col-span-2 space-y-4 sm:space-y-6">
-                <div class="md-elevated-card p-4 sm:p-6 hover:shadow-lg transition-shadow relative">
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-lg shadow-md p-6 relative">
                     <!-- Subscription Badge -->
                     <div class="absolute top-3 sm:top-4 right-3 sm:right-4">
                         <span :class="[
@@ -116,11 +116,11 @@ window.EnhancedDashboardComponent = {
                     </div>
                     
                     <div class="flex items-center justify-between mb-4 pr-12">
-                        <h3 class="text-base sm:text-lg font-semibold md-text-primary">📊 Your Progress & Usage</h3>
+                        <h3 class="text-lg font-semibold text-gray-900">📊 Your Progress & Usage</h3>
                     </div>
                     
-                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                        <div class="text-center p-3 sm:p-4 md-secondary-container rounded-lg relative">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                        <div class="text-center p-4 bg-blue-50 rounded-lg">
                             <div class="text-lg sm:text-xl md:text-2xl font-bold">{{ store.state.statistics.totalTopics }}</div>
                             <div class="text-xs sm:text-sm opacity-80">Topics</div>
                             <div class="text-xs opacity-60 mt-1">
@@ -128,7 +128,7 @@ window.EnhancedDashboardComponent = {
                             </div>
                         </div>
                         
-                        <div class="text-center p-3 sm:p-4 md-tertiary-container rounded-lg relative">
+                        <div class="text-center p-4 bg-green-50 rounded-lg">
                             <div class="text-lg sm:text-xl md:text-2xl font-bold">{{ store.state.statistics.totalQuestions }}</div>
                             <div class="text-xs sm:text-sm opacity-80">Questions</div>
                             <div class="text-xs opacity-60 mt-1">
@@ -136,7 +136,7 @@ window.EnhancedDashboardComponent = {
                             </div>
                         </div>
                         
-                        <div class="text-center p-3 sm:p-4 md-surface-container-high rounded-lg relative">
+                        <div class="text-center p-4 bg-gray-50 rounded-lg">
                             <div class="text-lg sm:text-xl md:text-2xl font-bold">{{ store.state.statistics.totalPracticeSessions }}</div>
                             <div class="text-xs sm:text-sm opacity-80">Sessions</div>
                             <div class="text-xs text-gray-500 mt-1">
@@ -144,7 +144,7 @@ window.EnhancedDashboardComponent = {
                             </div>
                         </div>
                         
-                        <div class="text-center p-3 sm:p-4 md-surface-container-high rounded-lg relative">
+                        <div class="text-center p-4 bg-gray-50 rounded-lg">
                             <div class="text-lg sm:text-xl md:text-2xl font-bold">{{ storageUsedMB }}MB</div>
                             <div class="text-xs sm:text-sm opacity-80">Storage</div>
                             <div class="text-xs opacity-60 mt-1">
@@ -174,15 +174,15 @@ window.EnhancedDashboardComponent = {
                 </div>
 
                 <!-- Fixed Subjects Grid -->
-                <div class="md-card p-4 sm:p-6">
+                <div class="bg-white rounded-lg shadow-md p-6">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
-                        <h3 class="text-base sm:text-lg font-semibold md-text-primary">📚 Choose Your Subject</h3>
+                        <h3 class="text-lg font-semibold text-gray-900">📚 Choose Your Subject</h3>
                         <span class="text-xs sm:text-sm bg-gray-100 text-gray-600 px-2 py-1 rounded-full self-start sm:self-auto">
                             {{ store.state.subjects.length }} Available
                         </span>
                     </div>
                     
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div
                             v-for="subject in store.state.subjects"
                             :key="subject.id"
@@ -206,30 +206,30 @@ window.EnhancedDashboardComponent = {
             </div>
 
             <!-- Sidebar -->
-            <div class="space-y-4 sm:space-y-6">
+            <div class="space-y-6">
                 <!-- Quick Actions -->
-                <div class="md-elevated-card p-4 sm:p-6">
-                    <h3 class="text-base sm:text-lg font-semibold md-text-primary mb-3 sm:mb-4">🚀 Quick Actions</h3>
-                    <div class="space-y-2 sm:space-y-3">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">🚀 Quick Actions</h3>
+                    <div class="space-y-3">
                         <!-- Upload Materials -->
                         <button
                             @click="goToUpload"
                             :disabled="!canUpload"
                             :class="[
-                                'w-full flex items-center p-2 sm:p-3 rounded-lg transition-all duration-300 text-left',
+                                'w-full flex items-center p-3 rounded-lg transition-all duration-300 text-left',
                                 canUpload 
                                     ? 'bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300' 
                                     : 'bg-gray-50 border border-gray-200 cursor-not-allowed opacity-75'
                             ]"
                         >
                             <div :class="[
-                                'w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white mr-2 sm:mr-3 flex-shrink-0',
+                                'w-10 h-10 rounded-lg flex items-center justify-center text-white mr-3 flex-shrink-0',
                                 canUpload ? 'bg-blue-500' : 'bg-gray-400'
                             ]">
-                                <i class="fas fa-upload text-sm sm:text-base"></i>
+                                <i class="fas fa-upload"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h4 class="font-medium text-gray-900 text-sm sm:text-base truncate">Upload Materials</h4>
+                                <h4 class="font-medium text-gray-900 truncate">Upload Materials</h4>
                                 <p class="text-xs text-gray-600 truncate">
                                     {{ canUpload ? 'Add study materials' : 'Storage limit reached' }}
                                 </p>
@@ -241,20 +241,20 @@ window.EnhancedDashboardComponent = {
                             @click="goToPractice"
                             :disabled="!canPractice"
                             :class="[
-                                'w-full flex items-center p-2 sm:p-3 rounded-lg transition-all duration-300 text-left',
+                                'w-full flex items-center p-3 rounded-lg transition-all duration-300 text-left',
                                 canPractice 
                                     ? 'bg-green-50 hover:bg-green-100 border border-green-200 hover:border-green-300' 
                                     : 'bg-gray-50 border border-gray-200 cursor-not-allowed opacity-75'
                             ]"
                         >
                             <div :class="[
-                                'w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white mr-2 sm:mr-3 flex-shrink-0',
+                                'w-10 h-10 rounded-lg flex items-center justify-center text-white mr-3 flex-shrink-0',
                                 canPractice ? 'bg-green-500' : 'bg-gray-400'
                             ]">
-                                <i class="fas fa-brain text-sm sm:text-base"></i>
+                                <i class="fas fa-brain"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h4 class="font-medium text-gray-900 text-sm sm:text-base truncate">Practice Questions</h4>
+                                <h4 class="font-medium text-gray-900 truncate">Practice Questions</h4>
                                 <p class="text-xs text-gray-600 truncate">
                                     {{ canPractice ? 'Start practicing' : 'No questions available' }}
                                 </p>
@@ -266,20 +266,20 @@ window.EnhancedDashboardComponent = {
                             @click="goToGenerate"
                             :disabled="!canGenerate"
                             :class="[
-                                'w-full flex items-center p-2 sm:p-3 rounded-lg transition-all duration-300 text-left',
+                                'w-full flex items-center p-3 rounded-lg transition-all duration-300 text-left',
                                 canGenerate 
                                     ? 'bg-purple-50 hover:bg-purple-100 border border-purple-200 hover:border-purple-300' 
                                     : 'bg-gray-50 border border-gray-200 cursor-not-allowed opacity-75'
                             ]"
                         >
                             <div :class="[
-                                'w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white mr-2 sm:mr-3 flex-shrink-0',
+                                'w-10 h-10 rounded-lg flex items-center justify-center text-white mr-3 flex-shrink-0',
                                 canGenerate ? 'bg-purple-500' : 'bg-gray-400'
                             ]">
-                                <i class="fas fa-magic text-sm sm:text-base"></i>
+                                <i class="fas fa-magic"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h4 class="font-medium text-gray-900 text-sm sm:text-base truncate">Generate Questions</h4>
+                                <h4 class="font-medium text-gray-900 truncate">Generate Questions</h4>
                                 <p class="text-xs text-gray-600 truncate">
                                     {{ canGenerate ? 'Create AI questions' : 'Question limit reached' }}
                                 </p>
@@ -289,8 +289,8 @@ window.EnhancedDashboardComponent = {
                 </div>
 
                 <!-- AI Status -->
-                <div class="md-card p-4 sm:p-6">
-                    <h3 class="text-base sm:text-lg font-semibold md-text-primary mb-3 sm:mb-4">🤖 AI Status</h3>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">🤖 AI Status</h3>
                     
                     <!-- OpenAI Status -->
                     <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-3">
@@ -390,7 +390,7 @@ window.EnhancedDashboardComponent = {
                 </div>
 
                 <!-- Recent Activity -->
-                <div v-if="recentActivity.length > 0" class="md-card p-6 recent-activity-section">
+                <div v-if="recentActivity.length > 0" class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-lg font-semibold mb-4">⏰ Recent Activity</h3>
                     <div class="space-y-3">
                         <div
