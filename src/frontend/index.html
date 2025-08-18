@@ -551,19 +551,18 @@
             }
         }
         
-        /* Prevent sidebar from taking space when hidden on mobile */
+        /* Mobile sidebar overlay behavior */
         @media (max-width: 767px) {
-            .md-sidebar {
-                position: fixed !important;
-                top: 0;
-                left: 0;
-                height: 100vh;
+            .sidebar-mobile-overlay:not(.mobile-open) {
                 transform: translateX(-100%);
-                transition: transform 0.3s ease-in-out;
             }
             
-            .md-sidebar.mobile-open {
+            .sidebar-mobile-overlay.mobile-open {
                 transform: translateX(0);
+            }
+            
+            .sidebar-mobile-overlay {
+                transition: transform 0.3s ease-in-out;
             }
         }
     </style>

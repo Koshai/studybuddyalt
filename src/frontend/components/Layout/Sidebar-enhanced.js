@@ -9,10 +9,12 @@ window.EnhancedSidebarComponent = {
     
     <!-- Sidebar -->
     <aside :class="[
-        'md-sidebar flex flex-col h-full transition-transform duration-300 ease-in-out z-50',
-        'fixed md:static inset-y-0 left-0',
-        'w-72 sm:w-80 md:w-64',
-        isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        'md-sidebar flex flex-col h-full',
+        // Desktop: always visible, static position
+        'md:flex md:w-64 md:static md:translate-x-0',
+        // Mobile: hidden by default, overlay when open
+        'fixed inset-y-0 left-0 w-72 sm:w-80 z-50 sidebar-mobile-overlay',
+        isMobileOpen ? 'mobile-open flex' : 'hidden'
     ]">
         <!-- Logo/Brand with Close Button -->
         <div class="p-4 sm:p-6" style="border-bottom: 1px solid var(--md-sys-color-outline-variant);">

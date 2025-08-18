@@ -132,16 +132,24 @@ const App = {
                 @close-sidebar="isMobileSidebarOpen = false"
             />
 
-            <!-- Main Content -->
-            <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Main Content - full width on mobile, account for sidebar on desktop -->
+            <div class="flex-1 flex flex-col overflow-hidden md:ml-0">
                 <!-- Enhanced Header -->
                 <HeaderSimplifiedComponent 
                     @toggle-sidebar="isMobileSidebarOpen = !isMobileSidebarOpen"
                 />
 
                 <!-- Content Area -->
-                <main class="flex-1 overflow-auto">
+                <main class="flex-1 overflow-auto bg-white">
                     <div class="p-3 sm:p-4 md:p-6">
+                        <!-- Debug Info (remove in production) -->
+                        <div v-if="showDebugInfo" class="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded text-sm">
+                            <strong>Debug:</strong> 
+                            Current View: {{ safeStore.state.currentView }} | 
+                            Authenticated: {{ safeStore.state.isAuthenticated }} |
+                            Mobile Sidebar: {{ isMobileSidebarOpen }}
+                        </div>
+                        
                         <!-- Enhanced Dashboard View -->
                         <DashboardSimplifiedComponent v-if="safeStore.state.currentView === 'dashboard'" />
                         
@@ -182,6 +190,22 @@ const App = {
                         
                         <!-- Admin Dashboard View -->
                         <AdminDashboardComponent v-if="safeStore.state.currentView === 'admin'" />
+                        
+                        <!-- Fallback Content (if no view matches) -->
+                        <div v-if="!['dashboard', 'subjects', 'topics', 'upload', 'practice', 'practice-session', 'practice-gameshow', 'browse-practice', 'notes', 'settings', 'admin'].includes(safeStore.state.currentView)" 
+                             class="text-center py-8">
+                            <div class="max-w-md mx-auto">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-exclamation-triangle text-gray-400 text-xl"></i>
+                                </div>
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">Unknown View</h3>
+                                <p class="text-gray-600 mb-4">Current view "{{ safeStore.state.currentView }}" not recognized</p>
+                                <button @click="safeStore.setCurrentView ? safeStore.setCurrentView('dashboard') : store.setCurrentView('dashboard')" 
+                                        class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors">
+                                    Go to Dashboard
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </main>
                 
@@ -328,6 +352,9 @@ const App = {
         
         // Mobile sidebar state
         const isMobileSidebarOpen = Vue.ref(false);
+        
+        // Debug mode for development
+        const showDebugInfo = Vue.ref(window.location.hostname === 'localhost');
         
         // Close mobile sidebar when clicking outside or on escape
         Vue.onMounted(() => {
@@ -687,6 +714,7 @@ const App = {
             showMobileUsage,
             showDesktopUsage,
             isMobileSidebarOpen,
+            showDebugInfo,
             loginEmail,
             loginPassword,
             loginLoading,
