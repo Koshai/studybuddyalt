@@ -5,6 +5,7 @@ const router = express.Router();
 // Import services
 const ServiceFactory = require('../services/service-factory');
 const authMiddleware = require('../middleware/auth-middleware');
+const AnswerEvaluationService = require('../services/answer-evaluation-service');
 
 /**
  * GET /api/practice/topics-with-questions
@@ -137,6 +138,42 @@ router.post('/session', authMiddleware.authenticateToken, async (req, res) => {
         console.error('❌ Record practice session error:', error);
         res.status(500).json({
             error: 'Failed to record practice session',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/practice/evaluate-answer
+ * Evaluate a text answer using AI-powered semantic comparison
+ */
+router.post('/evaluate-answer', authMiddleware.authenticateToken, async (req, res) => {
+    try {
+        const { userAnswer, correctAnswer, question, subject } = req.body;
+        
+        if (!userAnswer || !correctAnswer || !question) {
+            return res.status(400).json({ 
+                error: 'userAnswer, correctAnswer, and question are required' 
+            });
+        }
+        
+        console.log(`🧠 Evaluating answer: "${userAnswer}" vs "${correctAnswer}"`);
+        
+        const evaluationService = new AnswerEvaluationService();
+        const result = await evaluationService.evaluateTextAnswer(
+            userAnswer, 
+            correctAnswer, 
+            question, 
+            subject || 'general'
+        );
+        
+        console.log(`✅ Evaluation result:`, result);
+        res.json(result);
+        
+    } catch (error) {
+        console.error('❌ Answer evaluation error:', error);
+        res.status(500).json({
+            error: 'Failed to evaluate answer',
             details: error.message
         });
     }

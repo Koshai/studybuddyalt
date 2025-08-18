@@ -160,12 +160,31 @@ window.PracticeSessionComponent = {
                     <span class="font-medium" :class="isCorrect ? 'text-green-800' : 'text-red-800'">
                         {{ isCorrect ? 'Correct!' : 'Incorrect' }}
                     </span>
+                    <!-- AI Confidence Badge -->
+                    <span v-if="currentEvaluation && currentEvaluation.confidence" 
+                          class="ml-2 px-2 py-1 text-xs rounded-full"
+                          :class="currentEvaluation.confidence > 0.8 ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'">
+                        {{ Math.round(currentEvaluation.confidence * 100) }}% confidence
+                    </span>
                 </div>
                 <div class="text-sm" :class="isCorrect ? 'text-green-700' : 'text-red-700'">
                     <p><strong>Correct Answer:</strong> {{ getCorrectAnswerText() }}</p>
+                    
+                    <!-- AI Feedback -->
+                    <p v-if="currentEvaluation && currentEvaluation.feedback" class="mt-2">
+                        <strong>AI Feedback:</strong> {{ currentEvaluation.feedback }}
+                    </p>
+                    
+                    <!-- Explanation -->
                     <p v-if="currentQuestion.explanation" class="mt-2">
                         <strong>Explanation:</strong> {{ currentQuestion.explanation }}
                     </p>
+                    
+                    <!-- Detailed reasoning for incorrect answers -->
+                    <div v-if="!isCorrect && currentEvaluation && currentEvaluation.reasoning" class="mt-3 p-3 bg-gray-50 rounded border-l-4 border-gray-300">
+                        <p class="text-xs text-gray-600 font-medium">Why this was marked incorrect:</p>
+                        <p class="text-xs text-gray-700 mt-1">{{ currentEvaluation.reasoning }}</p>
+                    </div>
                 </div>
             </div>
 
@@ -212,6 +231,7 @@ window.PracticeSessionComponent = {
         const questionStartTime = Vue.ref(Date.now());
         const questionTime = Vue.ref(0);
         const timer = Vue.ref(null);
+        const currentEvaluation = Vue.ref(null);
 
         // Computed
         const selectedTopic = Vue.computed(() => store.state.selectedTopic);
@@ -278,44 +298,84 @@ window.PracticeSessionComponent = {
             checkAnswer(answerIndex);
         };
 
-        const submitTextAnswer = () => {
+        const submitTextAnswer = async () => {
             if (!textAnswer.value.trim() || answered.value) return;
             
-            // Improved text answer validation with multiple criteria
-            const userAnswer = textAnswer.value.trim().toLowerCase();
-            const correctAnswer = currentQuestion.value.answer.toLowerCase();
+            // Show loading state while evaluating
+            const originalButtonText = 'Submit Answer';
             
-            // Multiple validation strategies
-            let isMatch = false;
+            try {
+                // First check with the new AI-powered evaluation
+                const userAnswer = textAnswer.value.trim();
+                const correctAnswer = currentQuestion.value.answer;
+                const question = currentQuestion.value.question;
+                
+                console.log('🧠 Evaluating answer with AI:', { userAnswer, correctAnswer, question });
+                
+                const evaluation = await window.api.evaluateTextAnswer(
+                    userAnswer, 
+                    correctAnswer, 
+                    question,
+                    getSubjectName(selectedTopic.value?.subject_id)?.toLowerCase() || 'general'
+                );
+                
+                console.log('✅ AI Evaluation result:', evaluation);
+                
+                // Use the AI evaluation result
+                checkAnswer(userAnswer, evaluation.isCorrect, evaluation);
+                
+            } catch (error) {
+                console.warn('❌ AI evaluation failed, falling back to local evaluation:', error);
+                
+                // Fallback to improved local evaluation
+                const isMatch = evaluateAnswerLocally(textAnswer.value.trim(), currentQuestion.value.answer);
+                checkAnswer(textAnswer.value.trim(), isMatch);
+            }
+        };
+
+        // Improved local evaluation as fallback
+        const evaluateAnswerLocally = (userAnswer, correctAnswer) => {
+            const userLower = userAnswer.toLowerCase();
+            const correctLower = correctAnswer.toLowerCase();
             
             // 1. Exact match (case insensitive)
-            if (userAnswer === correctAnswer) {
-                isMatch = true;
-            }
-            // 2. User answer contains correct answer (for longer responses)
-            else if (userAnswer.includes(correctAnswer)) {
-                isMatch = true;
-            }
-            // 3. Correct answer contains user answer (for shorter responses)
-            else if (correctAnswer.includes(userAnswer) && userAnswer.length >= 3) {
-                isMatch = true;
-            }
-            // 4. Remove common words and compare key terms
-            else {
-                const cleanUserAnswer = userAnswer.replace(/\b(the|a|an|is|are|was|were|in|on|at|to|for|of|with|by)\b/g, '').trim();
-                const cleanCorrectAnswer = correctAnswer.replace(/\b(the|a|an|is|are|was|were|in|on|at|to|for|of|with|by)\b/g, '').trim();
-                
-                if (cleanUserAnswer && cleanCorrectAnswer) {
-                    isMatch = cleanUserAnswer.includes(cleanCorrectAnswer) || cleanCorrectAnswer.includes(cleanUserAnswer);
-                }
-            }
-            // 5. Check for similar words (simple similarity)
-            if (!isMatch && userAnswer.length > 4 && correctAnswer.length > 4) {
-                const similarity = calculateSimilarity(userAnswer, correctAnswer);
-                isMatch = similarity > 0.7; // 70% similarity threshold
+            if (userLower === correctLower) {
+                return true;
             }
             
-            checkAnswer(userAnswer, isMatch);
+            // 2. Clean both answers and compare
+            const cleanUserAnswer = userLower.replace(/[^\w\s]/g, ' ').replace(/\b(the|a|an|is|are|was|were|in|on|at|to|for|of|with|by|from|up|about|into|through|during|before|after|above|below|between|among|and|or|but|so|because|if|when|where|why|how)\b/g, '').replace(/\s+/g, ' ').trim();
+            const cleanCorrectAnswer = correctLower.replace(/[^\w\s]/g, ' ').replace(/\b(the|a|an|is|are|was|were|in|on|at|to|for|of|with|by|from|up|about|into|through|during|before|after|above|below|between|among|and|or|but|so|because|if|when|where|why|how)\b/g, '').replace(/\s+/g, ' ').trim();
+            
+            if (cleanUserAnswer === cleanCorrectAnswer) {
+                return true;
+            }
+            
+            // 3. Bidirectional containment
+            if (cleanUserAnswer.includes(cleanCorrectAnswer) || cleanCorrectAnswer.includes(cleanUserAnswer)) {
+                return true;
+            }
+            
+            // 4. Key terms matching
+            const correctWords = cleanCorrectAnswer.split(' ').filter(word => word.length > 2);
+            const userWords = cleanUserAnswer.split(' ');
+            
+            if (correctWords.length > 0) {
+                const matches = correctWords.filter(word => 
+                    userWords.some(userWord => 
+                        userWord.includes(word) || word.includes(userWord) || 
+                        calculateSimilarity(word, userWord) > 0.8
+                    )
+                );
+                
+                if (matches.length / correctWords.length > 0.7) {
+                    return true;
+                }
+            }
+            
+            // 5. Overall similarity
+            const similarity = calculateSimilarity(cleanUserAnswer, cleanCorrectAnswer);
+            return similarity > 0.75;
         };
 
         // Simple similarity function using Levenshtein distance
@@ -350,7 +410,7 @@ window.PracticeSessionComponent = {
             return maxLen === 0 ? 1 : (maxLen - matrix[len2][len1]) / maxLen;
         };
 
-        const checkAnswer = (userAnswer, forceCorrect = null) => {
+        const checkAnswer = (userAnswer, forceCorrect = null, evaluation = null) => {
             stopQuestionTimer();
             answered.value = true;
             
@@ -363,12 +423,24 @@ window.PracticeSessionComponent = {
             
             isCorrect.value = correct;
             
+            // Store evaluation details for feedback
+            if (evaluation) {
+                currentEvaluation.value = {
+                    feedback: evaluation.feedback,
+                    confidence: evaluation.confidence,
+                    reasoning: evaluation.reasoning
+                };
+            } else {
+                currentEvaluation.value = null;
+            }
+            
             // Record the answer
             answers.value[currentQuestionIndex.value] = {
                 questionId: currentQuestion.value.id,
                 userAnswer: currentQuestion.value.type === 'multiple_choice' ? userAnswer : textAnswer.value,
                 isCorrect: correct,
-                timeSpent: Math.floor((Date.now() - questionStartTime.value) / 1000)
+                timeSpent: Math.floor((Date.now() - questionStartTime.value) / 1000),
+                evaluation: evaluation
             };
         };
 
@@ -395,11 +467,13 @@ window.PracticeSessionComponent = {
                 selectedAnswer.value = currentAnswer.userAnswer;
                 textAnswer.value = currentQuestion.value.type !== 'multiple_choice' ? currentAnswer.userAnswer : '';
                 isCorrect.value = currentAnswer.isCorrect;
+                currentEvaluation.value = currentAnswer.evaluation || null;
             } else {
                 answered.value = false;
                 selectedAnswer.value = null;
                 textAnswer.value = '';
                 isCorrect.value = false;
+                currentEvaluation.value = null;
                 startQuestionTimer();
             }
         };
@@ -499,6 +573,7 @@ window.PracticeSessionComponent = {
             finalScore,
             averageTime,
             selectedTopic,
+            currentEvaluation,
             selectAnswer,
             submitTextAnswer,
             nextQuestion,

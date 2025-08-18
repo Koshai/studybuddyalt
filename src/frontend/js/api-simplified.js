@@ -801,6 +801,21 @@ class SimplifiedApiService {
     });
   }
 
+  /**
+   * Evaluate a text answer using AI-powered semantic comparison
+   */
+  async evaluateTextAnswer(userAnswer, correctAnswer, question, subject = 'general') {
+    return this.request('/practice/evaluate-answer', {
+      method: 'POST',
+      body: JSON.stringify({
+        userAnswer,
+        correctAnswer,
+        question,
+        subject
+      })
+    });
+  }
+
   // ===== NOTE-SPECIFIC QUESTION METHODS =====
 
   /**

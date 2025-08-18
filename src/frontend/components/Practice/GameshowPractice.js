@@ -172,7 +172,7 @@ window.GameshowPracticeComponent = {
                                 <i class="fas fa-check-circle mr-2"></i>Correct!
                             </div>
                             <div v-else class="text-red-600 text-lg font-bold">
-                                <i class="fas fa-times-circle mr-2"></i>Correct answer: {{ currentQuestion.correct_answer }}
+                                <i class="fas fa-times-circle mr-2"></i>Correct answer: {{ currentQuestion.correct_answer || currentQuestion.answer }}
                             </div>
                         </div>
                     </div>
@@ -386,8 +386,9 @@ window.GameshowPracticeComponent = {
 
             // Find correct answer index for multiple choice
             if (question.type === 'multiple_choice' && question.options) {
+                const correctAnswer = question.correct_answer || question.answer;
                 correctAnswerIndex.value = question.options.findIndex(option => 
-                    option.toLowerCase() === question.correct_answer.toLowerCase()
+                    option.toLowerCase() === correctAnswer.toLowerCase()
                 );
             }
 
@@ -409,16 +410,36 @@ window.GameshowPracticeComponent = {
             processAnswer(correct);
         };
 
-        const submitBlankAnswer = () => {
+        const submitBlankAnswer = async () => {
             if (answered.value || !blankAnswer.value.trim()) return;
             
             answered.value = true;
             totalAnswered.value++;
             
-            const correct = blankAnswer.value.toLowerCase().trim() === 
-                currentQuestion.value.correct_answer.toLowerCase().trim();
-            blankCorrect.value = correct;
-            processAnswer(correct);
+            const correctAnswer = currentQuestion.value.correct_answer || currentQuestion.value.answer;
+            
+            try {
+                // Use AI-powered evaluation for fill-in-the-blank answers too
+                const evaluation = await window.api.evaluateTextAnswer(
+                    blankAnswer.value.trim(),
+                    correctAnswer,
+                    currentQuestion.value.question,
+                    'general' // Could be enhanced to detect subject from props
+                );
+                
+                console.log('🎮 Gameshow AI evaluation:', evaluation);
+                blankCorrect.value = evaluation.isCorrect;
+                processAnswer(evaluation.isCorrect);
+                
+            } catch (error) {
+                console.warn('❌ AI evaluation failed in gameshow, using basic comparison:', error);
+                
+                // Fallback to basic comparison
+                const correct = blankAnswer.value.toLowerCase().trim() === 
+                    correctAnswer.toLowerCase().trim();
+                blankCorrect.value = correct;
+                processAnswer(correct);
+            }
         };
 
         const processAnswer = (correct) => {
