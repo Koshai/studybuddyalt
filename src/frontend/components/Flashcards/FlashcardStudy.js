@@ -328,12 +328,12 @@ window.FlashcardStudyComponent = {
                 console.log('📚 Loading cards for study session:', selectedSet.value.name);
                 
                 // Load cards due for review (or all cards if none due)
-                const reviewResponse = await window.api.get(\`/api/flashcards/review?setId=\${selectedSet.value.id}&limit=50\`);
+                const reviewResponse = await window.api.get(\`/flashcards/review?setId=\${selectedSet.value.id}&limit=50\`);
                 let reviewCards = reviewResponse.data || [];
                 
                 if (reviewCards.length === 0) {
                     // No cards due for review, load all cards from the set
-                    const allCardsResponse = await window.api.get(\`/api/flashcards/sets/\${selectedSet.value.id}/cards\`);
+                    const allCardsResponse = await window.api.get(\`/flashcards/sets/\${selectedSet.value.id}/cards\`);
                     reviewCards = allCardsResponse.data || [];
                 }
                 
@@ -412,7 +412,7 @@ window.FlashcardStudyComponent = {
 
             try {
                 // Update progress on backend
-                await window.api.post(\`/api/flashcards/cards/\${currentCard.value.id}/answer\`, {
+                await window.api.post(\`/flashcards/cards/\${currentCard.value.id}/answer\`, {
                     isCorrect: isCorrect,
                     responseTime: responseTime
                 });
