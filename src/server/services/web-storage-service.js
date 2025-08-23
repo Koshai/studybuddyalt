@@ -691,6 +691,332 @@ class WebStorageService {
         if (error) throw error;
         return data;
     }
+
+    // ===============================
+    // FLASHCARD OPERATIONS
+    // ===============================
+
+    /**
+     * Flashcard Set Operations
+     */
+    async createFlashcardSet(userId, setData) {
+        const { v4: uuidv4 } = require('uuid');
+        const id = uuidv4();
+        
+        const flashcardSet = {
+            id,
+            user_id: userId,
+            name: setData.name,
+            description: setData.description || null,
+            subject_id: setData.subjectId || null,
+            topic_id: setData.topicId || null,
+            is_shared: setData.isShared || false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+
+        const { data, error } = await this.supabase
+            .from('flashcard_sets')
+            .insert(flashcardSet)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    async getFlashcardSets(userId) {
+        const { data, error } = await this.supabase
+            .from('flashcard_sets')
+            .select(`
+                *,
+                flashcards (count)
+            `)
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        
+        // Add card count to each set
+        return data.map(set => ({
+            ...set,
+            card_count: set.flashcards?.[0]?.count || 0
+        }));
+    }
+
+    async getFlashcardSet(setId, userId) {
+        const { data, error } = await this.supabase
+            .from('flashcard_sets')
+            .select('*')
+            .eq('id', setId)
+            .eq('user_id', userId)
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    async updateFlashcardSet(setId, userId, updates) {
+        const { data, error } = await this.supabase
+            .from('flashcard_sets')
+            .update({
+                ...updates,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', setId)
+            .eq('user_id', userId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    async deleteFlashcardSet(setId, userId) {
+        const { error } = await this.supabase
+            .from('flashcard_sets')
+            .delete()
+            .eq('id', setId)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        return true;
+    }
+
+    /**
+     * Flashcard Operations
+     */
+    async createFlashcard(setId, userId, cardData) {
+        const { v4: uuidv4 } = require('uuid');
+        const id = uuidv4();
+        
+        // Verify user owns the set
+        const { data: setCheck } = await this.supabase
+            .from('flashcard_sets')
+            .select('id')
+            .eq('id', setId)
+            .eq('user_id', userId)
+            .single();
+            
+        if (!setCheck) {
+            throw new Error('Flashcard set not found or access denied');
+        }
+
+        const flashcard = {
+            id,
+            set_id: setId,
+            front: cardData.front,
+            back: cardData.back,
+            hint: cardData.hint || null,
+            difficulty: cardData.difficulty || 1,
+            tags: Array.isArray(cardData.tags) ? JSON.stringify(cardData.tags) : null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+
+        const { data, error } = await this.supabase
+            .from('flashcards')
+            .insert(flashcard)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    async getFlashcardsInSet(setId) {
+        const { data, error } = await this.supabase
+            .from('flashcards')
+            .select('*')
+            .eq('set_id', setId)
+            .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        
+        // Parse tags from JSON string
+        return data.map(card => ({
+            ...card,
+            tags: card.tags ? JSON.parse(card.tags) : []
+        }));
+    }
+
+    async updateFlashcard(cardId, userId, updates) {
+        // Verify user owns the flashcard through set ownership
+        const { data: cardCheck } = await this.supabase
+            .from('flashcards')
+            .select(`
+                id,
+                flashcard_sets!inner(user_id)
+            `)
+            .eq('id', cardId)
+            .eq('flashcard_sets.user_id', userId)
+            .single();
+            
+        if (!cardCheck) {
+            throw new Error('Flashcard not found or access denied');
+        }
+
+        const updateData = {
+            ...updates,
+            updated_at: new Date().toISOString()
+        };
+        
+        if (updates.tags) {
+            updateData.tags = JSON.stringify(updates.tags);
+        }
+
+        const { data, error } = await this.supabase
+            .from('flashcards')
+            .update(updateData)
+            .eq('id', cardId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        
+        return {
+            ...data,
+            tags: data.tags ? JSON.parse(data.tags) : []
+        };
+    }
+
+    async deleteFlashcard(cardId, userId) {
+        // Verify user owns the flashcard through set ownership
+        const { data: cardCheck } = await this.supabase
+            .from('flashcards')
+            .select(`
+                id,
+                flashcard_sets!inner(user_id)
+            `)
+            .eq('id', cardId)
+            .eq('flashcard_sets.user_id', userId)
+            .single();
+            
+        if (!cardCheck) {
+            throw new Error('Flashcard not found or access denied');
+        }
+
+        const { error } = await this.supabase
+            .from('flashcards')
+            .delete()
+            .eq('id', cardId);
+
+        if (error) throw error;
+        return true;
+    }
+
+    /**
+     * Flashcard Progress & Study Operations
+     */
+    async getCardProgress(userId, flashcardId) {
+        const { data, error } = await this.supabase
+            .from('flashcard_progress')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('flashcard_id', flashcardId)
+            .single();
+
+        if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
+        return data;
+    }
+
+    async updateCardProgress(userId, flashcardId, isCorrect, responseTime) {
+        // Implementation of spaced repetition algorithm would go here
+        // For now, just basic progress tracking
+        const existing = await this.getCardProgress(userId, flashcardId);
+        
+        const progressData = {
+            user_id: userId,
+            flashcard_id: flashcardId,
+            total_attempts: (existing?.total_attempts || 0) + 1,
+            correct_attempts: (existing?.correct_attempts || 0) + (isCorrect ? 1 : 0),
+            correct_streak: isCorrect ? (existing?.correct_streak || 0) + 1 : 0,
+            last_reviewed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+
+        if (!existing) {
+            const { v4: uuidv4 } = require('uuid');
+            progressData.id = uuidv4();
+            progressData.created_at = new Date().toISOString();
+            
+            const { data, error } = await this.supabase
+                .from('flashcard_progress')
+                .insert(progressData)
+                .select()
+                .single();
+                
+            if (error) throw error;
+            return data;
+        } else {
+            const { data, error } = await this.supabase
+                .from('flashcard_progress')
+                .update(progressData)
+                .eq('id', existing.id)
+                .select()
+                .single();
+                
+            if (error) throw error;
+            return data;
+        }
+    }
+
+    async getCardsForReview(userId, setId, limit = 10) {
+        const { data, error } = await this.supabase
+            .from('flashcards')
+            .select(`
+                *,
+                flashcard_progress(*)
+            `)
+            .eq('set_id', setId)
+            .limit(limit);
+
+        if (error) throw error;
+        return data.map(card => ({
+            ...card,
+            tags: card.tags ? JSON.parse(card.tags) : [],
+            progress: card.flashcard_progress?.[0] || null
+        }));
+    }
+
+    async recordStudySession(userId, setId, studyMode, cardsStudied, cardsCorrect, durationSeconds) {
+        const { v4: uuidv4 } = require('uuid');
+        
+        const session = {
+            id: uuidv4(),
+            user_id: userId,
+            set_id: setId,
+            study_mode: studyMode,
+            cards_studied: cardsStudied,
+            cards_correct: cardsCorrect,
+            duration_seconds: durationSeconds,
+            completed_at: new Date().toISOString()
+        };
+
+        const { data, error } = await this.supabase
+            .from('flashcard_sessions')
+            .insert(session)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    async getStudyStats(userId, days = 30) {
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+
+        const { data, error } = await this.supabase
+            .from('flashcard_sessions')
+            .select('*')
+            .eq('user_id', userId)
+            .gte('completed_at', startDate.toISOString())
+            .order('completed_at', { ascending: false });
+
+        if (error) throw error;
+        return data;
+    }
 }
 
 module.exports = WebStorageService;
