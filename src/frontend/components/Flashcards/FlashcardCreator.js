@@ -220,7 +220,14 @@ window.FlashcardCreatorComponent = {
 
         // Lifecycle
         Vue.onMounted(() => {
+            console.log('🔧 FlashcardCreator mounted - Debug info:');
+            console.log('  store:', !!store);
+            console.log('  store.state:', !!store?.state);
+            console.log('  selectedFlashcardSet:', store?.state?.selectedFlashcardSet);
+            console.log('  selectedSet.value:', selectedSet.value);
+            
             if (!selectedSet.value) {
+                console.log('❌ No flashcard set selected, redirecting...');
                 if (store?.showNotification) {
                     store.showNotification('No flashcard set selected', 'error');
                 }

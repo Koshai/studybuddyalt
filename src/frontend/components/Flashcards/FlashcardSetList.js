@@ -285,10 +285,13 @@ window.FlashcardSetListComponent = {
 
         const addCards = (set) => {
             console.log('➕ Adding cards to:', set.name);
+            console.log('🔧 Debug - Setting selectedFlashcardSet:', set);
             if (store.state) {
                 store.state.selectedFlashcardSet = set;
+                console.log('🔧 Debug - selectedFlashcardSet after setting:', store.state.selectedFlashcardSet);
             }
             if (store.setCurrentView) {
+                console.log('🔧 Debug - Navigating to flashcards-create');
                 store.setCurrentView('flashcards-create');
             }
             activeMenu.value = null;
