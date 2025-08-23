@@ -464,7 +464,7 @@ window.FlashcardStudyComponent = {
                     durationSeconds: Math.floor((Date.now() - cardStartTime.value) / 1000)
                 };
                 
-                await window.api.post('/api/flashcards/sessions', sessionData);
+                await window.api.post('/flashcards/sessions', sessionData);
                 console.log('✅ Study session recorded');
             } catch (error) {
                 console.warn('❌ Failed to record study session:', error);

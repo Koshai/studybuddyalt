@@ -202,7 +202,7 @@ window.FlashcardSetListComponent = {
         const loadFlashcardSets = async () => {
             try {
                 loading.value = true;
-                const response = await window.api.get('/api/flashcards/sets');
+                const response = await window.api.get('/flashcards/sets');
                 flashcardSets.value = response.data || [];
                 console.log(`✅ Loaded ${flashcardSets.value.length} flashcard sets`);
             } catch (error) {
@@ -228,7 +228,7 @@ window.FlashcardSetListComponent = {
                     isShared: false
                 };
                 
-                const response = await window.api.post('/api/flashcards/sets', setData);
+                const response = await window.api.post('/flashcards/sets', setData);
                 
                 // Add to local list
                 flashcardSets.value.unshift({
@@ -309,7 +309,7 @@ window.FlashcardSetListComponent = {
             }
             
             try {
-                await window.api.delete(`/api/flashcards/sets/${set.id}`);
+                await window.api.delete(`/flashcards/sets/${set.id}`);
                 
                 // Remove from local list
                 const index = flashcardSets.value.findIndex(s => s.id === set.id);
