@@ -5,8 +5,8 @@ const { authenticateToken } = require('../middleware/auth-middleware');
 const { validateSchema } = require('../middleware/validation-middleware');
 const Joi = require('joi');
 
-// Get database service from app context
-const getDatabaseService = (req) => req.app.get('databaseService');
+// Import services
+const ServiceFactory = require('../services/service-factory');
 
 // ===============================
 // VALIDATION SCHEMAS
@@ -63,7 +63,7 @@ const recordSessionSchema = Joi.object({
  */
 router.get('/sets', authenticateToken, async (req, res) => {
     try {
-        const db = getDatabaseService(req);
+        const db = ServiceFactory.getStorageService();
         const userId = req.user.user_id || req.user.id;
         
         const sets = await db.getFlashcardSets(userId);
@@ -90,7 +90,7 @@ router.post('/sets',
     validateSchema(createFlashcardSetSchema),
     async (req, res) => {
         try {
-            const db = getDatabaseService(req);
+            const db = ServiceFactory.getStorageService();
             const userId = req.user.user_id || req.user.id;
             
             const setData = req.body;
@@ -116,7 +116,7 @@ router.post('/sets',
  */
 router.get('/sets/:setId', authenticateToken, async (req, res) => {
     try {
-        const db = getDatabaseService(req);
+        const db = ServiceFactory.getStorageService();
         const userId = req.user.user_id || req.user.id;
         const { setId } = req.params;
         
@@ -151,7 +151,7 @@ router.put('/sets/:setId',
     validateSchema(updateFlashcardSetSchema),
     async (req, res) => {
         try {
-            const db = getDatabaseService(req);
+            const db = ServiceFactory.getStorageService();
             const userId = req.user.user_id || req.user.id;
             const { setId } = req.params;
             
@@ -184,7 +184,7 @@ router.put('/sets/:setId',
  */
 router.delete('/sets/:setId', authenticateToken, async (req, res) => {
     try {
-        const db = getDatabaseService(req);
+        const db = ServiceFactory.getStorageService();
         const userId = req.user.user_id || req.user.id;
         const { setId } = req.params;
         
@@ -223,7 +223,7 @@ router.post('/sets/:setId/cards',
     validateSchema(createFlashcardSchema),
     async (req, res) => {
         try {
-            const db = getDatabaseService(req);
+            const db = ServiceFactory.getStorageService();
             const userId = req.user.user_id || req.user.id;
             const { setId } = req.params;
             
@@ -258,7 +258,7 @@ router.post('/sets/:setId/cards',
  */
 router.get('/sets/:setId/cards', authenticateToken, async (req, res) => {
     try {
-        const db = getDatabaseService(req);
+        const db = ServiceFactory.getStorageService();
         const userId = req.user.user_id || req.user.id;
         const { setId } = req.params;
         
@@ -295,7 +295,7 @@ router.put('/cards/:cardId',
     validateSchema(updateFlashcardSchema),
     async (req, res) => {
         try {
-            const db = getDatabaseService(req);
+            const db = ServiceFactory.getStorageService();
             const userId = req.user.user_id || req.user.id;
             const { cardId } = req.params;
             
@@ -328,7 +328,7 @@ router.put('/cards/:cardId',
  */
 router.delete('/cards/:cardId', authenticateToken, async (req, res) => {
     try {
-        const db = getDatabaseService(req);
+        const db = ServiceFactory.getStorageService();
         const userId = req.user.user_id || req.user.id;
         const { cardId } = req.params;
         
@@ -364,7 +364,7 @@ router.delete('/cards/:cardId', authenticateToken, async (req, res) => {
  */
 router.get('/review', authenticateToken, async (req, res) => {
     try {
-        const db = getDatabaseService(req);
+        const db = ServiceFactory.getStorageService();
         const userId = req.user.user_id || req.user.id;
         const { setId, limit = 20 } = req.query;
         
@@ -392,7 +392,7 @@ router.post('/cards/:cardId/answer',
     validateSchema(recordAnswerSchema),
     async (req, res) => {
         try {
-            const db = getDatabaseService(req);
+            const db = ServiceFactory.getStorageService();
             const userId = req.user.user_id || req.user.id;
             const { cardId } = req.params;
             const { isCorrect, responseTime } = req.body;
@@ -422,7 +422,7 @@ router.post('/sessions',
     validateSchema(recordSessionSchema),
     async (req, res) => {
         try {
-            const db = getDatabaseService(req);
+            const db = ServiceFactory.getStorageService();
             const userId = req.user.user_id || req.user.id;
             const { setId, studyMode, cardsStudied, cardsCorrect, durationSeconds } = req.body;
             
@@ -455,7 +455,7 @@ router.post('/sessions',
  */
 router.get('/stats', authenticateToken, async (req, res) => {
     try {
-        const db = getDatabaseService(req);
+        const db = ServiceFactory.getStorageService();
         const userId = req.user.user_id || req.user.id;
         const { days = 7 } = req.query;
         
@@ -480,7 +480,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
  */
 router.get('/cards/:cardId/progress', authenticateToken, async (req, res) => {
     try {
-        const db = getDatabaseService(req);
+        const db = ServiceFactory.getStorageService();
         const userId = req.user.user_id || req.user.id;
         const { cardId } = req.params;
         
