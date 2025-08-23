@@ -183,6 +183,11 @@ const App = {
                         <!-- Notes Management View -->
                         <NotesViewComponent v-if="safeStore.state.currentView === 'notes'" />
                         
+                        <!-- Flashcard Views -->
+                        <FlashcardSetListComponent v-if="safeStore.state.currentView === 'flashcards'" />
+                        <FlashcardStudyComponent v-if="safeStore.state.currentView === 'flashcards-study'" />
+                        <FlashcardCreatorComponent v-if="safeStore.state.currentView === 'flashcards-create'" />
+                        
                         <!-- Settings View -->
                         <UserSettingsComponent v-if="safeStore.state.currentView === 'settings'" />
                         
@@ -190,7 +195,7 @@ const App = {
                         <AdminDashboardComponent v-if="safeStore.state.currentView === 'admin'" />
                         
                         <!-- Fallback Content (if no view matches) -->
-                        <div v-if="!['dashboard', 'subjects', 'topics', 'upload', 'practice', 'practice-session', 'practice-gameshow', 'browse-practice', 'notes', 'settings', 'admin'].includes(safeStore.state.currentView)" 
+                        <div v-if="!['dashboard', 'subjects', 'topics', 'upload', 'practice', 'practice-session', 'practice-gameshow', 'browse-practice', 'notes', 'flashcards', 'flashcards-study', 'flashcards-create', 'settings', 'admin'].includes(safeStore.state.currentView)" 
                              class="text-center py-8">
                             <div class="max-w-md mx-auto">
                                 <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -783,6 +788,11 @@ app.component('NotesDisplayComponent', window.NotesDisplayComponent);
 app.component('NotesViewComponent', window.NotesViewComponent);
 app.component('NoteEditorModalComponent', window.NoteEditorModalComponent);
 app.component('QuickNoteCreatorComponent', window.QuickNoteCreatorComponent);
+
+// Flashcard components
+app.component('FlashcardSetListComponent', window.FlashcardSetListComponent);
+app.component('FlashcardStudyComponent', window.FlashcardStudyComponent);
+app.component('FlashcardCreatorComponent', window.FlashcardCreatorComponent);
 
 // Settings components
 app.component('UserSettingsComponent', window.UserSettingsComponent);

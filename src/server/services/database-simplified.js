@@ -10,6 +10,7 @@ const NotesDbService = require('./notes-db-service');
 const QuestionsDbService = require('./questions-db-service');
 const PracticeDbService = require('./practice-db-service');
 const DataDbService = require('./data-db-service');
+const FlashcardsDbService = require('./flashcards-db-service');
 
 class SimplifiedDatabaseService {
   constructor() {
@@ -21,6 +22,7 @@ class SimplifiedDatabaseService {
     this.questionsService = null;
     this.practiceService = null;
     this.dataService = null;
+    this.flashcardsService = null;
   }
 
   init() {
@@ -63,6 +65,7 @@ class SimplifiedDatabaseService {
     this.notesService = new NotesDbService(this.db, this.subjectsService);
     this.questionsService = new QuestionsDbService(this.db);
     this.practiceService = new PracticeDbService(this.db, this.subjectsService);
+    this.flashcardsService = new FlashcardsDbService(this.db);
     this.dataService = new DataDbService(
       this.db, 
       this.subjectsService, 
@@ -167,6 +170,19 @@ class SimplifiedDatabaseService {
         });
       });
     });
+
+    // Initialize flashcard tables
+    setTimeout(() => {
+      if (this.flashcardsService) {
+        this.flashcardsService.initializeTables()
+          .then(() => {
+            console.log('✅ Flashcard tables initialized');
+          })
+          .catch((err) => {
+            console.error('❌ Error initializing flashcard tables:', err);
+          });
+      }
+    }, 500);
 
     // Add user_id columns if they don't exist (for existing databases)
     // Use setTimeout to ensure tables are created first
@@ -536,6 +552,73 @@ class SimplifiedDatabaseService {
 
   async exportDataForUser(userId) {
     return this.dataService.exportDataForUser(userId);
+  }
+
+  // ===== FLASHCARD METHODS =====
+  
+  /**
+   * Flashcard Set Operations
+   */
+  async createFlashcardSet(userId, setData) {
+    return this.flashcardsService.createFlashcardSet(userId, setData);
+  }
+
+  async getFlashcardSets(userId) {
+    return this.flashcardsService.getFlashcardSets(userId);
+  }
+
+  async getFlashcardSet(setId, userId) {
+    return this.flashcardsService.getFlashcardSet(setId, userId);
+  }
+
+  async updateFlashcardSet(setId, userId, updates) {
+    return this.flashcardsService.updateFlashcardSet(setId, userId, updates);
+  }
+
+  async deleteFlashcardSet(setId, userId) {
+    return this.flashcardsService.deleteFlashcardSet(setId, userId);
+  }
+
+  /**
+   * Flashcard Operations
+   */
+  async createFlashcard(setId, userId, cardData) {
+    return this.flashcardsService.createFlashcard(setId, userId, cardData);
+  }
+
+  async getFlashcardsInSet(setId) {
+    return this.flashcardsService.getFlashcardsInSet(setId);
+  }
+
+  async updateFlashcard(cardId, userId, updates) {
+    return this.flashcardsService.updateFlashcard(cardId, userId, updates);
+  }
+
+  async deleteFlashcard(cardId, userId) {
+    return this.flashcardsService.deleteFlashcard(cardId, userId);
+  }
+
+  /**
+   * Progress and Study Operations
+   */
+  async getCardProgress(userId, flashcardId) {
+    return this.flashcardsService.getCardProgress(userId, flashcardId);
+  }
+
+  async updateCardProgress(userId, flashcardId, isCorrect, responseTime) {
+    return this.flashcardsService.updateCardProgress(userId, flashcardId, isCorrect, responseTime);
+  }
+
+  async getCardsForReview(userId, setId = null, limit = 20) {
+    return this.flashcardsService.getCardsForReview(userId, setId, limit);
+  }
+
+  async recordFlashcardSession(userId, setId, studyMode, cardsStudied, cardsCorrect, durationSeconds) {
+    return this.flashcardsService.recordStudySession(userId, setId, studyMode, cardsStudied, cardsCorrect, durationSeconds);
+  }
+
+  async getFlashcardStudyStats(userId, days = 7) {
+    return this.flashcardsService.getStudyStats(userId, days);
   }
 
   // ===== UTILITY METHODS =====

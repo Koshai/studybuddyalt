@@ -86,6 +86,16 @@ window.CleanSidebarComponent = {
                     </span>
                 </button>
 
+                <!-- Flashcards -->
+                <button @click="navigateTo('flashcards')" 
+                        :class="getNavItemClass('flashcards')">
+                    <i class="fas fa-cards-blank w-5"></i>
+                    <span>Flashcards</span>
+                    <span class="ml-auto bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                        NEW
+                    </span>
+                </button>
+
                 <!-- Settings -->
                 <button @click="navigateTo('settings')" 
                         :class="getNavItemClass('settings')">

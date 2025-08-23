@@ -113,6 +113,56 @@ class SimplifiedApiService {
     }
   }
 
+  // ===== GENERIC HTTP METHODS =====
+  
+  /**
+   * Generic GET request
+   */
+  async get(endpoint) {
+    return await this.request(endpoint, {
+      method: 'GET'
+    });
+  }
+
+  /**
+   * Generic POST request
+   */
+  async post(endpoint, data = null) {
+    const options = {
+      method: 'POST'
+    };
+    
+    if (data) {
+      options.body = JSON.stringify(data);
+    }
+    
+    return await this.request(endpoint, options);
+  }
+
+  /**
+   * Generic PUT request
+   */
+  async put(endpoint, data = null) {
+    const options = {
+      method: 'PUT'
+    };
+    
+    if (data) {
+      options.body = JSON.stringify(data);
+    }
+    
+    return await this.request(endpoint, options);
+  }
+
+  /**
+   * Generic DELETE request
+   */
+  async delete(endpoint) {
+    return await this.request(endpoint, {
+      method: 'DELETE'
+    });
+  }
+
   // ===== AUTHENTICATION METHODS =====
   
   /**
