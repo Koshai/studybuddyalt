@@ -2,6 +2,12 @@
 window.FlashcardSetListComponent = {
     template: `
     <div class="animate-fade-in">
+        <!-- Debug Info -->
+        <div class="bg-green-100 border border-green-300 text-green-800 p-4 rounded-lg mb-4">
+            <h3 class="font-bold">🎉 Flashcard System Loaded Successfully!</h3>
+            <p class="text-sm">You're seeing the flashcard component. The system is working!</p>
+        </div>
+        
         <!-- Header -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
             <div class="flex items-center justify-between">
