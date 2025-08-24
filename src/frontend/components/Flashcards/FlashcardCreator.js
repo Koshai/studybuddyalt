@@ -18,11 +18,124 @@ window.FlashcardCreatorComponent = {
             </div>
         </div>
 
+        <!-- AI Generation Section -->
+        <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl shadow-lg border border-purple-200 p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-purple-900 mb-2">🤖 Generate with AI</h2>
+                    <p class="text-purple-700 text-sm">Let AI create flashcards from your existing notes</p>
+                </div>
+                <button 
+                    @click="showAIGenerator = !showAIGenerator"
+                    class="px-4 py-2 text-purple-600 hover:text-purple-800 rounded-lg hover:bg-purple-100 transition-colors"
+                >
+                    <i :class="showAIGenerator ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="mr-2"></i>
+                    {{ showAIGenerator ? 'Hide' : 'Show' }}
+                </button>
+            </div>
+            
+            <div v-if="showAIGenerator" class="space-y-4">
+                <!-- Topic Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-purple-700 mb-2">
+                        Select Topic with Notes
+                    </label>
+                    <select 
+                        v-model="selectedTopicForAI"
+                        class="w-full p-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    >
+                        <option value="">Choose a topic...</option>
+                        <option v-for="topic in topicsWithNotes" :key="topic.id" :value="topic.id">
+                            {{ topic.name }} ({{ topic.notesCount }} notes)
+                        </option>
+                    </select>
+                </div>
+                
+                <!-- Generation Options -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-purple-700 mb-2">
+                            Number of Cards
+                        </label>
+                        <select 
+                            v-model="aiGenerationCount"
+                            class="w-full p-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                        >
+                            <option value="3">3 cards</option>
+                            <option value="5">5 cards</option>
+                            <option value="8">8 cards</option>
+                            <option value="10">10 cards</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button
+                            @click="generateWithAI"
+                            :disabled="aiGenerating || !selectedTopicForAI"
+                            class="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                        >
+                            <i v-if="aiGenerating" class="fas fa-spinner fa-spin mr-2"></i>
+                            <i v-else class="fas fa-magic mr-2"></i>
+                            {{ aiGenerating ? 'Generating...' : 'Generate Cards' }}
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Generated Cards Preview -->
+                <div v-if="generatedCards.length > 0" class="mt-6">
+                    <h3 class="text-md font-semibold text-purple-900 mb-3">Generated Cards (Review & Add)</h3>
+                    <div class="space-y-3 max-h-64 overflow-y-auto">
+                        <div 
+                            v-for="(card, index) in generatedCards" 
+                            :key="index"
+                            class="bg-white rounded-lg border border-purple-200 p-4"
+                        >
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <p class="font-medium text-gray-900 mb-1">Q: {{ card.front }}</p>
+                                    <p class="text-gray-700 mb-1">A: {{ card.back }}</p>
+                                    <p v-if="card.hint" class="text-sm text-gray-600 italic">💡 {{ card.hint }}</p>
+                                </div>
+                                <div class="flex gap-2 ml-4">
+                                    <button
+                                        @click="addGeneratedCard(card)"
+                                        class="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 text-xs"
+                                    >
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                    <button
+                                        @click="removeGeneratedCard(index)"
+                                        class="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 text-xs"
+                                    >
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3 mt-4">
+                        <button
+                            @click="addAllGeneratedCards"
+                            class="flex-1 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg transition-all duration-300"
+                        >
+                            <i class="fas fa-check-double mr-2"></i>Add All Cards
+                        </button>
+                        <button
+                            @click="clearGeneratedCards"
+                            class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            Clear All
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Single Card Creation Form -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Creation Form -->
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Create New Card</h2>
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Create New Card Manually</h2>
                 
                 <form @submit.prevent="createCard" class="space-y-4">
                     <!-- Front (Question) -->
@@ -159,6 +272,14 @@ window.FlashcardCreatorComponent = {
             hint: ''
         });
 
+        // AI Generation state
+        const showAIGenerator = Vue.ref(false);
+        const aiGenerating = Vue.ref(false);
+        const selectedTopicForAI = Vue.ref('');
+        const aiGenerationCount = Vue.ref(5);
+        const generatedCards = Vue.ref([]);
+        const topicsWithNotes = Vue.ref([]);
+
         // Computed
         const selectedSet = Vue.computed(() => store?.state?.selectedFlashcardSet);
 
@@ -211,6 +332,111 @@ window.FlashcardCreatorComponent = {
             }
         };
 
+        // AI Generation methods
+        const loadTopicsWithNotes = async () => {
+            try {
+                const response = await window.api.get('/topics');
+                const allTopics = response.data || [];
+                
+                // Filter topics that have notes
+                const topicsWithNotesData = [];
+                for (const topic of allTopics) {
+                    const notesResponse = await window.api.get(`/topics/${topic.id}/notes`);
+                    const notes = notesResponse.data || [];
+                    if (notes.length > 0) {
+                        topicsWithNotesData.push({
+                            ...topic,
+                            notesCount: notes.length
+                        });
+                    }
+                }
+                
+                topicsWithNotes.value = topicsWithNotesData;
+                console.log(`✅ Found ${topicsWithNotesData.length} topics with notes`);
+            } catch (error) {
+                console.error('❌ Error loading topics with notes:', error);
+                if (store?.showNotification) {
+                    store.showNotification('Failed to load topics', 'error');
+                }
+            }
+        };
+
+        const generateWithAI = async () => {
+            if (!selectedTopicForAI.value || aiGenerating.value) return;
+            
+            try {
+                aiGenerating.value = true;
+                console.log(`🤖 Generating ${aiGenerationCount.value} flashcards for topic ${selectedTopicForAI.value}`);
+                
+                const response = await window.api.post('/flashcards/generate', {
+                    topicId: selectedTopicForAI.value,
+                    setId: selectedSet.value.id,
+                    count: parseInt(aiGenerationCount.value)
+                });
+                
+                generatedCards.value = response.data.cards || [];
+                
+                if (store?.showNotification) {
+                    store.showNotification(
+                        `AI generated ${generatedCards.value.length} flashcards from ${response.data.notesUsed} notes!`, 
+                        'success'
+                    );
+                }
+                
+            } catch (error) {
+                console.error('❌ Error generating flashcards:', error);
+                if (store?.showNotification) {
+                    store.showNotification('Failed to generate flashcards with AI', 'error');
+                }
+            } finally {
+                aiGenerating.value = false;
+            }
+        };
+
+        const addGeneratedCard = async (card) => {
+            try {
+                await window.api.post(
+                    `/flashcards/sets/${selectedSet.value.id}/cards`,
+                    card
+                );
+                
+                cardsCreated.value++;
+                
+                // Remove from generated cards
+                const index = generatedCards.value.findIndex(c => 
+                    c.front === card.front && c.back === card.back
+                );
+                if (index > -1) {
+                    generatedCards.value.splice(index, 1);
+                }
+                
+                if (store?.showNotification) {
+                    store.showNotification('Card added successfully!', 'success');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error adding generated card:', error);
+                if (store?.showNotification) {
+                    store.showNotification('Failed to add card', 'error');
+                }
+            }
+        };
+
+        const addAllGeneratedCards = async () => {
+            const cards = [...generatedCards.value];
+            for (const card of cards) {
+                await addGeneratedCard(card);
+            }
+        };
+
+        const removeGeneratedCard = (index) => {
+            generatedCards.value.splice(index, 1);
+        };
+
+        const clearGeneratedCards = () => {
+            generatedCards.value = [];
+        };
+
         // Navigation
         const exitCreator = () => {
             if (store?.setCurrentView) {
@@ -238,6 +464,9 @@ window.FlashcardCreatorComponent = {
             }
             
             console.log('✅ Flashcard creator loaded for set:', selectedSet.value.name);
+            
+            // Load topics with notes for AI generation
+            loadTopicsWithNotes();
         });
 
         return {
@@ -247,13 +476,28 @@ window.FlashcardCreatorComponent = {
             showSide,
             newCard,
             
+            // AI Generation state
+            showAIGenerator,
+            aiGenerating,
+            selectedTopicForAI,
+            aiGenerationCount,
+            generatedCards,
+            topicsWithNotes,
+            
             // Computed
             selectedSet,
             
             // Methods
             clearForm,
             createCard,
-            exitCreator
+            exitCreator,
+            
+            // AI Generation methods
+            generateWithAI,
+            addGeneratedCard,
+            addAllGeneratedCards,
+            removeGeneratedCard,
+            clearGeneratedCards
         };
     }
 };

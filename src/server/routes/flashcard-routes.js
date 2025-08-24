@@ -500,4 +500,142 @@ router.get('/cards/:cardId/progress', authenticateToken, async (req, res) => {
     }
 });
 
+// ===============================
+// AI GENERATION
+// ===============================
+
+/**
+ * POST /api/flashcards/generate
+ * Generate flashcards using AI from topic notes
+ */
+router.post('/generate', authenticateToken, async (req, res) => {
+    try {
+        const { topicId, setId, count = 5 } = req.body;
+        const userId = req.user.id;
+        
+        console.log(`🤖 Generating ${count} flashcards for topic ${topicId}`);
+        
+        const db = ServiceFactory.getStorageService();
+        
+        // Verify user owns the flashcard set
+        const flashcardSet = await db.getFlashcardSet(setId, userId);
+        if (!flashcardSet) {
+            return res.status(404).json({
+                success: false,
+                error: 'Flashcard set not found or access denied'
+            });
+        }
+        
+        // Get topic and notes
+        const topic = await db.getTopicById(topicId);
+        if (!topic || topic.user_id !== userId) {
+            return res.status(404).json({
+                success: false, 
+                error: 'Topic not found or access denied'
+            });
+        }
+        
+        const notes = await db.getNotesByTopicId(topicId);
+        if (!notes || notes.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'No notes found for this topic'
+            });
+        }
+        
+        // Combine all notes content
+        const notesContent = notes.map(note => note.content).join('\\n\\n');
+        
+        // Generate flashcards with AI
+        const aiService = ServiceFactory.getAIService(req.user.subscriptionTier || 'free');
+        
+        const prompt = `Based on the following notes about "${topic.name}", generate exactly ${count} flashcard questions and answers.
+
+NOTES:
+${notesContent}
+
+REQUIREMENTS:
+- Create concise, clear questions that test key concepts
+- Keep answers brief (1-3 sentences maximum)
+- Focus on definitions, important facts, and core concepts
+- Vary question types (what is, explain, define, etc.)
+- Return ONLY a JSON array with this exact format:
+
+[
+  {
+    "front": "Question here?",
+    "back": "Concise answer here.",
+    "hint": "Optional helpful hint"
+  }
+]
+
+Generate ${count} flashcards now:`;
+
+        const response = await aiService.generateResponse(prompt, {
+            temperature: 0.3, // Lower temperature for more consistent format
+            max_tokens: 1500
+        });
+        
+        // Parse AI response
+        let generatedCards;
+        try {
+            // Extract JSON from response (AI might add extra text)
+            const jsonMatch = response.match(/\\[[\\s\\S]*\\]/);
+            const jsonStr = jsonMatch ? jsonMatch[0] : response;
+            generatedCards = JSON.parse(jsonStr);
+        } catch (parseError) {
+            console.error('❌ Failed to parse AI response:', parseError);
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to parse AI-generated flashcards'
+            });
+        }
+        
+        // Validate generated cards
+        if (!Array.isArray(generatedCards)) {
+            return res.status(500).json({
+                success: false,
+                error: 'AI response is not a valid array'
+            });
+        }
+        
+        // Filter and validate cards
+        const validCards = generatedCards
+            .filter(card => card.front && card.back)
+            .slice(0, count) // Ensure we don't exceed requested count
+            .map(card => ({
+                front: String(card.front).substring(0, 1000), // Limit length
+                back: String(card.back).substring(0, 2000),
+                hint: card.hint ? String(card.hint).substring(0, 500) : undefined,
+                difficulty: 1, // Start with easy difficulty
+                tags: [topic.name] // Tag with topic name
+            }));
+            
+        if (validCards.length === 0) {
+            return res.status(500).json({
+                success: false,
+                error: 'No valid flashcards were generated'
+            });
+        }
+        
+        console.log(`✅ Generated ${validCards.length} valid flashcards`);
+        
+        res.json({
+            success: true,
+            data: {
+                cards: validCards,
+                topic: topic.name,
+                notesUsed: notes.length
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ AI flashcard generation error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to generate flashcards'
+        });
+    }
+});
+
 module.exports = router;
