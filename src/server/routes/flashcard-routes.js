@@ -511,14 +511,17 @@ router.get('/cards/:cardId/progress', authenticateToken, async (req, res) => {
 router.post('/generate', authenticateToken, async (req, res) => {
     try {
         const { topicId, setId, count = 5 } = req.body;
-        const userId = req.user.id;
+        const userId = req.user.user_id || req.user.id;
         
-        console.log(`🤖 Generating ${count} flashcards for topic ${topicId}`);
+        console.log(`🤖 Generating ${count} flashcards for topic ${topicId}, set ${setId}, user ${userId}`);
         
         const db = ServiceFactory.getStorageService();
+        console.log('🔧 Storage service obtained');
         
         // Verify user owns the flashcard set
+        console.log(`🔍 Looking for flashcard set ${setId} for user ${userId}`);
         const flashcardSet = await db.getFlashcardSet(setId, userId);
+        console.log('🔍 Flashcard set result:', flashcardSet ? 'found' : 'not found');
         if (!flashcardSet) {
             return res.status(404).json({
                 success: false,
@@ -527,15 +530,20 @@ router.post('/generate', authenticateToken, async (req, res) => {
         }
         
         // Get topic and notes
+        console.log(`🔍 Looking for topic ${topicId}`);
         const topic = await db.getTopicById(topicId);
+        console.log('🔍 Topic result:', topic ? `found: ${topic.name}` : 'not found');
         if (!topic || topic.user_id !== userId) {
+            console.log(`❌ Topic access denied. Topic user: ${topic?.user_id}, Request user: ${userId}`);
             return res.status(404).json({
                 success: false, 
                 error: 'Topic not found or access denied'
             });
         }
         
+        console.log(`🔍 Getting notes for topic ${topicId}`);
         const notes = await db.getNotesByTopicId(topicId);
+        console.log(`🔍 Found ${notes?.length || 0} notes for topic`);
         if (!notes || notes.length === 0) {
             return res.status(400).json({
                 success: false,
