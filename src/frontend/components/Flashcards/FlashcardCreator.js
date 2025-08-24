@@ -332,49 +332,111 @@ window.FlashcardCreatorComponent = {
             }
         };
 
-        // AI Generation methods
+        // AI Generation methods - Improved to handle flexible title structure
         const loadTopicsWithNotes = async () => {
             try {
-                console.log('🔍 Loading topics with notes...');
+                console.log('🔍 Loading topics with notes (flexible approach)...');
                 
-                // Get all subjects first
-                const subjects = window.api.getSubjects();
-                console.log(`🔍 Found ${subjects.length} subjects`);
-                
-                // Get topics for each subject
                 let allTopics = [];
-                for (const subject of subjects) {
-                    try {
-                        const topics = await window.api.getTopics(subject.id);
-                        console.log(`🔍 Subject "${subject.name}" has ${topics.length} topics`);
-                        allTopics = allTopics.concat(topics);
-                    } catch (subjectError) {
-                        console.error(`❌ Error loading topics for subject ${subject.name}:`, subjectError);
+                
+                try {
+                    // Try to get all subjects first (if they exist)
+                    const subjects = await window.api.getSubjects();
+                    console.log(`🔍 Found ${subjects?.length || 0} subjects`);
+                    
+                    if (subjects && Array.isArray(subjects)) {
+                        // Get topics for each subject
+                        for (const subject of subjects) {
+                            try {
+                                const topics = await window.api.getTopics(subject.id);
+                                console.log(`🔍 Subject "${subject.name}" has ${topics?.length || 0} topics`);
+                                if (topics && Array.isArray(topics)) {
+                                    allTopics = allTopics.concat(topics);
+                                }
+                            } catch (subjectError) {
+                                console.log(`⚠️ Subject ${subject.name} has no topics or error:`, subjectError.message);
+                            }
+                        }
                     }
+                } catch (subjectError) {
+                    console.log('⚠️ No subjects found or subjects API unavailable:', subjectError.message);
                 }
                 
-                console.log(`🔍 Found ${allTopics.length} total topics:`, allTopics);
+                // Alternative approach: Try to get all notes directly and group by topic
+                try {
+                    console.log('🔍 Trying alternative approach: getting all notes...');
+                    const allNotes = await window.api.getAllNotes();
+                    console.log(`🔍 Found ${allNotes?.length || 0} total notes`);
+                    
+                    if (allNotes && Array.isArray(allNotes)) {
+                        // Group notes by topic_id to create topics list
+                        const topicGroups = {};
+                        
+                        allNotes.forEach(note => {
+                            if (note.topic_id) {
+                                if (!topicGroups[note.topic_id]) {
+                                    topicGroups[note.topic_id] = {
+                                        id: note.topic_id,
+                                        name: note.topic_name || `Topic ${note.topic_id}`,
+                                        subject_id: note.subject_id,
+                                        notes: []
+                                    };
+                                }
+                                topicGroups[note.topic_id].notes.push(note);
+                            }
+                        });
+                        
+                        // Convert to topics array
+                        const notesBasedTopics = Object.values(topicGroups);
+                        console.log(`🔍 Created ${notesBasedTopics.length} topics from notes`);
+                        
+                        // Merge with existing topics (avoid duplicates)
+                        notesBasedTopics.forEach(notesTopic => {
+                            const existing = allTopics.find(t => t.id === notesTopic.id);
+                            if (!existing) {
+                                allTopics.push(notesTopic);
+                            }
+                        });
+                    }
+                } catch (notesError) {
+                    console.log('⚠️ Could not load notes directly:', notesError.message);
+                }
+                
+                console.log(`🔍 Found ${allTopics.length} total topics across all methods`);
                 
                 // Filter topics that have notes
                 const topicsWithNotesData = [];
                 for (const topic of allTopics) {
                     console.log(`🔍 Checking notes for topic: ${topic.name} (${topic.id})`);
                     try {
-                        const notes = await window.api.getNotesByTopicId(topic.id);
-                        console.log(`🔍 Topic "${topic.name}" has ${notes.length} notes`);
-                        if (notes.length > 0) {
+                        // If we already have notes from the notes-based approach, use them
+                        let notes = topic.notes;
+                        if (!notes) {
+                            notes = await window.api.getNotesByTopicId(topic.id);
+                        }
+                        
+                        console.log(`🔍 Topic "${topic.name}" has ${notes?.length || 0} notes`);
+                        if (notes && notes.length > 0) {
                             topicsWithNotesData.push({
                                 ...topic,
                                 notesCount: notes.length
                             });
                         }
                     } catch (noteError) {
-                        console.error(`❌ Error loading notes for topic ${topic.name}:`, noteError);
+                        console.log(`⚠️ Error loading notes for topic ${topic.name}:`, noteError.message);
                     }
                 }
                 
                 topicsWithNotes.value = topicsWithNotesData;
                 console.log(`✅ Found ${topicsWithNotesData.length} topics with notes:`, topicsWithNotesData);
+                
+                if (topicsWithNotesData.length === 0) {
+                    console.log('ℹ️ No topics with notes found. Users may need to create topics and add notes first.');
+                    if (store?.showNotification) {
+                        store.showNotification('No topics with notes found. Create some topics and add notes to use AI generation.', 'info');
+                    }
+                }
+                
             } catch (error) {
                 console.error('❌ Error loading topics with notes:', error);
                 if (store?.showNotification) {
