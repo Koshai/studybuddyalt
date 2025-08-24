@@ -335,24 +335,32 @@ window.FlashcardCreatorComponent = {
         // AI Generation methods
         const loadTopicsWithNotes = async () => {
             try {
+                console.log('🔍 Loading topics...');
                 const response = await window.api.get('/topics');
                 const allTopics = response.data || [];
+                console.log(`🔍 Found ${allTopics.length} total topics:`, allTopics);
                 
                 // Filter topics that have notes
                 const topicsWithNotesData = [];
                 for (const topic of allTopics) {
-                    const notesResponse = await window.api.get(`/topics/${topic.id}/notes`);
-                    const notes = notesResponse.data || [];
-                    if (notes.length > 0) {
-                        topicsWithNotesData.push({
-                            ...topic,
-                            notesCount: notes.length
-                        });
+                    console.log(`🔍 Checking notes for topic: ${topic.name} (${topic.id})`);
+                    try {
+                        const notesResponse = await window.api.get(`/topics/${topic.id}/notes`);
+                        const notes = notesResponse.data || [];
+                        console.log(`🔍 Topic "${topic.name}" has ${notes.length} notes`);
+                        if (notes.length > 0) {
+                            topicsWithNotesData.push({
+                                ...topic,
+                                notesCount: notes.length
+                            });
+                        }
+                    } catch (noteError) {
+                        console.error(`❌ Error loading notes for topic ${topic.name}:`, noteError);
                     }
                 }
                 
                 topicsWithNotes.value = topicsWithNotesData;
-                console.log(`✅ Found ${topicsWithNotesData.length} topics with notes`);
+                console.log(`✅ Found ${topicsWithNotesData.length} topics with notes:`, topicsWithNotesData);
             } catch (error) {
                 console.error('❌ Error loading topics with notes:', error);
                 if (store?.showNotification) {
