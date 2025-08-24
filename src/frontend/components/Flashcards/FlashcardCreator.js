@@ -335,9 +335,24 @@ window.FlashcardCreatorComponent = {
         // AI Generation methods
         const loadTopicsWithNotes = async () => {
             try {
-                console.log('🔍 Loading topics...');
-                const response = await window.api.get('/topics');
-                const allTopics = response.data || [];
+                console.log('🔍 Loading topics with notes...');
+                
+                // Get all subjects first
+                const subjects = window.api.getSubjects();
+                console.log(`🔍 Found ${subjects.length} subjects`);
+                
+                // Get topics for each subject
+                let allTopics = [];
+                for (const subject of subjects) {
+                    try {
+                        const topics = await window.api.getTopics(subject.id);
+                        console.log(`🔍 Subject "${subject.name}" has ${topics.length} topics`);
+                        allTopics = allTopics.concat(topics);
+                    } catch (subjectError) {
+                        console.error(`❌ Error loading topics for subject ${subject.name}:`, subjectError);
+                    }
+                }
+                
                 console.log(`🔍 Found ${allTopics.length} total topics:`, allTopics);
                 
                 // Filter topics that have notes
@@ -345,8 +360,7 @@ window.FlashcardCreatorComponent = {
                 for (const topic of allTopics) {
                     console.log(`🔍 Checking notes for topic: ${topic.name} (${topic.id})`);
                     try {
-                        const notesResponse = await window.api.get(`/topics/${topic.id}/notes`);
-                        const notes = notesResponse.data || [];
+                        const notes = await window.api.getNotesByTopicId(topic.id);
                         console.log(`🔍 Topic "${topic.name}" has ${notes.length} notes`);
                         if (notes.length > 0) {
                             topicsWithNotesData.push({

@@ -1,11 +1,12 @@
 {
   "permissions": {
-    "additionalDirectories": [
-      "C:\\c\\Users\\boltu\\Documents\\StudyBuddy"
-    ],
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ],
+    "additionalDirectories": [
+      "C:\\c\\Users\\boltu\\Documents\\StudyBuddy"
     ]
   }
 }
