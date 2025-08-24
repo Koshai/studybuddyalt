@@ -187,7 +187,7 @@ window.FlashcardCreatorComponent = {
                 };
                 
                 await window.api.post(
-                    \`/flashcards/sets/\${selectedSet.value.id}/cards\`,
+                    `/flashcards/sets/${selectedSet.value.id}/cards`,
                     cardData
                 );
                 

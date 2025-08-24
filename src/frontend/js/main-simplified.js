@@ -792,7 +792,7 @@ app.component('QuickNoteCreatorComponent', window.QuickNoteCreatorComponent);
 // Flashcard components
 app.component('FlashcardSetListComponent', window.FlashcardSetListComponent);
 app.component('FlashcardStudyComponent', window.FlashcardStudyComponent);
-app.component('FlashcardCreatorComponent', window.FlashcardCreatorTestComponent);
+app.component('FlashcardCreatorComponent', window.FlashcardCreatorComponent);
 
 // Settings components
 app.component('UserSettingsComponent', window.UserSettingsComponent);
