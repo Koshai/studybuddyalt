@@ -456,6 +456,13 @@ class SimplifiedApiService {
   }
 
   /**
+   * Get notes for a topic by topic ID (alias for getNotes for consistency)
+   */
+  async getNotesByTopicId(topicId) {
+    return this.getNotes(topicId);
+  }
+
+  /**
    * Get all notes for a subject
    */
   async getSubjectNotes(subjectId) {

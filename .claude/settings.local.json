@@ -3,7 +3,11 @@
     "allow": [
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npm run dev:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd.exe /c \"taskkill /PID 33708 /F\")",
+      "Bash(powershell:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\boltu\\Documents\\StudyBuddy"
