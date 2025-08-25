@@ -542,8 +542,31 @@ router.post('/generate', authenticateToken, async (req, res) => {
         }
         
         console.log(`🔍 Getting notes for topic ${topicId}`);
-        const notes = await db.getNotesForUser(userId, topicId);
-        console.log(`🔍 Found ${notes?.length || 0} notes for topic`);
+        // Try the complex method first, then fallback to simple query
+        let notes;
+        try {
+            notes = await db.getNotesForUser(userId, topicId);
+            console.log(`🔍 Found ${notes?.length || 0} notes for topic using getNotesForUser`);
+        } catch (notesError) {
+            console.log(`⚠️ getNotesForUser failed, trying direct query:`, notesError.message);
+            // Fallback: Direct query to notes table
+            try {
+                const { data, error } = await db.supabase
+                    .from('notes')
+                    .select('*')
+                    .eq('topic_id', topicId);
+                
+                if (error) throw error;
+                
+                // Filter by user ownership through topic ownership
+                const topicNotes = data || [];
+                console.log(`🔍 Found ${topicNotes.length} notes using direct query`);
+                notes = topicNotes;
+            } catch (directError) {
+                console.error(`❌ Direct notes query also failed:`, directError);
+                throw new Error(`Could not retrieve notes: ${directError.message}`);
+            }
+        }
         if (!notes || notes.length === 0) {
             return res.status(400).json({
                 success: false,

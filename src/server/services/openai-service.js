@@ -196,6 +196,53 @@ Continue this exact format for all ${count} questions. Do not add any extra text
         }
     }
 
+    /**
+     * Generate a response from OpenAI for any prompt (used by flashcard generation)
+     */
+    async generateResponse(prompt, options = {}) {
+        try {
+            console.log(`🤖 OpenAI: Generating response for ${this.userTier} user`);
+            
+            const response = await this.client.chat.completions.create({
+                model: this.model,
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are a helpful assistant that generates educational content. Always follow the exact format requested."
+                    },
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                temperature: options.temperature || 0.7,
+                max_tokens: options.max_tokens || this.getTokenLimit(),
+                top_p: 0.9
+            });
+
+            this.requestCounter++;
+            console.log(`📊 OpenAI: Request #${this.requestCounter}, Tokens used: ~${response.usage?.total_tokens || 'unknown'}`);
+
+            const content = response.choices[0].message.content;
+            console.log(`✅ OpenAI: Successfully generated response (${content.length} characters)`);
+            
+            return content;
+            
+        } catch (error) {
+            console.error('❌ OpenAI generateResponse error:', error);
+            
+            if (error.code === 'insufficient_quota') {
+                throw new Error('OpenAI quota exceeded. Please contact support.');
+            }
+            
+            if (error.code === 'rate_limit_exceeded') {
+                throw new Error('Rate limit exceeded. Please try again in a moment.');
+            }
+            
+            throw new Error(`OpenAI API error: ${error.message}`);
+        }
+    }
+
     async testConnection() {
         try {
             const response = await this.client.chat.completions.create({
