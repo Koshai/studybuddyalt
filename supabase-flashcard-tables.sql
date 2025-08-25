@@ -3,7 +3,7 @@
 
 -- ===== FLASHCARD SETS TABLE =====
 CREATE TABLE IF NOT EXISTS flashcard_sets (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id TEXT PRIMARY KEY, -- Using TEXT to match WebStorageService uuidv4() string generation
     user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     description TEXT,
@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS flashcard_sets (
 
 -- ===== FLASHCARDS TABLE =====
 CREATE TABLE IF NOT EXISTS flashcards (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    set_id UUID NOT NULL REFERENCES flashcard_sets(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY, -- Using TEXT to match the pattern
+    set_id TEXT NOT NULL REFERENCES flashcard_sets(id) ON DELETE CASCADE,
     front TEXT NOT NULL,
     back TEXT NOT NULL,
     hint TEXT,
@@ -29,9 +29,9 @@ CREATE TABLE IF NOT EXISTS flashcards (
 
 -- ===== FLASHCARD STUDY SESSIONS TABLE =====
 CREATE TABLE IF NOT EXISTS flashcard_study_sessions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id TEXT PRIMARY KEY, -- Using TEXT for consistency
     user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
-    set_id UUID NOT NULL REFERENCES flashcard_sets(id) ON DELETE CASCADE,
+    set_id TEXT NOT NULL REFERENCES flashcard_sets(id) ON DELETE CASCADE,
     study_mode TEXT DEFAULT 'recognition',
     cards_studied INTEGER DEFAULT 0,
     cards_correct INTEGER DEFAULT 0,
@@ -42,9 +42,9 @@ CREATE TABLE IF NOT EXISTS flashcard_study_sessions (
 
 -- ===== FLASHCARD ANSWERS TABLE =====
 CREATE TABLE IF NOT EXISTS flashcard_answers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_id UUID NOT NULL REFERENCES flashcard_study_sessions(id) ON DELETE CASCADE,
-    card_id UUID NOT NULL REFERENCES flashcards(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY, -- Using TEXT for consistency  
+    session_id TEXT NOT NULL REFERENCES flashcard_study_sessions(id) ON DELETE CASCADE,
+    card_id TEXT NOT NULL REFERENCES flashcards(id) ON DELETE CASCADE,
     is_correct BOOLEAN NOT NULL,
     response_time INTEGER, -- milliseconds
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -52,9 +52,9 @@ CREATE TABLE IF NOT EXISTS flashcard_answers (
 
 -- ===== FLASHCARD PROGRESS TABLE =====
 CREATE TABLE IF NOT EXISTS flashcard_progress (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
-    card_id UUID NOT NULL REFERENCES flashcards(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY, -- Using TEXT for consistency
+    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE, 
+    card_id TEXT NOT NULL REFERENCES flashcards(id) ON DELETE CASCADE,
     times_studied INTEGER DEFAULT 0,
     times_correct INTEGER DEFAULT 0,
     last_studied TIMESTAMPTZ,
@@ -139,11 +139,30 @@ DROP TRIGGER IF EXISTS handle_updated_at_flashcard_progress ON flashcard_progres
 CREATE TRIGGER handle_updated_at_flashcard_progress BEFORE UPDATE ON flashcard_progress
     FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 
+-- ===== HELPER FUNCTIONS =====
+
+-- Function to generate UUID-like strings for compatibility with WebStorageService
+CREATE OR REPLACE FUNCTION generate_uuid_string()
+RETURNS TEXT AS $$
+BEGIN
+    -- Generate a UUID and cast to text to match WebStorageService pattern
+    RETURN gen_random_uuid()::text;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Add default values for ID columns that need them
+ALTER TABLE flashcard_sets ALTER COLUMN id SET DEFAULT generate_uuid_string();
+ALTER TABLE flashcards ALTER COLUMN id SET DEFAULT generate_uuid_string();
+ALTER TABLE flashcard_study_sessions ALTER COLUMN id SET DEFAULT generate_uuid_string();
+ALTER TABLE flashcard_answers ALTER COLUMN id SET DEFAULT generate_uuid_string();
+ALTER TABLE flashcard_progress ALTER COLUMN id SET DEFAULT generate_uuid_string();
+
 -- ===== COMPLETION MESSAGE =====
 DO $$
 BEGIN
     RAISE NOTICE '🃏 Flashcard tables created successfully!';
     RAISE NOTICE '📚 Tables: flashcard_sets, flashcards, flashcard_study_sessions, flashcard_answers, flashcard_progress';
+    RAISE NOTICE '🔧 Data types: TEXT IDs to match WebStorageService uuidv4() strings';
     RAISE NOTICE '🔒 Row Level Security enabled with proper user isolation';
     RAISE NOTICE '⚡ Performance indexes created';
     RAISE NOTICE '🎯 Ready for AI flashcard generation!';
