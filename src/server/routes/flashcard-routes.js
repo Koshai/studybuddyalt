@@ -542,7 +542,7 @@ router.post('/generate', authenticateToken, async (req, res) => {
         }
         
         console.log(`🔍 Getting notes for topic ${topicId}`);
-        const notes = await db.getNotesByTopicId(topicId);
+        const notes = await db.getNotesForUser(userId, topicId);
         console.log(`🔍 Found ${notes?.length || 0} notes for topic`);
         if (!notes || notes.length === 0) {
             return res.status(400).json({
@@ -555,7 +555,9 @@ router.post('/generate', authenticateToken, async (req, res) => {
         const notesContent = notes.map(note => note.content).join('\\n\\n');
         
         // Generate flashcards with AI
+        console.log(`🔍 Getting AI service for tier: ${req.user.subscriptionTier || 'free'}`);
         const aiService = ServiceFactory.getAIService(req.user.subscriptionTier || 'free');
+        console.log('🔍 AI service obtained:', !!aiService);
         
         const prompt = `Based on the following notes about "${topic.name}", generate exactly ${count} flashcard questions and answers.
 
@@ -579,10 +581,12 @@ REQUIREMENTS:
 
 Generate ${count} flashcards now:`;
 
+        console.log(`🔍 Sending prompt to AI service (${prompt.length} characters)`);
         const response = await aiService.generateResponse(prompt, {
             temperature: 0.3, // Lower temperature for more consistent format
             max_tokens: 1500
         });
+        console.log(`🔍 AI response received (${response?.length || 0} characters)`);
         
         // Parse AI response
         let generatedCards;
@@ -639,9 +643,16 @@ Generate ${count} flashcards now:`;
         
     } catch (error) {
         console.error('❌ AI flashcard generation error:', error);
+        console.error('❌ Error stack:', error.stack);
+        console.error('❌ Error details:', {
+            name: error.name,
+            message: error.message,
+            code: error.code
+        });
+        
         res.status(500).json({
             success: false,
-            error: 'Failed to generate flashcards'
+            error: `Failed to generate flashcards: ${error.message || 'Unknown error'}`
         });
     }
 });
