@@ -279,6 +279,60 @@ class SimplifiedOllamaService {
   }
 
   /**
+   * Generate a response from Ollama for any prompt (used by flashcard generation)
+   * This method provides compatibility with OpenAI service interface
+   */
+  async generateResponse(prompt, options = {}) {
+    try {
+      console.log(`🤖 Ollama: Generating response using ${this.defaultModel}`);
+      
+      const response = await this.ollama.chat({
+        model: this.defaultModel,
+        messages: [
+          {
+            role: "system", 
+            content: "You are a helpful assistant that generates educational content. Always follow the exact format requested."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        options: {
+          temperature: options.temperature || 0.7,
+          num_predict: options.max_tokens || 1500,
+          top_p: 0.9
+        }
+      });
+
+      const content = response.message.content;
+      console.log(`✅ Ollama: Successfully generated response (${content.length} characters)`);
+      
+      return content;
+      
+    } catch (error) {
+      console.error('❌ Ollama generateResponse error:', error);
+      
+      if (error.message.includes('model not found')) {
+        throw new Error(`Ollama model ${this.defaultModel} not found. Please pull the model first.`);
+      }
+      
+      if (error.message.includes('connection')) {
+        throw new Error('Cannot connect to Ollama server. Make sure Ollama is running.');
+      }
+      
+      throw new Error(`Ollama API error: ${error.message}`);
+    }
+  }
+
+  /**
+   * Test connection to Ollama (compatibility method for testConnection)
+   */
+  async testConnection() {
+    return await this.isHealthy();
+  }
+
+  /**
    * Get service information
    */
   getServiceInfo() {
