@@ -318,6 +318,7 @@ window.FlashcardStudyComponent = {
         // Load cards for study
         const loadCards = async () => {
             if (!selectedSet.value) {
+                console.error('❌ No flashcard set selected');
                 store.showNotification('No flashcard set selected', 'error');
                 store.setCurrentView('flashcards');
                 return;
@@ -326,23 +327,40 @@ window.FlashcardStudyComponent = {
             try {
                 loading.value = true;
                 console.log('📚 Loading cards for study session:', selectedSet.value.name);
+                console.log('📚 Selected set details:', selectedSet.value);
                 
-                // Load cards due for review (or all cards if none due)
+                // Try to load cards due for review first
+                console.log('🔍 Trying to load review cards...');
                 const reviewResponse = await window.api.get(\`/flashcards/review?setId=\${selectedSet.value.id}&limit=50\`);
+                console.log('🔍 Review response:', reviewResponse);
                 let reviewCards = reviewResponse.data || [];
+                console.log(\`🔍 Found \${reviewCards.length} review cards\`);
                 
                 if (reviewCards.length === 0) {
                     // No cards due for review, load all cards from the set
+                    console.log('🔍 No review cards, loading all cards from set...');
                     const allCardsResponse = await window.api.get(\`/flashcards/sets/\${selectedSet.value.id}/cards\`);
+                    console.log('🔍 All cards response:', allCardsResponse);
                     reviewCards = allCardsResponse.data || [];
+                    console.log(\`🔍 Found \${reviewCards.length} total cards in set\`);
                 }
                 
                 // Shuffle cards for variety
                 cards.value = reviewCards.sort(() => Math.random() - 0.5);
                 
-                console.log(\`✅ Loaded \${cards.value.length} cards for study\`);
+                console.log(\`✅ Loaded \${cards.value.length} cards for study:\`, cards.value);
+                
+                if (cards.value.length === 0) {
+                    console.warn('⚠️ No cards loaded - set may be empty or API issue');
+                }
+                
             } catch (error) {
                 console.error('❌ Error loading cards:', error);
+                console.error('❌ Error details:', {
+                    message: error.message,
+                    response: error.response?.data,
+                    status: error.response?.status
+                });
                 store.showNotification('Failed to load cards for study', 'error');
             } finally {
                 loading.value = false;
