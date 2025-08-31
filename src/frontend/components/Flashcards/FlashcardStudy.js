@@ -154,19 +154,87 @@ window.FlashcardStudyComponent = {
                     @click="flipCard"
                     class="relative bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-200 rounded-2xl p-8 min-h-[300px] cursor-pointer hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
                 >
-                    <!-- Front Side -->
-                    <div v-if="!cardFlipped" class="flex flex-col items-center justify-center h-full text-center">
-                        <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard.front }}</div>
-                        <div v-if="currentCard.hint && showHint" class="text-sm text-blue-600 italic mb-4">
-                            💡 Hint: {{ currentCard.hint }}
+                    <!-- Recognition Mode (Default) -->
+                    <div v-if="currentStudyMode.id === 'recognition'">
+                        <!-- Front Side -->
+                        <div v-if="!cardFlipped" class="flex flex-col items-center justify-center h-full text-center">
+                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard.front }}</div>
+                            <div v-if="currentCard.hint && showHint" class="text-sm text-blue-600 italic mb-4">
+                                💡 Hint: {{ currentCard.hint }}
+                            </div>
+                            <div class="text-sm text-gray-500">Click to reveal answer</div>
                         </div>
-                        <div class="text-sm text-gray-500">Click to reveal answer</div>
+                        <!-- Back Side -->
+                        <div v-else class="flex flex-col items-center justify-center h-full text-center">
+                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard.back }}</div>
+                            <div class="text-sm text-gray-500">How well did you know this?</div>
+                        </div>
                     </div>
                     
-                    <!-- Back Side -->
-                    <div v-else class="flex flex-col items-center justify-center h-full text-center">
-                        <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard.back }}</div>
-                        <div class="text-sm text-gray-500">How well did you know this?</div>
+                    <!-- Recall Mode - Type Answer -->
+                    <div v-else-if="currentStudyMode.id === 'recall'">
+                        <div class="flex flex-col items-center justify-center h-full text-center">
+                            <div class="text-lg font-medium text-gray-900 mb-6">{{ currentCard.front }}</div>
+                            <div v-if="currentCard.hint && showHint" class="text-sm text-blue-600 italic mb-4">
+                                💡 Hint: {{ currentCard.hint }}
+                            </div>
+                            
+                            <!-- Answer Input -->
+                            <div v-if="!showAnswer" class="w-full max-w-md">
+                                <input 
+                                    v-model="userAnswer"
+                                    @keyup.enter="checkRecallAnswer"
+                                    type="text" 
+                                    placeholder="Type your answer..."
+                                    class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-center text-lg"
+                                />
+                                <button 
+                                    @click="checkRecallAnswer"
+                                    class="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                >
+                                    Check Answer
+                                </button>
+                            </div>
+                            
+                            <!-- Show Result -->
+                            <div v-else class="w-full max-w-md">
+                                <div class="mb-4">
+                                    <div class="text-sm text-gray-600 mb-2">Your Answer:</div>
+                                    <div class="p-3 bg-gray-100 rounded-lg text-lg">{{ userAnswer || '(No answer)' }}</div>
+                                </div>
+                                <div class="mb-4">
+                                    <div class="text-sm text-gray-600 mb-2">Correct Answer:</div>
+                                    <div class="p-3 bg-green-100 rounded-lg text-lg font-medium">{{ currentCard.back }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Rapid Fire Mode -->
+                    <div v-else-if="currentStudyMode.id === 'rapid_fire'">
+                        <div class="flex flex-col items-center justify-center h-full text-center">
+                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard.front }}</div>
+                            <div class="text-2xl font-bold text-gray-900 mb-4">{{ currentCard.back }}</div>
+                            <div class="text-sm text-blue-600">Auto-advance in {{ autoAdvanceTime }}s</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Spaced Review Mode (like recognition but prioritizes due cards) -->
+                    <div v-else>
+                        <!-- Front Side -->
+                        <div v-if="!cardFlipped" class="flex flex-col items-center justify-center h-full text-center">
+                            <div class="text-xs text-purple-600 mb-2">📅 Spaced Repetition</div>
+                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard.front }}</div>
+                            <div v-if="currentCard.hint && showHint" class="text-sm text-blue-600 italic mb-4">
+                                💡 Hint: {{ currentCard.hint }}
+                            </div>
+                            <div class="text-sm text-gray-500">Click to reveal answer</div>
+                        </div>
+                        <!-- Back Side -->
+                        <div v-else class="flex flex-col items-center justify-center h-full text-center">
+                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard.back }}</div>
+                            <div class="text-sm text-gray-500">Rate your memory strength</div>
+                        </div>
                     </div>
 
                     <!-- Flip Icon -->
@@ -176,40 +244,77 @@ window.FlashcardStudyComponent = {
                 </div>
             </div>
 
-            <!-- Answer Buttons (shown after flip) -->
-            <div v-if="cardFlipped" class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+            <!-- Answer Buttons (different for each mode) -->
+            
+            <!-- Recognition & Spaced Review: Traditional 4-button rating -->
+            <div v-if="(cardFlipped && currentStudyMode.id === 'recognition') || (cardFlipped && currentStudyMode.id === 'spaced_review')" class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
                 <button 
                     @click="answerCard(1)"
                     class="p-4 border-2 border-red-300 text-red-700 rounded-xl hover:bg-red-50 hover:border-red-400 transition-all duration-300"
                 >
                     <div class="font-semibold">Again</div>
-                    <div class="text-xs">Didn't know</div>
+                    <div class="text-xs">{{ currentStudyMode.id === 'spaced_review' ? '< 1 min' : 'Didn\'t know' }}</div>
                 </button>
                 <button 
                     @click="answerCard(2)"
                     class="p-4 border-2 border-yellow-300 text-yellow-700 rounded-xl hover:bg-yellow-50 hover:border-yellow-400 transition-all duration-300"
                 >
                     <div class="font-semibold">Hard</div>
-                    <div class="text-xs">Barely knew</div>
+                    <div class="text-xs">{{ currentStudyMode.id === 'spaced_review' ? '< 6 min' : 'Barely knew' }}</div>
                 </button>
                 <button 
                     @click="answerCard(3)"
                     class="p-4 border-2 border-green-300 text-green-700 rounded-xl hover:bg-green-50 hover:border-green-400 transition-all duration-300"
                 >
                     <div class="font-semibold">Good</div>
-                    <div class="text-xs">Knew it</div>
+                    <div class="text-xs">{{ currentStudyMode.id === 'spaced_review' ? '< 10 min' : 'Knew it' }}</div>
                 </button>
                 <button 
                     @click="answerCard(4)"
                     class="p-4 border-2 border-blue-300 text-blue-700 rounded-xl hover:bg-blue-50 hover:border-blue-400 transition-all duration-300"
                 >
                     <div class="font-semibold">Easy</div>
-                    <div class="text-xs">Very easy</div>
+                    <div class="text-xs">{{ currentStudyMode.id === 'spaced_review' ? '4 days' : 'Very easy' }}</div>
+                </button>
+            </div>
+            
+            <!-- Recall Mode: After showing answer -->
+            <div v-else-if="showAnswer && currentStudyMode.id === 'recall'" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                <button 
+                    @click="answerCard(1)"
+                    class="p-4 border-2 border-red-300 text-red-700 rounded-xl hover:bg-red-50 hover:border-red-400 transition-all duration-300"
+                >
+                    <div class="font-semibold">Incorrect</div>
+                    <div class="text-xs">Got it wrong</div>
+                </button>
+                <button 
+                    @click="answerCard(3)"
+                    class="p-4 border-2 border-yellow-300 text-yellow-700 rounded-xl hover:bg-yellow-50 hover:border-yellow-400 transition-all duration-300"
+                >
+                    <div class="font-semibold">Partially</div>
+                    <div class="text-xs">Close enough</div>
+                </button>
+                <button 
+                    @click="answerCard(4)"
+                    class="p-4 border-2 border-green-300 text-green-700 rounded-xl hover:bg-green-50 hover:border-green-400 transition-all duration-300"
+                >
+                    <div class="font-semibold">Correct</div>
+                    <div class="text-xs">Got it right</div>
+                </button>
+            </div>
+            
+            <!-- Rapid Fire: Simple Continue button -->
+            <div v-else-if="currentStudyMode.id === 'rapid_fire'" class="text-center mb-6">
+                <button 
+                    @click="answerCard(4)"
+                    class="px-8 py-4 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-all duration-300 text-lg font-semibold"
+                >
+                    Continue <i class="fas fa-arrow-right ml-2"></i>
                 </button>
             </div>
 
-            <!-- Hint Button (before flip) -->
-            <div v-if="!cardFlipped && currentCard.hint" class="text-center mb-6">
+            <!-- Hint Button (mode-dependent) -->
+            <div v-if="shouldShowHintButton" class="text-center mb-6">
                 <button 
                     @click="toggleHint"
                     class="px-4 py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
@@ -262,6 +367,12 @@ window.FlashcardStudyComponent = {
         const currentStreak = Vue.ref(0);
         const maxStreak = Vue.ref(0);
         const currentStudyMode = Vue.ref(null);
+        
+        // Mode-specific state
+        const userAnswer = Vue.ref('');
+        const showAnswer = Vue.ref(false);
+        const rapidFireTimer = Vue.ref(null);
+        const autoAdvanceTime = Vue.ref(5); // seconds for rapid fire
 
         // Study modes
         const studyModes = Vue.ref([
@@ -314,9 +425,26 @@ window.FlashcardStudyComponent = {
             const times = answers.value.map(a => a.responseTime);
             return times.length > 0 ? times.reduce((a, b) => a + b, 0) / times.length : 0;
         });
+        
+        // Mode-specific computed properties
+        const shouldShowHintButton = Vue.computed(() => {
+            if (!currentCard.value?.hint) return false;
+            
+            switch (currentStudyMode.value?.id) {
+                case 'recognition':
+                case 'spaced_review':
+                    return !cardFlipped.value;
+                case 'recall':
+                    return !showAnswer.value;
+                case 'rapid_fire':
+                    return false; // No hints in rapid fire
+                default:
+                    return !cardFlipped.value;
+            }
+        });
 
-        // Load cards for study
-        const loadCards = async () => {
+        // Load cards for study (mode-specific loading)
+        const loadCards = async (mode = null) => {
             if (!selectedSet.value) {
                 console.error('❌ No flashcard set selected');
                 store.showNotification('No flashcard set selected', 'error');
@@ -327,28 +455,42 @@ window.FlashcardStudyComponent = {
             try {
                 loading.value = true;
                 console.log('📚 Loading cards for study session:', selectedSet.value.name);
-                console.log('📚 Selected set details:', selectedSet.value);
+                console.log('📚 Mode:', mode?.id || 'default');
                 
-                // Try to load cards due for review first
-                console.log('🔍 Trying to load review cards...');
-                const reviewResponse = await window.api.get(`/flashcards/review?setId=${selectedSet.value.id}&limit=50`);
-                console.log('🔍 Review response:', reviewResponse);
-                let reviewCards = reviewResponse.data || [];
-                console.log(`🔍 Found ${reviewCards.length} review cards`);
+                let reviewCards = [];
                 
-                if (reviewCards.length === 0) {
-                    // No cards due for review, load all cards from the set
-                    console.log('🔍 No review cards, loading all cards from set...');
+                // Mode-specific card loading
+                if (mode?.id === 'spaced_review') {
+                    // Prioritize cards due for review
+                    console.log('🧠 Loading spaced repetition cards...');
+                    const reviewResponse = await window.api.get(`/flashcards/review?setId=${selectedSet.value.id}&limit=50`);
+                    reviewCards = reviewResponse.data || [];
+                    
+                    if (reviewCards.length === 0) {
+                        // Fall back to all cards if no reviews due
+                        const allCardsResponse = await window.api.get(`/flashcards/sets/${selectedSet.value.id}/cards`);
+                        reviewCards = allCardsResponse.data || [];
+                    }
+                } else {
+                    // All other modes: load all cards
+                    console.log('🔍 Loading all cards from set...');
                     const allCardsResponse = await window.api.get(`/flashcards/sets/${selectedSet.value.id}/cards`);
-                    console.log('🔍 All cards response:', allCardsResponse);
                     reviewCards = allCardsResponse.data || [];
-                    console.log(`🔍 Found ${reviewCards.length} total cards in set`);
                 }
                 
-                // Shuffle cards for variety
-                cards.value = reviewCards.sort(() => Math.random() - 0.5);
+                // Mode-specific shuffling
+                if (mode?.id === 'spaced_review') {
+                    // Don't shuffle - keep SRS order
+                    cards.value = reviewCards;
+                } else if (mode?.id === 'rapid_fire') {
+                    // Shuffle and limit to 20 cards for rapid sessions
+                    cards.value = reviewCards.sort(() => Math.random() - 0.5).slice(0, 20);
+                } else {
+                    // Shuffle for variety
+                    cards.value = reviewCards.sort(() => Math.random() - 0.5);
+                }
                 
-                console.log(`✅ Loaded ${cards.value.length} cards for study:`, cards.value);
+                console.log(`✅ Loaded ${cards.value.length} cards for ${mode?.name || 'study'}:`, cards.value);
                 
                 if (cards.value.length === 0) {
                     console.warn('⚠️ No cards loaded - set may be empty or API issue');
@@ -356,11 +498,6 @@ window.FlashcardStudyComponent = {
                 
             } catch (error) {
                 console.error('❌ Error loading cards:', error);
-                console.error('❌ Error details:', {
-                    message: error.message,
-                    response: error.response?.data,
-                    status: error.response?.status
-                });
                 store.showNotification('Failed to load cards for study', 'error');
             } finally {
                 loading.value = false;
@@ -374,10 +511,18 @@ window.FlashcardStudyComponent = {
             currentCardIndex.value = 0;
             cardFlipped.value = false;
             showHint.value = false;
+            userAnswer.value = '';
+            showAnswer.value = false;
             answers.value = [];
             currentStreak.value = 0;
             maxStreak.value = 0;
-            startCardTimer();
+            
+            // Mode-specific initialization
+            if (mode.id === 'rapid_fire') {
+                startRapidFireTimer();
+            } else {
+                startCardTimer();
+            }
         };
 
         // Timer functions
@@ -399,7 +544,8 @@ window.FlashcardStudyComponent = {
 
         // Card interactions
         const flipCard = () => {
-            if (!cardFlipped.value) {
+            // Only allow flipping in recognition and spaced review modes
+            if ((currentStudyMode.value?.id === 'recognition' || currentStudyMode.value?.id === 'spaced_review') && !cardFlipped.value) {
                 cardFlipped.value = true;
             }
         };
@@ -409,7 +555,8 @@ window.FlashcardStudyComponent = {
         };
 
         const answerCard = async (quality) => {
-            const responseTime = stopCardTimer();
+            const responseTime = currentStudyMode.value?.id === 'rapid_fire' ? 
+                stopRapidFireTimer() || 5000 : stopCardTimer();
             const isCorrect = quality >= 3;
             
             // Update streak
@@ -425,23 +572,28 @@ window.FlashcardStudyComponent = {
                 cardId: currentCard.value.id,
                 quality: quality,
                 responseTime: responseTime,
-                isCorrect: isCorrect
+                isCorrect: isCorrect,
+                userAnswer: currentStudyMode.value?.id === 'recall' ? userAnswer.value : null
             });
 
             try {
                 // Update progress on backend
                 await window.api.post(`/flashcards/cards/${currentCard.value.id}/answer`, {
                     isCorrect: isCorrect,
-                    responseTime: responseTime
+                    responseTime: responseTime,
+                    studyMode: currentStudyMode.value?.id
                 });
             } catch (error) {
                 console.warn('❌ Failed to record answer progress:', error);
             }
 
+            // Mode-specific delays
+            const delay = currentStudyMode.value?.id === 'rapid_fire' ? 100 : 500;
+            
             // Move to next card
             setTimeout(() => {
                 nextCard();
-            }, 500);
+            }, delay);
         };
 
         const nextCard = () => {
@@ -451,7 +603,15 @@ window.FlashcardStudyComponent = {
                 currentCardIndex.value++;
                 cardFlipped.value = false;
                 showHint.value = false;
-                startCardTimer();
+                userAnswer.value = '';
+                showAnswer.value = false;
+                
+                // Mode-specific card timer
+                if (currentStudyMode.value?.id === 'rapid_fire') {
+                    startRapidFireTimer();
+                } else {
+                    startCardTimer();
+                }
             }
         };
 
@@ -470,6 +630,7 @@ window.FlashcardStudyComponent = {
 
         const completeStudy = async () => {
             stopCardTimer();
+            stopRapidFireTimer();
             studyComplete.value = true;
             
             try {
@@ -483,7 +644,7 @@ window.FlashcardStudyComponent = {
                 };
                 
                 await window.api.post('/flashcards/sessions', sessionData);
-                console.log('✅ Study session recorded');
+                console.log(`✅ Study session recorded - ${currentStudyMode.value.name} mode`);
             } catch (error) {
                 console.warn('❌ Failed to record study session:', error);
             }
@@ -502,6 +663,7 @@ window.FlashcardStudyComponent = {
 
         const exitStudy = () => {
             stopCardTimer();
+            stopRapidFireTimer();
             store.setCurrentView('flashcards');
         };
 
@@ -510,6 +672,32 @@ window.FlashcardStudyComponent = {
         };
 
         // Utility functions
+        // Mode-specific functions
+        const checkRecallAnswer = () => {
+            showAnswer.value = true;
+            cardFlipped.value = true; // For progress calculation
+        };
+        
+        const startRapidFireTimer = () => {
+            cardStartTime.value = Date.now();
+            autoAdvanceTime.value = 5;
+            
+            rapidFireTimer.value = setInterval(() => {
+                autoAdvanceTime.value--;
+                if (autoAdvanceTime.value <= 0) {
+                    answerCard(4); // Auto-advance as 'easy'
+                }
+            }, 1000);
+        };
+        
+        const stopRapidFireTimer = () => {
+            if (rapidFireTimer.value) {
+                clearInterval(rapidFireTimer.value);
+                rapidFireTimer.value = null;
+            }
+            return Math.floor((Date.now() - cardStartTime.value) / 1000) * 1000; // Return milliseconds
+        };
+        
         const formatTime = (seconds) => {
             if (seconds < 60) return `${seconds}s`;
             const minutes = Math.floor(seconds / 60);
@@ -524,6 +712,7 @@ window.FlashcardStudyComponent = {
 
         Vue.onUnmounted(() => {
             stopCardTimer();
+            stopRapidFireTimer();
         });
 
         return {
@@ -539,6 +728,9 @@ window.FlashcardStudyComponent = {
             currentStreak,
             studyModes,
             currentStudyMode,
+            userAnswer,
+            showAnswer,
+            autoAdvanceTime,
             
             // Computed
             selectedSet,
@@ -550,12 +742,14 @@ window.FlashcardStudyComponent = {
             scorePercentage,
             finalScore,
             averageTime,
+            shouldShowHintButton,
             
             // Methods
             startStudy,
             flipCard,
             toggleHint,
             answerCard,
+            checkRecallAnswer,
             nextCard,
             previousCard,
             skipCard,
