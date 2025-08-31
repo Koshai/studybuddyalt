@@ -155,27 +155,27 @@ window.FlashcardStudyComponent = {
                     class="relative bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-200 rounded-2xl p-8 min-h-[300px] cursor-pointer hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
                 >
                     <!-- Recognition Mode (Default) -->
-                    <div v-if="currentStudyMode.id === 'recognition'">
+                    <div v-if="currentStudyMode?.id === 'recognition'">
                         <!-- Front Side -->
                         <div v-if="!cardFlipped" class="flex flex-col items-center justify-center h-full text-center">
-                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard.front }}</div>
-                            <div v-if="currentCard.hint && showHint" class="text-sm text-blue-600 italic mb-4">
+                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard?.front }}</div>
+                            <div v-if="currentCard?.hint && showHint" class="text-sm text-blue-600 italic mb-4">
                                 💡 Hint: {{ currentCard.hint }}
                             </div>
                             <div class="text-sm text-gray-500">Click to reveal answer</div>
                         </div>
                         <!-- Back Side -->
                         <div v-else class="flex flex-col items-center justify-center h-full text-center">
-                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard.back }}</div>
+                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard?.back }}</div>
                             <div class="text-sm text-gray-500">How well did you know this?</div>
                         </div>
                     </div>
                     
                     <!-- Recall Mode - Type Answer -->
-                    <div v-else-if="currentStudyMode.id === 'recall'">
+                    <div v-else-if="currentStudyMode?.id === 'recall'">
                         <div class="flex flex-col items-center justify-center h-full text-center">
-                            <div class="text-lg font-medium text-gray-900 mb-6">{{ currentCard.front }}</div>
-                            <div v-if="currentCard.hint && showHint" class="text-sm text-blue-600 italic mb-4">
+                            <div class="text-lg font-medium text-gray-900 mb-6">{{ currentCard?.front }}</div>
+                            <div v-if="currentCard?.hint && showHint" class="text-sm text-blue-600 italic mb-4">
                                 💡 Hint: {{ currentCard.hint }}
                             </div>
                             
@@ -204,17 +204,17 @@ window.FlashcardStudyComponent = {
                                 </div>
                                 <div class="mb-4">
                                     <div class="text-sm text-gray-600 mb-2">Correct Answer:</div>
-                                    <div class="p-3 bg-green-100 rounded-lg text-lg font-medium">{{ currentCard.back }}</div>
+                                    <div class="p-3 bg-green-100 rounded-lg text-lg font-medium">{{ currentCard?.back }}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Rapid Fire Mode -->
-                    <div v-else-if="currentStudyMode.id === 'rapid_fire'">
+                    <div v-else-if="currentStudyMode?.id === 'rapid_fire'">
                         <div class="flex flex-col items-center justify-center h-full text-center">
-                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard.front }}</div>
-                            <div class="text-2xl font-bold text-gray-900 mb-4">{{ currentCard.back }}</div>
+                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard?.front }}</div>
+                            <div class="text-2xl font-bold text-gray-900 mb-4">{{ currentCard?.back }}</div>
                             <div class="text-sm text-blue-600">Auto-advance in {{ autoAdvanceTime }}s</div>
                         </div>
                     </div>
@@ -223,17 +223,17 @@ window.FlashcardStudyComponent = {
                     <div v-else>
                         <!-- Front Side -->
                         <div v-if="!cardFlipped" class="flex flex-col items-center justify-center h-full text-center">
-                            <div class="text-xs text-purple-600 mb-2">📅 Spaced Repetition</div>
-                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard.front }}</div>
-                            <div v-if="currentCard.hint && showHint" class="text-sm text-blue-600 italic mb-4">
+                            <div v-if="currentStudyMode?.id === 'spaced_review'" class="text-xs text-purple-600 mb-2">📅 Spaced Repetition</div>
+                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard?.front || 'Loading...' }}</div>
+                            <div v-if="currentCard?.hint && showHint" class="text-sm text-blue-600 italic mb-4">
                                 💡 Hint: {{ currentCard.hint }}
                             </div>
                             <div class="text-sm text-gray-500">Click to reveal answer</div>
                         </div>
                         <!-- Back Side -->
                         <div v-else class="flex flex-col items-center justify-center h-full text-center">
-                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard.back }}</div>
-                            <div class="text-sm text-gray-500">Rate your memory strength</div>
+                            <div class="text-lg font-medium text-gray-900 mb-4">{{ currentCard?.back || 'Loading...' }}</div>
+                            <div class="text-sm text-gray-500">{{ currentStudyMode?.id === 'spaced_review' ? 'Rate your memory strength' : 'How well did you know this?' }}</div>
                         </div>
                     </div>
 
@@ -247,39 +247,39 @@ window.FlashcardStudyComponent = {
             <!-- Answer Buttons (different for each mode) -->
             
             <!-- Recognition & Spaced Review: Traditional 4-button rating -->
-            <div v-if="(cardFlipped && currentStudyMode.id === 'recognition') || (cardFlipped && currentStudyMode.id === 'spaced_review')" class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+            <div v-if="(cardFlipped && currentStudyMode?.id === 'recognition') || (cardFlipped && currentStudyMode?.id === 'spaced_review')" class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
                 <button 
                     @click="answerCard(1)"
                     class="p-4 border-2 border-red-300 text-red-700 rounded-xl hover:bg-red-50 hover:border-red-400 transition-all duration-300"
                 >
                     <div class="font-semibold">Again</div>
-                    <div class="text-xs">{{ currentStudyMode.id === 'spaced_review' ? '< 1 min' : 'Didn\'t know' }}</div>
+                    <div class="text-xs">{{ currentStudyMode?.id === 'spaced_review' ? '< 1 min' : 'Didn\'t know' }}</div>
                 </button>
                 <button 
                     @click="answerCard(2)"
                     class="p-4 border-2 border-yellow-300 text-yellow-700 rounded-xl hover:bg-yellow-50 hover:border-yellow-400 transition-all duration-300"
                 >
                     <div class="font-semibold">Hard</div>
-                    <div class="text-xs">{{ currentStudyMode.id === 'spaced_review' ? '< 6 min' : 'Barely knew' }}</div>
+                    <div class="text-xs">{{ currentStudyMode?.id === 'spaced_review' ? '< 6 min' : 'Barely knew' }}</div>
                 </button>
                 <button 
                     @click="answerCard(3)"
                     class="p-4 border-2 border-green-300 text-green-700 rounded-xl hover:bg-green-50 hover:border-green-400 transition-all duration-300"
                 >
                     <div class="font-semibold">Good</div>
-                    <div class="text-xs">{{ currentStudyMode.id === 'spaced_review' ? '< 10 min' : 'Knew it' }}</div>
+                    <div class="text-xs">{{ currentStudyMode?.id === 'spaced_review' ? '< 10 min' : 'Knew it' }}</div>
                 </button>
                 <button 
                     @click="answerCard(4)"
                     class="p-4 border-2 border-blue-300 text-blue-700 rounded-xl hover:bg-blue-50 hover:border-blue-400 transition-all duration-300"
                 >
                     <div class="font-semibold">Easy</div>
-                    <div class="text-xs">{{ currentStudyMode.id === 'spaced_review' ? '4 days' : 'Very easy' }}</div>
+                    <div class="text-xs">{{ currentStudyMode?.id === 'spaced_review' ? '4 days' : 'Very easy' }}</div>
                 </button>
             </div>
             
             <!-- Recall Mode: After showing answer -->
-            <div v-else-if="showAnswer && currentStudyMode.id === 'recall'" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+            <div v-else-if="showAnswer && currentStudyMode?.id === 'recall'" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
                 <button 
                     @click="answerCard(1)"
                     class="p-4 border-2 border-red-300 text-red-700 rounded-xl hover:bg-red-50 hover:border-red-400 transition-all duration-300"
@@ -304,7 +304,7 @@ window.FlashcardStudyComponent = {
             </div>
             
             <!-- Rapid Fire: Simple Continue button -->
-            <div v-else-if="currentStudyMode.id === 'rapid_fire'" class="text-center mb-6">
+            <div v-else-if="currentStudyMode?.id === 'rapid_fire'" class="text-center mb-6">
                 <button 
                     @click="answerCard(4)"
                     class="px-8 py-4 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-all duration-300 text-lg font-semibold"
@@ -707,6 +707,9 @@ window.FlashcardStudyComponent = {
 
         // Lifecycle
         Vue.onMounted(() => {
+            console.log('🎯 FlashcardStudy component mounted!');
+            console.log('📊 Selected set:', selectedSet.value);
+            console.log('📊 Store state:', store?.state);
             loadCards();
         });
 
