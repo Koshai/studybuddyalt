@@ -331,24 +331,24 @@ window.FlashcardStudyComponent = {
                 
                 // Try to load cards due for review first
                 console.log('🔍 Trying to load review cards...');
-                const reviewResponse = await window.api.get(\`/flashcards/review?setId=\${selectedSet.value.id}&limit=50\`);
+                const reviewResponse = await window.api.get(`/flashcards/review?setId=${selectedSet.value.id}&limit=50`);
                 console.log('🔍 Review response:', reviewResponse);
                 let reviewCards = reviewResponse.data || [];
-                console.log(\`🔍 Found \${reviewCards.length} review cards\`);
+                console.log(`🔍 Found ${reviewCards.length} review cards`);
                 
                 if (reviewCards.length === 0) {
                     // No cards due for review, load all cards from the set
                     console.log('🔍 No review cards, loading all cards from set...');
-                    const allCardsResponse = await window.api.get(\`/flashcards/sets/\${selectedSet.value.id}/cards\`);
+                    const allCardsResponse = await window.api.get(`/flashcards/sets/${selectedSet.value.id}/cards`);
                     console.log('🔍 All cards response:', allCardsResponse);
                     reviewCards = allCardsResponse.data || [];
-                    console.log(\`🔍 Found \${reviewCards.length} total cards in set\`);
+                    console.log(`🔍 Found ${reviewCards.length} total cards in set`);
                 }
                 
                 // Shuffle cards for variety
                 cards.value = reviewCards.sort(() => Math.random() - 0.5);
                 
-                console.log(\`✅ Loaded \${cards.value.length} cards for study:\`, cards.value);
+                console.log(`✅ Loaded ${cards.value.length} cards for study:`, cards.value);
                 
                 if (cards.value.length === 0) {
                     console.warn('⚠️ No cards loaded - set may be empty or API issue');
@@ -430,7 +430,7 @@ window.FlashcardStudyComponent = {
 
             try {
                 // Update progress on backend
-                await window.api.post(\`/flashcards/cards/\${currentCard.value.id}/answer\`, {
+                await window.api.post(`/flashcards/cards/${currentCard.value.id}/answer`, {
                     isCorrect: isCorrect,
                     responseTime: responseTime
                 });
@@ -511,10 +511,10 @@ window.FlashcardStudyComponent = {
 
         // Utility functions
         const formatTime = (seconds) => {
-            if (seconds < 60) return \`\${seconds}s\`;
+            if (seconds < 60) return `${seconds}s`;
             const minutes = Math.floor(seconds / 60);
             const remainingSeconds = seconds % 60;
-            return \`\${minutes}m \${remainingSeconds}s\`;
+            return `${minutes}m ${remainingSeconds}s`;
         };
 
         // Lifecycle
