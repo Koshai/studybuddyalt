@@ -343,6 +343,11 @@ const App = {
             return window.store || { state: { isAuthenticated: false, authLoading: false, currentView: 'dashboard' } };
         });
         
+        // Debug: Watch for currentView changes
+        Vue.watch(() => safeStore.value.state.currentView, (newView, oldView) => {
+            console.log('🔄 Main App - View changed:', { from: oldView, to: newView });
+        }, { immediate: true });
+        
         const authMode = Vue.ref('landing');
         
         // Expose authMode globally for landing page navigation

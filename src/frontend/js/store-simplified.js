@@ -534,12 +534,22 @@ class SimplifiedStore {
   // ===== UI ACTIONS =====
   
   setCurrentView(view) {
+    console.log('🔄 Store - setCurrentView called:', { 
+      currentView: this.state.currentView, 
+      newView: view, 
+      isAuthenticated: this.state.isAuthenticated 
+    });
+    
     // Require authentication for certain views
     if (!this.state.isAuthenticated && ['upload', 'practice', 'practice-session', 'browse-practice', 'topics', 'notes'].includes(view)) {
+      console.log('🔒 Store - Authentication required for view:', view);
       this.showAuthModal('login');
       return;
     }
+    
+    console.log('✅ Store - Setting currentView to:', view);
     this.state.currentView = view;
+    console.log('✅ Store - currentView is now:', this.state.currentView);
   }
 
   toggleSidebar() {
