@@ -101,10 +101,16 @@ window.FlashcardSetListComponent = {
                 <div class="flex gap-2">
                     <button 
                         @click.stop="studySet(set)"
-                        :disabled="!set.card_count"
-                        class="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                        :disabled="false"
+                        :class="[
+                            'flex-1 px-4 py-2 rounded-lg transition-all duration-300',
+                            !set.card_count ? 
+                                'bg-gray-400 text-white cursor-not-allowed' : 
+                                'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg'
+                        ]"
+                        @mouseenter="console.log('🔍 Study button hover - Set:', set.name, 'Card count:', set.card_count)"
                     >
-                        <i class="fas fa-play mr-2"></i>Study
+                        <i class="fas fa-play mr-2"></i>Study {{ set.card_count ? `(${set.card_count})` : '(0)' }}
                     </button>
                     <button 
                         @click.stop="addCards(set)"
@@ -268,14 +274,20 @@ window.FlashcardSetListComponent = {
         };
 
         const studySet = (set) => {
+            console.log('🚀 STUDY BUTTON CLICKED!');
             console.log('📚 Starting study session for:', set.name);
             console.log('📊 Set card_count:', set.card_count);
+            console.log('📊 Full set object:', set);
             
             // Still allow navigation even if card_count is 0
             // The study component will handle empty sets properly
             if (!set.card_count || set.card_count === 0) {
                 console.log('⚠️ Set shows 0 cards, but navigating anyway (might be a count issue)');
             }
+            
+            console.log('🔧 Store check - store exists:', !!store);
+            console.log('🔧 Store state exists:', !!store?.state);
+            console.log('🔧 Store setCurrentView exists:', !!store?.setCurrentView);
             
             if (store.state) {
                 store.state.selectedFlashcardSet = set;
