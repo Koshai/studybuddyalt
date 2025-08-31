@@ -268,19 +268,28 @@ window.FlashcardSetListComponent = {
         };
 
         const studySet = (set) => {
-            if (!set.card_count) {
-                if (store.showNotification) {
-                    store.showNotification('This set has no cards to study', 'warning');
-                }
-                return;
-            }
             console.log('📚 Starting study session for:', set.name);
+            console.log('📊 Set card_count:', set.card_count);
+            
+            // Still allow navigation even if card_count is 0
+            // The study component will handle empty sets properly
+            if (!set.card_count || set.card_count === 0) {
+                console.log('⚠️ Set shows 0 cards, but navigating anyway (might be a count issue)');
+            }
+            
             if (store.state) {
                 store.state.selectedFlashcardSet = set;
+                console.log('✅ Set selectedFlashcardSet in store');
             }
             if (store.setCurrentView) {
                 store.setCurrentView('flashcards-study');
+                console.log('✅ Set current view to flashcards-study');
             }
+            
+            // Debug: Check if view actually changed
+            setTimeout(() => {
+                console.log('🔍 Current view after navigation:', store?.state?.currentView);
+            }, 100);
         };
 
         const addCards = (set) => {

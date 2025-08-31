@@ -726,22 +726,46 @@ class WebStorageService {
     }
 
     async getFlashcardSets(userId) {
-        const { data, error } = await this.supabase
-            .from('flashcard_sets')
-            .select(`
-                *,
-                flashcards (count)
-            `)
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
+        try {
+            // First get all flashcard sets
+            const { data: sets, error: setsError } = await this.supabase
+                .from('flashcard_sets')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        
-        // Add card count to each set
-        return data.map(set => ({
-            ...set,
-            card_count: set.flashcards?.[0]?.count || 0
-        }));
+            if (setsError) throw setsError;
+            
+            console.log(`🔍 Found ${sets?.length || 0} flashcard sets for user ${userId}`);
+            
+            // Then get card counts for each set
+            const setsWithCounts = await Promise.all(
+                (sets || []).map(async (set) => {
+                    try {
+                        const { count, error: countError } = await this.supabase
+                            .from('flashcards')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('set_id', set.id);
+                            
+                        if (countError) {
+                            console.warn(`⚠️ Error getting count for set ${set.id}:`, countError);
+                            return { ...set, card_count: 0 };
+                        }
+                        
+                        console.log(`🔍 Set "${set.name}" has ${count || 0} cards`);
+                        return { ...set, card_count: count || 0 };
+                    } catch (err) {
+                        console.warn(`⚠️ Error counting cards for set ${set.id}:`, err);
+                        return { ...set, card_count: 0 };
+                    }
+                })
+            );
+            
+            return setsWithCounts;
+        } catch (error) {
+            console.error('❌ Error in getFlashcardSets:', error);
+            throw error;
+        }
     }
 
     async getFlashcardSet(setId, userId) {
