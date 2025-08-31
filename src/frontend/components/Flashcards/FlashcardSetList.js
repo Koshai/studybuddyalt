@@ -2,8 +2,6 @@
 window.FlashcardSetListComponent = {
     template: `
     <div class="animate-fade-in">
-        <!-- Debug: Template rendering -->
-        <div style="position: absolute; top: -1000px;">{{ console.log('🎨 FlashcardSetList template is rendering!') }}</div>
         <!-- Header -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
             <div class="flex items-center justify-between">
@@ -110,9 +108,8 @@ window.FlashcardSetListComponent = {
                                 'bg-gray-400 text-white cursor-not-allowed' : 
                                 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg'
                         ]"
-                        @mouseenter="console.log('🔍 Study button hover - Set:', set.name, 'Card count:', set.card_count)"
                     >
-                        <i class="fas fa-play mr-2"></i>Study {{ set.card_count ? `(${set.card_count})` : '(0)' }}
+                        <i class="fas fa-play mr-2"></i>Study {{ set.card_count ? '(' + set.card_count + ')' : '(0)' }}
                     </button>
                     <button 
                         @click.stop="addCards(set)"
