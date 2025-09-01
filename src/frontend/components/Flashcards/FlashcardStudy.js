@@ -253,7 +253,7 @@ window.FlashcardStudyComponent = {
                     class="p-4 border-2 border-red-300 text-red-700 rounded-xl hover:bg-red-50 hover:border-red-400 transition-all duration-300"
                 >
                     <div class="font-semibold">Again</div>
-                    <div class="text-xs">{{ currentStudyMode?.id === 'spaced_review' ? '< 1 min' : 'Didn\'t know' }}</div>
+                    <div class="text-xs">{{ currentStudyMode?.id === 'spaced_review' ? '< 1 min' : "Didn't know" }}</div>
                 </button>
                 <button 
                     @click="answerCard(2)"

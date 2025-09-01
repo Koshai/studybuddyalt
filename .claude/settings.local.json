@@ -7,7 +7,8 @@
       "Bash(npm run dev:*)",
       "Bash(taskkill:*)",
       "Bash(cmd.exe /c \"taskkill /PID 33708 /F\")",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(grep:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\boltu\\Documents\\StudyBuddy"
