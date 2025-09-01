@@ -1073,46 +1073,70 @@ class WebStorageService {
                 .getPublicUrl(storageFilename);
 
             // Process document and extract text content
-            const DocumentProcessor = require('./document-processor');
-            const processor = new DocumentProcessor();
+            let processedDoc, fileRecord, dbData;
             
-            console.log('📄 Processing document for text extraction...');
-            const processedDoc = await processor.processDocument(
-                fileBuffer, 
-                originalFilename, 
-                this.getMimeType(fileExtension)
-            );
-            
-            // Create database record with extracted content
-            const fileRecord = processor.createFileRecord(
-                userId,
-                topicId,
-                originalFilename,
-                processedDoc.content,
-                processedDoc.word_count
-            );
-            
-            // Insert into files table
-            const { data: dbData, error: dbError } = await this.supabase
-                .from('files')
-                .insert(fileRecord)
-                .select()
-                .single();
+            try {
+                console.log('📄 Loading document processor...');
+                const DocumentProcessor = require('./document-processor');
+                const processor = new DocumentProcessor();
+                
+                console.log('📄 Processing document for text extraction...');
+                processedDoc = await processor.processDocument(
+                    fileBuffer, 
+                    originalFilename, 
+                    this.getMimeType(fileExtension)
+                );
+                
+                console.log('📄 Creating file record...');
+                fileRecord = processor.createFileRecord(
+                    userId,
+                    topicId,
+                    originalFilename,
+                    processedDoc.content,
+                    processedDoc.word_count
+                );
+                
+                console.log('📄 Inserting file record into database...');
+                const { data: insertData, error: dbError } = await this.supabase
+                    .from('files')
+                    .insert(fileRecord)
+                    .select()
+                    .single();
 
-            if (dbError) {
-                console.error('❌ Database file record error:', dbError);
+                if (dbError) {
+                    console.error('❌ Database file record error:', dbError);
+                    throw new Error(`Database error: ${dbError.message}`);
+                }
+                
+                dbData = insertData;
+                console.log('✅ File record created in database with extracted content');
+                
+            } catch (processingError) {
+                console.error('❌ Document processing error:', processingError);
+                
                 // Try to clean up the uploaded file
                 try {
                     await this.supabase.storage
                         .from('study-materials')
                         .remove([storageFilename]);
+                    console.log('🧹 Cleaned up uploaded file after processing error');
                 } catch (cleanupError) {
                     console.error('❌ Failed to cleanup uploaded file:', cleanupError);
                 }
-                throw dbError;
+                
+                // Return a simplified response without document processing
+                console.log('⚠️ Falling back to basic file upload without text extraction');
+                return {
+                    id: fileId,
+                    filename: originalFilename,
+                    size: fileBuffer.length,
+                    file_url: publicUrl,
+                    file_type: this.getMimeType(fileExtension),
+                    upload_date: new Date().toISOString(),
+                    error: 'Text extraction failed, file uploaded to storage only',
+                    processing_error: processingError.message
+                };
             }
-            
-            console.log('✅ File record created in database with extracted content');
 
             console.log('✅ File uploaded successfully:', {
                 fileId: fileId,

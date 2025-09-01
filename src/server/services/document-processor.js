@@ -1,11 +1,10 @@
 // src/server/services/document-processor.js - Document text extraction service
 
-const PDFService = require('./pdf');
 const { v4: uuidv4 } = require('uuid');
 
 class DocumentProcessor {
     constructor() {
-        this.pdfService = new PDFService();
+        // Simple document processor without external service dependencies
     }
 
     async processDocument(fileBuffer, filename, mimeType) {
@@ -61,14 +60,22 @@ class DocumentProcessor {
     }
 
     async processPDFBuffer(buffer) {
-        const pdf = require('pdf-parse');
-        
-        const data = await pdf(buffer, {
-            max: 0, // Process all pages
-            version: 'v1.10.100'
-        });
-        
-        return data.text;
+        try {
+            const pdf = require('pdf-parse');
+            
+            console.log('📄 Processing PDF buffer...');
+            const data = await pdf(buffer, {
+                max: 0, // Process all pages
+                version: 'v1.10.100'
+            });
+            
+            console.log(`📄 PDF processed: ${data.numpages} pages, ${data.text?.length || 0} characters`);
+            return data.text || '';
+            
+        } catch (error) {
+            console.error('❌ PDF processing error:', error);
+            throw new Error(`PDF processing failed: ${error.message}`);
+        }
     }
 
     processHTML(htmlContent) {
