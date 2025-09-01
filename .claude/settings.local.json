@@ -8,7 +8,9 @@
       "Bash(taskkill:*)",
       "Bash(cmd.exe /c \"taskkill /PID 33708 /F\")",
       "Bash(powershell:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(curl:*)",
+      "Bash(cmd.exe:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\boltu\\Documents\\StudyBuddy"

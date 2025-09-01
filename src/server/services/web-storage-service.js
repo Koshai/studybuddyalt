@@ -1045,6 +1045,13 @@ class WebStorageService {
     // ===== FILE UPLOAD METHODS =====
 
     async uploadFile(userId, topicId, fileBuffer, originalFilename) {
+        console.log('📤 uploadFile method called with parameters:', {
+            userId: userId,
+            topicId: topicId,
+            bufferSize: fileBuffer?.length || 'undefined',
+            filename: originalFilename
+        });
+        
         const { v4: uuidv4 } = require('uuid');
         const path = require('path');
         
@@ -1097,7 +1104,8 @@ class WebStorageService {
                 );
                 
                 console.log('📄 Inserting file record into database...');
-                console.log('📄 File record to insert:', {
+                console.log('📄 Full file record to insert:', fileRecord);
+                console.log('📄 File record summary:', {
                     user_id: fileRecord.user_id,
                     topic_id: fileRecord.topic_id,
                     file_name: fileRecord.file_name,
@@ -1105,11 +1113,19 @@ class WebStorageService {
                     content_length: fileRecord.content?.length || 0
                 });
                 
+                console.log('📄 About to call Supabase insert...');
                 const { data: insertData, error: dbError } = await this.supabase
-                    .from('files')
+                    .from('notes')
                     .insert(fileRecord)
                     .select()
                     .single();
+                    
+                console.log('📄 Supabase insert response:', { 
+                    data: insertData ? 'Got data' : null, 
+                    error: dbError || 'No error',
+                    errorType: typeof dbError,
+                    errorKeys: dbError ? Object.keys(dbError) : []
+                });
 
                 if (dbError) {
                     console.error('❌ Database file record error:', dbError);
