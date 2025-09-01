@@ -1072,39 +1072,9 @@ class WebStorageService {
                 .from('study-materials')
                 .getPublicUrl(storageFilename);
 
-            // Create file record in database
-            const fileRecord = {
-                id: fileId,
-                user_id: userId,
-                topic_id: topicId,
-                filename: originalFilename,
-                original_filename: originalFilename,
-                file_type: this.getMimeType(fileExtension),
-                file_size: fileBuffer.length,
-                storage_path: storageFilename,
-                file_url: publicUrl,
-                upload_date: new Date().toISOString()
-            };
-
-            // Insert file record
-            const { data: dbData, error: dbError } = await this.supabase
-                .from('files')
-                .insert(fileRecord)
-                .select()
-                .single();
-
-            if (dbError) {
-                console.error('❌ Database file record error:', dbError);
-                // Try to clean up the uploaded file
-                try {
-                    await this.supabase.storage
-                        .from('study-materials')
-                        .remove([storageFilename]);
-                } catch (cleanupError) {
-                    console.error('❌ Failed to cleanup uploaded file:', cleanupError);
-                }
-                throw dbError;
-            }
+            // For now, just upload to storage - file content extraction will be handled separately
+            // The existing files table structure expects content extraction which requires additional processing
+            console.log('📁 File uploaded to storage successfully, content extraction needed for database record');
 
             console.log('✅ File uploaded successfully:', {
                 fileId: fileId,
@@ -1131,13 +1101,35 @@ class WebStorageService {
     async getTopicFiles(userId, topicId) {
         const { data, error } = await this.supabase
             .from('files')
-            .select('*')
+            .select('id, topic_id, file_name, word_count, created_at, updated_at, user_id')
             .eq('user_id', userId)
             .eq('topic_id', topicId)
-            .order('upload_date', { ascending: false });
+            .order('created_at', { ascending: false });
 
         if (error) throw error;
-        return data || [];
+        
+        // Transform to match expected format
+        return (data || []).map(file => ({
+            id: file.id,
+            filename: file.file_name,
+            word_count: file.word_count,
+            upload_date: file.created_at,
+            file_type: this.getFileTypeFromName(file.file_name),
+            size: file.word_count ? file.word_count * 6 : 0 // Rough estimate: 6 chars per word
+        }));
+    }
+
+    getFileTypeFromName(filename) {
+        const extension = filename.toLowerCase().split('.').pop();
+        const typeMap = {
+            'pdf': 'application/pdf',
+            'doc': 'application/msword', 
+            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'txt': 'text/plain',
+            'html': 'text/html',
+            'md': 'text/markdown'
+        };
+        return typeMap[extension] || 'application/octet-stream';
     }
 
     getMimeType(fileExtension) {
