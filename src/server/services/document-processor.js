@@ -133,17 +133,16 @@ class DocumentProcessor {
             .length;
     }
 
-    // Create database record for processed file
+    // Create database record for processed file - match existing table structure
     createFileRecord(userId, topicId, filename, content, wordCount) {
         return {
-            id: uuidv4(),
-            user_id: userId,
-            topic_id: topicId,
+            // Don't specify id - let Supabase generate it
+            user_id: userId, // This should already be UUID from auth
+            topic_id: topicId, // This should already be UUID
             file_name: filename,
             content: content,
-            word_count: wordCount,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            word_count: wordCount
+            // Don't specify timestamps - let database defaults handle them
         };
     }
 }

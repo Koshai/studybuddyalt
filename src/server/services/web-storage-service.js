@@ -1097,6 +1097,14 @@ class WebStorageService {
                 );
                 
                 console.log('📄 Inserting file record into database...');
+                console.log('📄 File record to insert:', {
+                    user_id: fileRecord.user_id,
+                    topic_id: fileRecord.topic_id,
+                    file_name: fileRecord.file_name,
+                    word_count: fileRecord.word_count,
+                    content_length: fileRecord.content?.length || 0
+                });
+                
                 const { data: insertData, error: dbError } = await this.supabase
                     .from('files')
                     .insert(fileRecord)
@@ -1105,7 +1113,10 @@ class WebStorageService {
 
                 if (dbError) {
                     console.error('❌ Database file record error:', dbError);
-                    throw new Error(`Database error: ${dbError.message}`);
+                    console.error('❌ Error code:', dbError.code);
+                    console.error('❌ Error details:', dbError.details);
+                    console.error('❌ Error hint:', dbError.hint);
+                    throw new Error(`Database error: ${dbError.message} (${dbError.code})`);
                 }
                 
                 dbData = insertData;
