@@ -587,7 +587,7 @@ window.EnhancedUploadFormComponent = {
                 uploadProgress.value = 100;
                 uploadStatus.value = 'Upload complete!';
                 
-                store.showNotification(`File uploaded successfully! Extracted ${result.wordCount || 0} words.`, 'success');
+                store.showNotification('File uploaded successfully!', 'success');
                 
                 // Reset form
                 selectedFile.value = null;

@@ -556,18 +556,6 @@ class SimplifiedApiService {
 
   // ===== PRACTICE SESSIONS =====
   
-  /**
-   * Record a practice session
-   */
-  async recordPracticeSession(topicId, questionsCount, correctAnswers) {
-    return this.request(`/topics/${topicId}/practice-session`, {
-      method: 'POST',
-      body: JSON.stringify({ 
-        questionsCount, 
-        correctAnswers 
-      }),
-    });
-  }
 
   /**
    * Get topic statistics
@@ -848,12 +836,16 @@ class SimplifiedApiService {
   /**
    * Record practice session results
    */
-  async recordPracticeSession(topicId, results) {
-    return this.request('/practice/sessions', {
+  async recordPracticeSession(topicId, answers) {
+    const questionsCount = answers.length;
+    const correctAnswers = answers.filter(answer => answer.isCorrect).length;
+    
+    return this.request('/practice/session', {
       method: 'POST',
       body: JSON.stringify({
         topicId,
-        results
+        questionsCount,
+        correctAnswers
       })
     });
   }
