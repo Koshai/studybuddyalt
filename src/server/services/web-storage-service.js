@@ -1126,6 +1126,7 @@ class WebStorageService {
                 
                 // Return a simplified response without document processing
                 console.log('⚠️ Falling back to basic file upload without text extraction');
+                console.log('⚠️ Processing error was:', processingError.message);
                 return {
                     id: fileId,
                     filename: originalFilename,
@@ -1133,6 +1134,8 @@ class WebStorageService {
                     file_url: publicUrl,
                     file_type: this.getMimeType(fileExtension),
                     upload_date: new Date().toISOString(),
+                    success: true,
+                    extraction_successful: false,
                     error: 'Text extraction failed, file uploaded to storage only',
                     processing_error: processingError.message
                 };
@@ -1145,6 +1148,7 @@ class WebStorageService {
                 url: publicUrl
             });
 
+            console.log('✅ Full upload process completed successfully');
             return {
                 id: fileRecord.id,
                 filename: originalFilename,
@@ -1153,7 +1157,9 @@ class WebStorageService {
                 file_type: processedDoc.file_type,
                 word_count: processedDoc.word_count,
                 upload_date: fileRecord.created_at,
-                database_record: dbData
+                database_record: dbData,
+                success: true,
+                extraction_successful: true
             };
 
         } catch (error) {
