@@ -1041,6 +1041,73 @@ class WebStorageService {
         if (error) throw error;
         return data;
     }
+
+    // ===== FILE UPLOAD METHODS =====
+
+    async uploadFile(userId, topicId, fileBuffer, originalFilename) {
+        const { v4: uuidv4 } = require('uuid');
+        const path = require('path');
+        
+        const fileId = uuidv4();
+        const fileExtension = path.extname(originalFilename);
+        const fileName = path.basename(originalFilename, fileExtension);
+        const storageFilename = `${userId}/${topicId}/${fileId}${fileExtension}`;
+        
+        try {
+            // Upload to Supabase Storage
+            const { data: uploadData, error: uploadError } = await this.supabase.storage
+                .from('study-materials')
+                .upload(storageFilename, fileBuffer, {
+                    contentType: this.getMimeType(fileExtension),
+                    upsert: false
+                });
+
+            if (uploadError) {
+                console.error('❌ Supabase storage upload error:', uploadError);
+                throw uploadError;
+            }
+
+            // Get public URL
+            const { data: { publicUrl } } = this.supabase.storage
+                .from('study-materials')
+                .getPublicUrl(storageFilename);
+
+            // For now, we'll just upload to storage without database tracking
+            // TODO: Consider adding a files table or tracking within topics/notes
+
+            console.log('✅ File uploaded successfully:', {
+                fileId: fileId,
+                filename: originalFilename,
+                size: fileBuffer.length,
+                url: publicUrl
+            });
+
+            return {
+                id: fileId,
+                filename: originalFilename,
+                size: fileBuffer.length,
+                file_url: publicUrl,
+                file_type: this.getMimeType(fileExtension),
+                upload_date: new Date().toISOString()
+            };
+
+        } catch (error) {
+            console.error('❌ File upload failed:', error);
+            throw error;
+        }
+    }
+
+    getMimeType(fileExtension) {
+        const mimeTypes = {
+            '.pdf': 'application/pdf',
+            '.doc': 'application/msword',
+            '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            '.txt': 'text/plain',
+            '.md': 'text/markdown'
+        };
+        
+        return mimeTypes[fileExtension.toLowerCase()] || 'application/octet-stream';
+    }
 }
 
 module.exports = WebStorageService;
