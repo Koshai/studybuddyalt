@@ -47,6 +47,33 @@ router.get('/upload-test', (req, res) => {
 });
 
 /**
+ * GET /api/list-topics - List available topics for testing
+ */
+router.get('/list-topics', async (req, res) => {
+    try {
+        const db = ServiceFactory.getStorageService();
+        const { data: topics, error } = await db.supabase
+            .from('topics')
+            .select('*')
+            .limit(10);
+            
+        if (error) {
+            console.error('❌ Error fetching topics:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+        
+        res.json({ 
+            success: true, 
+            topics: topics || [],
+            count: topics?.length || 0
+        });
+    } catch (err) {
+        console.error('❌ Exception fetching topics:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/**
  * POST /api/upload-debug - Debug upload without auth
  */
 router.post('/upload-debug', 
@@ -56,10 +83,9 @@ router.post('/upload-debug',
             console.log('🐛 DEBUG: File upload request received (no auth)');
             console.log('🐛 DEBUG: Request body:', { topicId: req.body.topicId, hasFile: !!req.file });
             
-            // Mock user and topic for testing (need to be valid UUIDs for notes table)
-            const { v4: uuidv4 } = require('uuid');
-            const userId = uuidv4(); // Generate a valid UUID for testing
-            const topicId = uuidv4(); // Generate a valid UUID for testing
+            // Use real user and topic IDs from your database
+            const userId = '127fa11a-442f-4180-b0c4-c5e3efacdea5'; // Real user ID from topics
+            const topicId = 'f7c45508-64b2-4af4-a104-ae41858682cd'; // "The Merchant of Venice" topic
             const file = req.file;
             
             console.log('🐛 DEBUG: File details:', {
@@ -130,11 +156,9 @@ router.post('/upload-debug',
  * POST /api/upload-simplified - Upload file to topic
  */
 router.post('/upload-simplified', 
-    //authenticateToken,  // Temporarily disabled for testing
+    authenticateToken,
     upload.single('file'),
     async (req, res) => {
-        // Mock user for testing
-        req.user = { user_id: 'test-user-123' };
         try {
             console.log('📤 File upload request received');
             console.log('📊 Request body:', { topicId: req.body.topicId, hasFile: !!req.file });
@@ -166,9 +190,21 @@ router.post('/upload-simplified',
                 mimeType: file.mimetype
             });
             
-            // Verify topic exists and user has access (mocked for testing)
-            console.log('📍 Skipping topic validation for testing...');
-            const topic = { user_id: userId, id: topicId }; // Mock topic
+            // Verify topic exists and user has access
+            const topic = await db.getTopicById(topicId);
+            if (!topic) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Topic not found'
+                });
+            }
+            
+            if (topic.user_id !== userId) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Access denied to this topic'
+                });
+            }
             
             // Upload file using storage service
             console.log('🚀 About to call db.uploadFile...');
