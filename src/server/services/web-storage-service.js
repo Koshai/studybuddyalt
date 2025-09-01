@@ -1072,9 +1072,47 @@ class WebStorageService {
                 .from('study-materials')
                 .getPublicUrl(storageFilename);
 
-            // For now, just upload to storage - file content extraction will be handled separately
-            // The existing files table structure expects content extraction which requires additional processing
-            console.log('📁 File uploaded to storage successfully, content extraction needed for database record');
+            // Process document and extract text content
+            const DocumentProcessor = require('./document-processor');
+            const processor = new DocumentProcessor();
+            
+            console.log('📄 Processing document for text extraction...');
+            const processedDoc = await processor.processDocument(
+                fileBuffer, 
+                originalFilename, 
+                this.getMimeType(fileExtension)
+            );
+            
+            // Create database record with extracted content
+            const fileRecord = processor.createFileRecord(
+                userId,
+                topicId,
+                originalFilename,
+                processedDoc.content,
+                processedDoc.word_count
+            );
+            
+            // Insert into files table
+            const { data: dbData, error: dbError } = await this.supabase
+                .from('files')
+                .insert(fileRecord)
+                .select()
+                .single();
+
+            if (dbError) {
+                console.error('❌ Database file record error:', dbError);
+                // Try to clean up the uploaded file
+                try {
+                    await this.supabase.storage
+                        .from('study-materials')
+                        .remove([storageFilename]);
+                } catch (cleanupError) {
+                    console.error('❌ Failed to cleanup uploaded file:', cleanupError);
+                }
+                throw dbError;
+            }
+            
+            console.log('✅ File record created in database with extracted content');
 
             console.log('✅ File uploaded successfully:', {
                 fileId: fileId,
@@ -1084,12 +1122,14 @@ class WebStorageService {
             });
 
             return {
-                id: fileId,
+                id: fileRecord.id,
                 filename: originalFilename,
                 size: fileBuffer.length,
                 file_url: publicUrl,
-                file_type: this.getMimeType(fileExtension),
-                upload_date: new Date().toISOString()
+                file_type: processedDoc.file_type,
+                word_count: processedDoc.word_count,
+                upload_date: fileRecord.created_at,
+                database_record: dbData
             };
 
         } catch (error) {
