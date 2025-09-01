@@ -1014,11 +1014,11 @@ class WebStorageService {
             cards_studied: cardsStudied,
             cards_correct: cardsCorrect,
             duration_seconds: durationSeconds,
-            completed_at: new Date().toISOString()
+            session_date: new Date().toISOString()
         };
 
         const { data, error } = await this.supabase
-            .from('flashcard_sessions')
+            .from('flashcard_study_sessions')
             .insert(session)
             .select()
             .single();
@@ -1032,11 +1032,11 @@ class WebStorageService {
         startDate.setDate(startDate.getDate() - days);
 
         const { data, error } = await this.supabase
-            .from('flashcard_sessions')
+            .from('flashcard_study_sessions')
             .select('*')
             .eq('user_id', userId)
-            .gte('completed_at', startDate.toISOString())
-            .order('completed_at', { ascending: false });
+            .gte('session_date', startDate.toISOString())
+            .order('session_date', { ascending: false });
 
         if (error) throw error;
         return data;
