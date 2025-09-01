@@ -1072,8 +1072,39 @@ class WebStorageService {
                 .from('study-materials')
                 .getPublicUrl(storageFilename);
 
-            // For now, we'll just upload to storage without database tracking
-            // TODO: Consider adding a files table or tracking within topics/notes
+            // Create file record in database
+            const fileRecord = {
+                id: fileId,
+                user_id: userId,
+                topic_id: topicId,
+                filename: originalFilename,
+                original_filename: originalFilename,
+                file_type: this.getMimeType(fileExtension),
+                file_size: fileBuffer.length,
+                storage_path: storageFilename,
+                file_url: publicUrl,
+                upload_date: new Date().toISOString()
+            };
+
+            // Insert file record
+            const { data: dbData, error: dbError } = await this.supabase
+                .from('files')
+                .insert(fileRecord)
+                .select()
+                .single();
+
+            if (dbError) {
+                console.error('❌ Database file record error:', dbError);
+                // Try to clean up the uploaded file
+                try {
+                    await this.supabase.storage
+                        .from('study-materials')
+                        .remove([storageFilename]);
+                } catch (cleanupError) {
+                    console.error('❌ Failed to cleanup uploaded file:', cleanupError);
+                }
+                throw dbError;
+            }
 
             console.log('✅ File uploaded successfully:', {
                 fileId: fileId,
@@ -1095,6 +1126,18 @@ class WebStorageService {
             console.error('❌ File upload failed:', error);
             throw error;
         }
+    }
+
+    async getTopicFiles(userId, topicId) {
+        const { data, error } = await this.supabase
+            .from('files')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('topic_id', topicId)
+            .order('upload_date', { ascending: false });
+
+        if (error) throw error;
+        return data || [];
     }
 
     getMimeType(fileExtension) {

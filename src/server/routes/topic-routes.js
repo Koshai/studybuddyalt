@@ -255,4 +255,35 @@ router.get('/:topicId/stats', authMiddleware.authenticateToken, async (req, res)
     }
 });
 
+/**
+ * GET /api/topics/:topicId/files
+ * Get uploaded files for a specific topic
+ */
+router.get('/:topicId/files', authMiddleware.authenticateToken, async (req, res) => {
+    try {
+        const { topicId } = req.params;
+        const userId = req.user.user_id || req.user.id;
+        const storage = ServiceFactory.getStorageService();
+        
+        console.log(`📁 Getting files for topic ${topicId}`);
+        
+        // Get files for the topic
+        const files = await storage.getTopicFiles(userId, topicId);
+        
+        console.log(`✅ Found ${files.length} files for topic`);
+        res.json({
+            success: true,
+            data: files
+        });
+        
+    } catch (error) {
+        console.error('❌ Get topic files error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch topic files',
+            details: error.message
+        });
+    }
+});
+
 module.exports = router;

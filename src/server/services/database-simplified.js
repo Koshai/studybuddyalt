@@ -621,6 +621,16 @@ class SimplifiedDatabaseService {
     return this.flashcardsService.getStudyStats(userId, days);
   }
 
+  // ===== FILE METHODS =====
+
+  async uploadFile(userId, topicId, fileBuffer, originalFilename) {
+    return this.storageService.uploadFile(userId, topicId, fileBuffer, originalFilename);
+  }
+
+  async getTopicFiles(userId, topicId) {
+    return this.storageService.getTopicFiles(userId, topicId);
+  }
+
   // ===== UTILITY METHODS =====
   
   /**
