@@ -65,7 +65,16 @@ router.post('/', async (req, res) => {
                 console.log('✅ Feedback email sent successfully');
             })
             .catch((error) => {
-                console.error('⚠️ Failed to send feedback email (logged anyway):', error.message);
+                console.error('⚠️ Failed to send feedback email (feedback is logged):', error.message);
+                // Also log the full feedback content as backup
+                console.log('📧 EMAIL CONTENT (for manual review):', {
+                    to: 'neloythedev@gmail.com',
+                    subject: emailContent.subject,
+                    type: type,
+                    userEmail: email,
+                    message: message,
+                    timestamp: new Date().toISOString()
+                });
             });
         
     } catch (error) {
@@ -176,12 +185,22 @@ async function sendEmailInternal(emailContent) {
         
         if (process.env.EMAIL_SERVICE && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
             // Production email configuration
+            console.log('🔧 Using production email config:', {
+                service: process.env.EMAIL_SERVICE,
+                user: process.env.EMAIL_USER?.substring(0, 5) + '***',
+                hasPass: !!process.env.EMAIL_PASS
+            });
+            
             transporter = nodemailer.createTransport({
                 service: process.env.EMAIL_SERVICE, // e.g., 'gmail'
                 auth: {
                     user: process.env.EMAIL_USER,
                     pass: process.env.EMAIL_PASS
-                }
+                },
+                // Add timeout settings for Gmail
+                connectionTimeout: 8000, // 8 seconds
+                greetingTimeout: 5000,   // 5 seconds
+                socketTimeout: 8000      // 8 seconds
             });
         } else {
             // Development: Create test account
