@@ -154,7 +154,7 @@ async function sendFeedbackEmail(emailContent) {
         
         if (process.env.EMAIL_SERVICE && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
             // Production email configuration
-            transporter = nodemailer.createTransporter({
+            transporter = nodemailer.createTransport({
                 service: process.env.EMAIL_SERVICE, // e.g., 'gmail'
                 auth: {
                     user: process.env.EMAIL_USER,
@@ -165,7 +165,7 @@ async function sendFeedbackEmail(emailContent) {
             // Development: Create test account
             const testAccount = await nodemailer.createTestAccount();
             
-            transporter = nodemailer.createTransporter({
+            transporter = nodemailer.createTransport({
                 host: 'smtp.ethereal.email',
                 port: 587,
                 secure: false,
