@@ -4,8 +4,9 @@ const nodemailer = require('nodemailer');
 
 const router = express.Router();
 
-// Get database instance
-const database = require('../services/database-simplified');
+// Get storage service via ServiceFactory
+const ServiceFactory = require('../services/service-factory');
+const serviceFactory = new ServiceFactory();
 
 /**
  * POST /api/feedback - Submit feedback
@@ -48,7 +49,8 @@ router.post('/', async (req, res) => {
         
         // Save feedback to database
         try {
-            const savedFeedback = await database.feedbackService.submitFeedback({
+            const storageService = serviceFactory.getStorageService();
+            const savedFeedback = await storageService.submitFeedback({
                 type,
                 subject,
                 message,
@@ -122,7 +124,8 @@ router.get('/', async (req, res) => {
             orderDirection = 'DESC'
         } = req.query;
 
-        const feedback = await database.feedbackService.getAllFeedback({
+        const storageService = serviceFactory.getStorageService();
+        const feedback = await storageService.getAllFeedback({
             limit: parseInt(limit),
             offset: parseInt(offset),
             status,
@@ -154,7 +157,8 @@ router.get('/', async (req, res) => {
  */
 router.get('/stats', async (req, res) => {
     try {
-        const stats = await database.feedbackService.getFeedbackStats();
+        const storageService = serviceFactory.getStorageService();
+        const stats = await storageService.getFeedbackStats();
         
         res.json({
             success: true,
@@ -175,7 +179,8 @@ router.get('/stats', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const feedback = await database.feedbackService.getFeedbackById(id);
+        const storageService = serviceFactory.getStorageService();
+        const feedback = await storageService.getFeedbackById(id);
         
         if (!feedback) {
             return res.status(404).json({
@@ -210,7 +215,8 @@ router.put('/:id', async (req, res) => {
         if (priority) updates.priority = priority;
         if (admin_notes !== undefined) updates.admin_notes = admin_notes;
 
-        const result = await database.feedbackService.updateFeedback(id, updates);
+        const storageService = serviceFactory.getStorageService();
+        const result = await storageService.updateFeedback(id, updates);
         
         res.json({
             success: true,
@@ -231,7 +237,8 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await database.feedbackService.deleteFeedback(id);
+        const storageService = serviceFactory.getStorageService();
+        const result = await storageService.deleteFeedback(id);
         
         res.json({
             success: true,

@@ -1240,6 +1240,207 @@ class WebStorageService {
         
         return mimeTypes[fileExtension.toLowerCase()] || 'application/octet-stream';
     }
+
+    // ===== FEEDBACK METHODS =====
+
+    /**
+     * Submit new feedback
+     */
+    async submitFeedback(feedbackData) {
+        const { v4: uuidv4 } = require('uuid');
+        const id = uuidv4();
+        
+        const feedback = {
+            id,
+            type: feedbackData.type,
+            subject: feedbackData.subject,
+            message: feedbackData.message,
+            user_email: feedbackData.userEmail || null,
+            user_id: feedbackData.userId || null,
+            user_agent: feedbackData.userAgent || null,
+            status: 'new',
+            priority: 'normal',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+
+        const { data, error } = await this.supabase
+            .from('feedback')
+            .insert(feedback)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    /**
+     * Get all feedback with filtering and pagination
+     */
+    async getAllFeedback(options = {}) {
+        const {
+            limit = 50,
+            offset = 0,
+            status = null,
+            type = null,
+            priority = null,
+            orderBy = 'created_at',
+            orderDirection = 'desc'
+        } = options;
+
+        let query = this.supabase
+            .from('feedback')
+            .select('*');
+
+        if (status) {
+            query = query.eq('status', status);
+        }
+
+        if (type) {
+            query = query.eq('type', type);
+        }
+
+        if (priority) {
+            query = query.eq('priority', priority);
+        }
+
+        query = query
+            .order(orderBy, { ascending: orderDirection.toLowerCase() === 'asc' })
+            .range(offset, offset + limit - 1);
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data;
+    }
+
+    /**
+     * Get feedback by ID
+     */
+    async getFeedbackById(id) {
+        const { data, error } = await this.supabase
+            .from('feedback')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
+        return data;
+    }
+
+    /**
+     * Update feedback status, priority, or admin notes
+     */
+    async updateFeedback(id, updates) {
+        const allowedFields = ['status', 'priority', 'admin_notes'];
+        const updateData = {
+            updated_at: new Date().toISOString()
+        };
+
+        // Only include allowed fields
+        Object.keys(updates).forEach(key => {
+            if (allowedFields.includes(key)) {
+                updateData[key] = updates[key];
+            }
+        });
+
+        const { data, error } = await this.supabase
+            .from('feedback')
+            .update(updateData)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    /**
+     * Get feedback statistics
+     */
+    async getFeedbackStats() {
+        try {
+            // Get total count
+            const { count: totalCount, error: totalError } = await this.supabase
+                .from('feedback')
+                .select('*', { count: 'exact', head: true });
+
+            if (totalError) throw totalError;
+
+            // Get new count
+            const { count: newCount, error: newError } = await this.supabase
+                .from('feedback')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'new');
+
+            if (newError) throw newError;
+
+            // Get high priority count
+            const { count: highPriorityCount, error: highError } = await this.supabase
+                .from('feedback')
+                .select('*', { count: 'exact', head: true })
+                .eq('priority', 'high');
+
+            if (highError) throw highError;
+
+            // Get counts by type
+            const { data: typeData, error: typeError } = await this.supabase
+                .from('feedback')
+                .select('type')
+                .order('type');
+
+            if (typeError) throw typeError;
+
+            // Get counts by status
+            const { data: statusData, error: statusError } = await this.supabase
+                .from('feedback')
+                .select('status')
+                .order('status');
+
+            if (statusError) throw statusError;
+
+            // Count by type
+            const byType = {};
+            typeData.forEach(item => {
+                byType[item.type] = (byType[item.type] || 0) + 1;
+            });
+
+            // Count by status
+            const byStatus = {};
+            statusData.forEach(item => {
+                byStatus[item.status] = (byStatus[item.status] || 0) + 1;
+            });
+
+            return {
+                total: totalCount || 0,
+                new: newCount || 0,
+                highPriority: highPriorityCount || 0,
+                byType: Object.keys(byType).map(type => ({ type, count: byType[type] })),
+                byStatus: Object.keys(byStatus).map(status => ({ status, count: byStatus[status] }))
+            };
+        } catch (error) {
+            console.error('❌ Error getting feedback stats:', error);
+            return {
+                total: 0,
+                new: 0,
+                highPriority: 0,
+                byType: [],
+                byStatus: []
+            };
+        }
+    }
+
+    /**
+     * Delete feedback (admin only)
+     */
+    async deleteFeedback(id) {
+        const { error } = await this.supabase
+            .from('feedback')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        return { id, deleted: true };
+    }
 }
 
 module.exports = WebStorageService;
