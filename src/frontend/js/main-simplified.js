@@ -777,6 +777,7 @@ app.component('UsageIndicatorComponent', window.UsageIndicatorComponent);
 app.component('SidebarSimplifiedComponent', window.EnhancedSidebarComponent);
 app.component('CleanSidebarComponent', window.CleanSidebarComponent);
 app.component('FooterComponent', window.FooterComponent);
+app.component('FeedbackModal', window.FeedbackModal);
 app.component('EnhancedHeaderComponent', window.EnhancedHeaderComponent);
 app.component('NotificationsComponent', window.NotificationsComponent);
 

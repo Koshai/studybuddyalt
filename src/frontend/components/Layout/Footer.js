@@ -1,5 +1,8 @@
 // components/Layout/Footer.js - Clean Footer Component
 window.FooterComponent = {
+    components: {
+        'feedback-modal': window.FeedbackModal
+    },
     template: `
     <footer class="bg-gray-50 border-t border-gray-200 px-4 py-3">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
