@@ -43,10 +43,7 @@ router.post('/', async (req, res) => {
             userAgent: req.headers['user-agent']
         });
         
-        // Send email
-        await sendFeedbackEmail(emailContent);
-        
-        // For now, just log the feedback
+        // Log the feedback immediately
         console.log('✅ Feedback received and logged:', {
             type: type,
             subject: subject,
@@ -55,12 +52,21 @@ router.post('/', async (req, res) => {
             userInfo: userInfo,
             timestamp: new Date().toISOString()
         });
-        console.log('✅ Feedback processed successfully (email disabled)');
-        
+
+        // Respond immediately to prevent timeout
         res.json({
             success: true,
             message: 'Feedback submitted successfully'
         });
+
+        // Try to send email in background (don't await to prevent timeout)
+        sendFeedbackEmail(emailContent)
+            .then(() => {
+                console.log('✅ Feedback email sent successfully');
+            })
+            .catch((error) => {
+                console.error('⚠️ Failed to send feedback email (logged anyway):', error.message);
+            });
         
     } catch (error) {
         console.error('❌ Error submitting feedback:', error);
@@ -142,6 +148,22 @@ function createFeedbackEmail(feedback) {
  * Send feedback email using nodemailer
  */
 async function sendFeedbackEmail(emailContent) {
+    // Add timeout wrapper to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Email sending timed out after 10 seconds')), 10000);
+    });
+
+    const emailPromise = sendEmailInternal(emailContent);
+    
+    try {
+        return await Promise.race([emailPromise, timeoutPromise]);
+    } catch (error) {
+        console.error('❌ Email sending failed or timed out:', error.message);
+        throw error;
+    }
+}
+
+async function sendEmailInternal(emailContent) {
     // For now, we'll use a simple SMTP configuration
     // You can configure this with your preferred email service
     
