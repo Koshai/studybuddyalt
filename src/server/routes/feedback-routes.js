@@ -59,23 +59,24 @@ router.post('/', async (req, res) => {
             message: 'Feedback submitted successfully'
         });
 
-        // Try to send email in background (don't await to prevent timeout)
-        sendFeedbackEmail(emailContent)
-            .then(() => {
-                console.log('✅ Feedback email sent successfully');
-            })
-            .catch((error) => {
-                console.error('⚠️ Failed to send feedback email (feedback is logged):', error.message);
-                // Also log the full feedback content as backup
-                console.log('📧 EMAIL CONTENT (for manual review):', {
-                    to: 'neloythedev@gmail.com',
-                    subject: emailContent.subject,
-                    type: type,
-                    userEmail: email,
-                    message: message,
-                    timestamp: new Date().toISOString()
-                });
-            });
+        // For now, just log the email content in a readable format
+        // Email sending is disabled due to Railway SMTP restrictions
+        console.log('📧 FEEDBACK EMAIL (Railway SMTP blocked - logging instead):');
+        console.log('================================================');
+        console.log(`To: neloythedev@gmail.com`);
+        console.log(`Subject: ${emailContent.subject}`);
+        console.log(`From: ${email || 'Anonymous'}`);
+        console.log(`Type: ${type}`);
+        console.log(`Time: ${new Date().toLocaleString()}`);
+        console.log('------------------------------------------------');
+        console.log(`Message:`);
+        console.log(message);
+        console.log('================================================');
+        
+        // Uncomment below if you set up a proper email service (SendGrid, etc.)
+        // sendFeedbackEmail(emailContent)
+        //     .then(() => console.log('✅ Feedback email sent successfully'))
+        //     .catch((error) => console.error('⚠️ Email failed:', error.message));
         
     } catch (error) {
         console.error('❌ Error submitting feedback:', error);
