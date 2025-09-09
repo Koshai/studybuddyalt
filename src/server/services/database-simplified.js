@@ -11,6 +11,7 @@ const QuestionsDbService = require('./questions-db-service');
 const PracticeDbService = require('./practice-db-service');
 const DataDbService = require('./data-db-service');
 const FlashcardsDbService = require('./flashcards-db-service');
+const FeedbackDbService = require('./feedback-db-service');
 
 class SimplifiedDatabaseService {
   constructor() {
@@ -23,6 +24,7 @@ class SimplifiedDatabaseService {
     this.practiceService = null;
     this.dataService = null;
     this.flashcardsService = null;
+    this.feedbackService = null;
   }
 
   init() {
@@ -66,6 +68,7 @@ class SimplifiedDatabaseService {
     this.questionsService = new QuestionsDbService(this.db);
     this.practiceService = new PracticeDbService(this.db, this.subjectsService);
     this.flashcardsService = new FlashcardsDbService(this.db);
+    this.feedbackService = new FeedbackDbService(this.db);
     this.dataService = new DataDbService(
       this.db, 
       this.subjectsService, 

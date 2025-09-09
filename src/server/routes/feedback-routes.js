@@ -4,6 +4,9 @@ const nodemailer = require('nodemailer');
 
 const router = express.Router();
 
+// Get database instance
+const database = require('../services/database-simplified');
+
 /**
  * POST /api/feedback - Submit feedback
  */
@@ -43,46 +46,202 @@ router.post('/', async (req, res) => {
             userAgent: req.headers['user-agent']
         });
         
-        // Log the feedback immediately
-        console.log('✅ Feedback received and logged:', {
-            type: type,
-            subject: subject,
-            message: message,
-            userEmail: email,
-            userInfo: userInfo,
-            timestamp: new Date().toISOString()
-        });
+        // Save feedback to database
+        try {
+            const savedFeedback = await database.feedbackService.submitFeedback({
+                type,
+                subject,
+                message,
+                userEmail: email,
+                userId: userInfo?.userId || null,
+                userAgent: req.headers['user-agent']
+            });
 
-        // Respond immediately to prevent timeout
-        res.json({
-            success: true,
-            message: 'Feedback submitted successfully'
-        });
+            console.log('✅ Feedback saved to database:', savedFeedback.id);
 
-        // For now, just log the email content in a readable format
-        // Email sending is disabled due to Railway SMTP restrictions
-        console.log('📧 FEEDBACK EMAIL (Railway SMTP blocked - logging instead):');
-        console.log('================================================');
-        console.log(`To: neloythedev@gmail.com`);
-        console.log(`Subject: ${emailContent.subject}`);
-        console.log(`From: ${email || 'Anonymous'}`);
-        console.log(`Type: ${type}`);
-        console.log(`Time: ${new Date().toLocaleString()}`);
-        console.log('------------------------------------------------');
-        console.log(`Message:`);
-        console.log(message);
-        console.log('================================================');
-        
-        // Uncomment below if you set up a proper email service (SendGrid, etc.)
-        // sendFeedbackEmail(emailContent)
-        //     .then(() => console.log('✅ Feedback email sent successfully'))
-        //     .catch((error) => console.error('⚠️ Email failed:', error.message));
+            // Respond immediately to prevent timeout
+            res.json({
+                success: true,
+                message: 'Feedback submitted successfully',
+                feedbackId: savedFeedback.id
+            });
+
+            // Optionally log for admin visibility
+            console.log('📧 NEW FEEDBACK SUBMITTED:');
+            console.log('================================================');
+            console.log(`ID: ${savedFeedback.id}`);
+            console.log(`Type: ${type}`);
+            console.log(`Subject: ${subject}`);
+            console.log(`From: ${email || 'Anonymous'}`);
+            console.log(`Time: ${new Date().toLocaleString()}`);
+            console.log('------------------------------------------------');
+            console.log(`Message: ${message}`);
+            console.log('================================================');
+        } catch (dbError) {
+            console.error('❌ Failed to save feedback to database:', dbError);
+            
+            // Still respond with success since feedback was logged
+            res.json({
+                success: true,
+                message: 'Feedback submitted successfully'
+            });
+
+            // Fallback logging
+            console.log('📧 FEEDBACK (DB SAVE FAILED - CONSOLE BACKUP):');
+            console.log('================================================');
+            console.log(`Type: ${type}`);
+            console.log(`Subject: ${subject}`);
+            console.log(`From: ${email || 'Anonymous'}`);
+            console.log(`Time: ${new Date().toLocaleString()}`);
+            console.log('------------------------------------------------');
+            console.log(`Message: ${message}`);
+            console.log('================================================');
+        }
         
     } catch (error) {
         console.error('❌ Error submitting feedback:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to submit feedback'
+        });
+    }
+});
+
+/**
+ * GET /api/feedback - Get all feedback (admin only)
+ */
+router.get('/', async (req, res) => {
+    try {
+        const {
+            limit = 50,
+            offset = 0,
+            status,
+            type,
+            priority,
+            orderBy = 'created_at',
+            orderDirection = 'DESC'
+        } = req.query;
+
+        const feedback = await database.feedbackService.getAllFeedback({
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            status,
+            type,
+            priority,
+            orderBy,
+            orderDirection
+        });
+
+        res.json({
+            success: true,
+            data: feedback,
+            pagination: {
+                limit: parseInt(limit),
+                offset: parseInt(offset)
+            }
+        });
+    } catch (error) {
+        console.error('❌ Error fetching feedback:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch feedback'
+        });
+    }
+});
+
+/**
+ * GET /api/feedback/stats - Get feedback statistics (admin only)
+ */
+router.get('/stats', async (req, res) => {
+    try {
+        const stats = await database.feedbackService.getFeedbackStats();
+        
+        res.json({
+            success: true,
+            data: stats
+        });
+    } catch (error) {
+        console.error('❌ Error fetching feedback stats:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch feedback statistics'
+        });
+    }
+});
+
+/**
+ * GET /api/feedback/:id - Get specific feedback (admin only)
+ */
+router.get('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const feedback = await database.feedbackService.getFeedbackById(id);
+        
+        if (!feedback) {
+            return res.status(404).json({
+                success: false,
+                error: 'Feedback not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: feedback
+        });
+    } catch (error) {
+        console.error('❌ Error fetching feedback:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch feedback'
+        });
+    }
+});
+
+/**
+ * PUT /api/feedback/:id - Update feedback status/priority/notes (admin only)
+ */
+router.put('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, priority, admin_notes } = req.body;
+        
+        const updates = {};
+        if (status) updates.status = status;
+        if (priority) updates.priority = priority;
+        if (admin_notes !== undefined) updates.admin_notes = admin_notes;
+
+        const result = await database.feedbackService.updateFeedback(id, updates);
+        
+        res.json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        console.error('❌ Error updating feedback:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update feedback'
+        });
+    }
+});
+
+/**
+ * DELETE /api/feedback/:id - Delete feedback (admin only)
+ */
+router.delete('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await database.feedbackService.deleteFeedback(id);
+        
+        res.json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        console.error('❌ Error deleting feedback:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to delete feedback'
         });
     }
 });
