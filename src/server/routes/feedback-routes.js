@@ -43,10 +43,19 @@ router.post('/', async (req, res) => {
             userAgent: req.headers['user-agent']
         });
         
-        // Send email
-        await sendFeedbackEmail(emailContent);
+        // Send email (temporarily disabled to prevent 500 errors)
+        // await sendFeedbackEmail(emailContent);
         
-        console.log('✅ Feedback email sent successfully');
+        // For now, just log the feedback
+        console.log('✅ Feedback received and logged:', {
+            type: type,
+            subject: subject,
+            message: message,
+            userEmail: email,
+            userInfo: userInfo,
+            timestamp: new Date().toISOString()
+        });
+        console.log('✅ Feedback processed successfully (email disabled)');
         
         res.json({
             success: true,
