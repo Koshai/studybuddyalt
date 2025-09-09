@@ -19,6 +19,7 @@ const userRoutes = require('./routes/user-routes');
 const dashboardRoutes = require('./routes/dashboard-routes');
 const flashcardRoutes = require('./routes/flashcard-routes');
 const uploadRoutes = require('./routes/upload-routes');
+const feedbackRoutes = require('./routes/feedback-routes');
 
 // Import middleware
 const securityMiddleware = require('./middleware/security-middleware');
@@ -127,6 +128,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/activity', dashboardRoutes);
 app.use('/api/flashcards', flashcardRoutes);
 app.use('/api', uploadRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Missing routes that return HTML instead of JSON - add stubs
 app.get('/api/setup/offline/status', (req, res) => {

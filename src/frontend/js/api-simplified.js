@@ -959,6 +959,18 @@ class SimplifiedApiService {
       }
     }
   }
+
+  // ===== FEEDBACK =====
+  
+  /**
+   * Submit user feedback
+   */
+  async submitFeedback(feedbackData) {
+    return this.request('/feedback', {
+      method: 'POST',
+      body: JSON.stringify(feedbackData)
+    });
+  }
 }
 
 // Create global API instance

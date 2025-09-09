@@ -47,6 +47,9 @@ window.FooterComponent = {
                 Built with ❤️ for better learning
             </p>
         </div>
+        
+        <!-- Feedback Modal -->
+        <feedback-modal :is-open="showFeedbackModal" @close="closeFeedback"></feedback-modal>
     </footer>
     `,
 
@@ -73,15 +76,23 @@ window.FooterComponent = {
             store.showNotification('Help documentation coming soon!', 'info');
         };
 
+        const showFeedbackModal = Vue.ref(false);
+        
         const showFeedback = () => {
-            store.showNotification('Feedback form coming soon! For now, please contact support.', 'info');
+            showFeedbackModal.value = true;
+        };
+        
+        const closeFeedback = () => {
+            showFeedbackModal.value = false;
         };
 
         return {
             store,
             isOnline,
             showHelp,
-            showFeedback
+            showFeedback,
+            showFeedbackModal,
+            closeFeedback
         };
     }
 };
