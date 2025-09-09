@@ -43,8 +43,8 @@ router.post('/', async (req, res) => {
             userAgent: req.headers['user-agent']
         });
         
-        // Send email (temporarily disabled to prevent 500 errors)
-        // await sendFeedbackEmail(emailContent);
+        // Send email
+        await sendFeedbackEmail(emailContent);
         
         // For now, just log the feedback
         console.log('✅ Feedback received and logged:', {
