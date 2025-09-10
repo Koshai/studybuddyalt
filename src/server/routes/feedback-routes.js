@@ -45,8 +45,7 @@ router.post('/', async (req, res) => {
         
         // Try to save to Supabase database first
         try {
-            const ServiceFactory = require('../services/service-factory');
-            const serviceFactory = new ServiceFactory();
+            const serviceFactory = require('../services/service-factory');
             const storageService = serviceFactory.getStorageService();
             
             const savedFeedback = await storageService.submitFeedback({
@@ -110,8 +109,7 @@ router.get('/', async (req, res) => {
             priority
         } = req.query;
 
-        const ServiceFactory = require('../services/service-factory');
-        const serviceFactory = new ServiceFactory();
+        const serviceFactory = require('../services/service-factory');
         const storageService = serviceFactory.getStorageService();
 
         const feedback = await storageService.getAllFeedback({
@@ -146,8 +144,7 @@ router.get('/', async (req, res) => {
  */
 router.get('/stats', async (req, res) => {
     try {
-        const ServiceFactory = require('../services/service-factory');
-        const serviceFactory = new ServiceFactory();
+        const serviceFactory = require('../services/service-factory');
         const storageService = serviceFactory.getStorageService();
 
         const stats = await storageService.getFeedbackStats();
