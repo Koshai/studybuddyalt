@@ -1242,8 +1242,118 @@ class WebStorageService {
     }
 
     // ===== FEEDBACK METHODS =====
-    // Temporarily removed for deployment stability
-    // Will be re-implemented after successful deployment
+
+    /**
+     * Submit new feedback to Supabase
+     */
+    async submitFeedback(feedbackData) {
+        try {
+            const { v4: uuidv4 } = require('uuid');
+            const id = uuidv4();
+            
+            const feedback = {
+                id,
+                type: feedbackData.type,
+                subject: feedbackData.subject,
+                message: feedbackData.message,
+                user_email: feedbackData.userEmail || null,
+                user_id: feedbackData.userId || null,
+                user_agent: feedbackData.userAgent || null,
+                status: 'new',
+                priority: 'normal',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            const { data, error } = await this.supabase
+                .from('feedback')
+                .insert(feedback)
+                .select()
+                .single();
+
+            if (error) {
+                console.error('❌ Supabase feedback insert error:', error);
+                throw error;
+            }
+            
+            console.log('✅ Feedback saved to Supabase:', id);
+            return data;
+        } catch (error) {
+            console.error('❌ submitFeedback error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get all feedback with filtering and pagination
+     */
+    async getAllFeedback(options = {}) {
+        try {
+            const {
+                limit = 50,
+                offset = 0,
+                status = null,
+                type = null,
+                priority = null,
+                orderBy = 'created_at',
+                orderDirection = 'desc'
+            } = options;
+
+            let query = this.supabase
+                .from('feedback')
+                .select('*');
+
+            if (status) query = query.eq('status', status);
+            if (type) query = query.eq('type', type);
+            if (priority) query = query.eq('priority', priority);
+
+            query = query
+                .order(orderBy, { ascending: orderDirection.toLowerCase() === 'asc' })
+                .range(offset, offset + limit - 1);
+
+            const { data, error } = await query;
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('❌ getAllFeedback error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get feedback statistics
+     */
+    async getFeedbackStats() {
+        try {
+            // Get total count
+            const { count: totalCount } = await this.supabase
+                .from('feedback')
+                .select('*', { count: 'exact', head: true });
+
+            // Get new count
+            const { count: newCount } = await this.supabase
+                .from('feedback')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'new');
+
+            return {
+                total: totalCount || 0,
+                new: newCount || 0,
+                highPriority: 0, // Will implement if needed
+                byType: [],      // Will implement if needed
+                byStatus: []     // Will implement if needed
+            };
+        } catch (error) {
+            console.error('❌ getFeedbackStats error:', error);
+            return {
+                total: 0,
+                new: 0,
+                highPriority: 0,
+                byType: [],
+                byStatus: []
+            };
+        }
+    }
 }
 
 module.exports = WebStorageService;

@@ -43,46 +43,125 @@ router.post('/', async (req, res) => {
             userAgent: req.headers['user-agent']
         });
         
-        // Log the feedback immediately
-        console.log('✅ Feedback received and logged:', {
-            type: type,
-            subject: subject,
-            message: message,
-            userEmail: email,
-            userInfo: userInfo,
-            timestamp: new Date().toISOString()
-        });
+        // Try to save to Supabase database first
+        try {
+            const ServiceFactory = require('../services/service-factory');
+            const serviceFactory = new ServiceFactory();
+            const storageService = serviceFactory.getStorageService();
+            
+            const savedFeedback = await storageService.submitFeedback({
+                type,
+                subject,
+                message,
+                userEmail: email,
+                userId: userInfo?.userId || null,
+                userAgent: req.headers['user-agent']
+            });
 
-        // Respond immediately to prevent timeout
-        res.json({
-            success: true,
-            message: 'Feedback submitted successfully'
-        });
+            console.log('✅ Feedback saved to Supabase database:', savedFeedback.id);
 
-        // For now, just log the email content in a readable format
-        // Email sending is disabled due to Railway SMTP restrictions
-        console.log('📧 FEEDBACK EMAIL (Railway SMTP blocked - logging instead):');
-        console.log('================================================');
-        console.log(`To: neloythedev@gmail.com`);
-        console.log(`Subject: ${emailContent.subject}`);
-        console.log(`From: ${email || 'Anonymous'}`);
-        console.log(`Type: ${type}`);
-        console.log(`Time: ${new Date().toLocaleString()}`);
-        console.log('------------------------------------------------');
-        console.log(`Message:`);
-        console.log(message);
-        console.log('================================================');
-        
-        // Uncomment below if you set up a proper email service (SendGrid, etc.)
-        // sendFeedbackEmail(emailContent)
-        //     .then(() => console.log('✅ Feedback email sent successfully'))
-        //     .catch((error) => console.error('⚠️ Email failed:', error.message));
+            // Respond immediately with success
+            res.json({
+                success: true,
+                message: 'Feedback submitted successfully',
+                feedbackId: savedFeedback.id
+            });
+
+        } catch (dbError) {
+            console.error('⚠️ Failed to save feedback to Supabase:', dbError.message);
+            
+            // Fallback: still respond with success and log to console
+            console.log('📧 FEEDBACK FALLBACK (Supabase failed - console logging):');
+            console.log('================================================');
+            console.log(`Type: ${type}`);
+            console.log(`Subject: ${subject}`);
+            console.log(`From: ${email || 'Anonymous'}`);
+            console.log(`Time: ${new Date().toLocaleString()}`);
+            console.log('------------------------------------------------');
+            console.log(`Message: ${message}`);
+            console.log('================================================');
+            
+            // Still respond with success to user
+            res.json({
+                success: true,
+                message: 'Feedback submitted successfully'
+            });
+        }
         
     } catch (error) {
         console.error('❌ Error submitting feedback:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to submit feedback'
+        });
+    }
+});
+
+/**
+ * GET /api/feedback - Get all feedback (admin endpoint)
+ */
+router.get('/', async (req, res) => {
+    try {
+        const {
+            limit = 50,
+            offset = 0,
+            status,
+            type,
+            priority
+        } = req.query;
+
+        const ServiceFactory = require('../services/service-factory');
+        const serviceFactory = new ServiceFactory();
+        const storageService = serviceFactory.getStorageService();
+
+        const feedback = await storageService.getAllFeedback({
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            status,
+            type,
+            priority
+        });
+
+        res.json({
+            success: true,
+            data: feedback,
+            pagination: {
+                limit: parseInt(limit),
+                offset: parseInt(offset),
+                total: feedback.length
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching feedback:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch feedback'
+        });
+    }
+});
+
+/**
+ * GET /api/feedback/stats - Get feedback statistics (admin endpoint)  
+ */
+router.get('/stats', async (req, res) => {
+    try {
+        const ServiceFactory = require('../services/service-factory');
+        const serviceFactory = new ServiceFactory();
+        const storageService = serviceFactory.getStorageService();
+
+        const stats = await storageService.getFeedbackStats();
+
+        res.json({
+            success: true,
+            data: stats
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching feedback stats:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch feedback statistics'
         });
     }
 });
