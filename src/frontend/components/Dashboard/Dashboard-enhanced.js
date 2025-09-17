@@ -469,7 +469,7 @@ window.EnhancedDashboardComponent = {
         const store = window.store;
         
         // Debug mode for mobile troubleshooting
-        const debugMode = Vue.ref(true); // Enable debug mode
+        const debugMode = Vue.ref(false); // Disable debug mode
         const screenWidth = Vue.ref(window.innerWidth);
         const isMobile = Vue.computed(() => screenWidth.value < 768);
         
