@@ -533,10 +533,10 @@
                 overflow-x: hidden;
             }
             
-            /* Fix main app container height on mobile */
+            /* Fix main app container height on mobile - use min-height instead of fixed height */
             #app {
                 min-height: 100vh;
-                height: 100vh;
+                height: auto;
             }
             
             /* Make sure text doesn't break layout */
@@ -560,6 +560,21 @@
             .flex-1 {
                 min-height: 0;
                 flex: 1 1 0%;
+            }
+            
+            /* Dashboard mobile fixes */
+            .min-h-screen {
+                min-height: 100vh;
+                min-height: 100dvh; /* Dynamic viewport height for mobile */
+            }
+            
+            /* Grid layout mobile fixes */
+            .grid {
+                display: block;
+            }
+            
+            .grid > * {
+                margin-bottom: 1rem;
             }
         }
         
