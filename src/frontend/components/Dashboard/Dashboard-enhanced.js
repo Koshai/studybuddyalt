@@ -2,6 +2,53 @@
 window.EnhancedDashboardComponent = {
     template: `
     <div class="animate-fade-in space-y-6 md-dashboard p-4">
+        <!-- Debug Info for Mobile -->
+        <div v-if="debugMode" class="bg-red-100 border border-red-300 rounded-lg p-4 mb-4">
+            <h4 class="font-bold text-red-800">Dashboard Debug Info</h4>
+            <p class="text-sm text-red-700">Store available: {{ !!store }}</p>
+            <p class="text-sm text-red-700">User authenticated: {{ store?.state?.isAuthenticated }}</p>
+            <p class="text-sm text-red-700">User data: {{ !!store?.state?.user }}</p>
+            <p class="text-sm text-red-700">Statistics: {{ !!store?.state?.statistics }}</p>
+            <p class="text-sm text-red-700">Usage data: {{ !!store?.state?.usage }}</p>
+            <p class="text-sm text-red-700">Subjects count: {{ store?.state?.subjects?.length || 0 }}</p>
+            <p class="text-sm text-red-700">Screen width: {{ screenWidth }}</p>
+            <p class="text-sm text-red-700">Is mobile: {{ isMobile }}</p>
+        </div>
+        
+        <!-- Simple Mobile Fallback -->
+        <div v-if="isMobile" class="space-y-4">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">📱 Mobile Dashboard</h2>
+                <p class="text-gray-600 mb-4">Welcome back, {{ store?.state?.user?.firstName || 'Student' }}!</p>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-blue-50 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-blue-600">{{ store?.state?.statistics?.totalTopics || 0 }}</div>
+                        <div class="text-sm text-gray-600">Topics</div>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-green-600">{{ store?.state?.statistics?.totalQuestions || 0 }}</div>
+                        <div class="text-sm text-gray-600">Questions</div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <button @click="store?.setCurrentView('subjects')" class="w-full bg-blue-500 text-white py-3 rounded-lg font-medium">
+                        📚 Browse Subjects
+                    </button>
+                    <button @click="store?.setCurrentView('upload')" class="w-full bg-green-500 text-white py-3 rounded-lg font-medium">
+                        📤 Upload Materials
+                    </button>
+                    <button @click="store?.setCurrentView('practice')" class="w-full bg-purple-500 text-white py-3 rounded-lg font-medium">
+                        🧠 Practice Questions
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Desktop Dashboard (hidden on mobile) -->
+        <div v-else>
+        
         <!-- Welcome Header with User Info -->
         <div class="bg-blue-600 text-white rounded-xl p-6 mb-6">
             <!-- User Greeting -->
@@ -413,11 +460,31 @@ window.EnhancedDashboardComponent = {
                 </div>
             </div>
         </div>
+        
+        </div> <!-- End Desktop Dashboard -->
     </div>
     `,
 
     setup() {
         const store = window.store;
+        
+        // Debug mode for mobile troubleshooting
+        const debugMode = Vue.ref(true); // Enable debug mode
+        const screenWidth = Vue.ref(window.innerWidth);
+        const isMobile = Vue.computed(() => screenWidth.value < 768);
+        
+        // Update screen width on resize
+        const updateScreenWidth = () => {
+            screenWidth.value = window.innerWidth;
+        };
+        
+        Vue.onMounted(() => {
+            window.addEventListener('resize', updateScreenWidth);
+        });
+        
+        Vue.onUnmounted(() => {
+            window.removeEventListener('resize', updateScreenWidth);
+        });
         
         // Sync status
         const syncStatus = Vue.ref(null);
@@ -702,6 +769,10 @@ window.EnhancedDashboardComponent = {
 
         return {
             store,
+            // Debug variables
+            debugMode,
+            screenWidth,
+            isMobile,
             questionsUsagePercentage,
             storageUsagePercentage,
             topicsUsagePercentage,
