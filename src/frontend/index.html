@@ -568,13 +568,18 @@
                 min-height: 100dvh; /* Dynamic viewport height for mobile */
             }
             
-            /* Grid layout mobile fixes */
-            .grid {
-                display: block;
+            /* Dashboard mobile fixes - specific targeting */
+            .dashboard-main-content {
+                display: block !important;
             }
             
-            .grid > * {
-                margin-bottom: 1rem;
+            .dashboard-main-content > * {
+                margin-bottom: 1.5rem;
+            }
+            
+            /* Don't break other grids */
+            .grid:not(.dashboard-main-content) {
+                display: grid;
             }
         }
         

@@ -1,7 +1,7 @@
 // components/Dashboard/Dashboard-enhanced.js - Dashboard with Usage Integration
 window.EnhancedDashboardComponent = {
     template: `
-    <div class="min-h-screen bg-gray-50 p-4">
+    <div class="animate-fade-in space-y-6 md-dashboard p-4">
         <!-- Welcome Header with User Info -->
         <div class="bg-blue-600 text-white rounded-xl p-6 mb-6">
             <!-- User Greeting -->
@@ -36,7 +36,7 @@ window.EnhancedDashboardComponent = {
             </div>
             
             <!-- Usage Summary Bar -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+            <div class="dashboard-usage-grid space-y-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 mt-6">
                 <div class="bg-white/10 rounded-lg p-4">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm text-white/80">Questions Generated</span>
@@ -101,7 +101,7 @@ window.EnhancedDashboardComponent = {
         </div>
 
         <!-- Main Content Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="dashboard-main-content space-y-6 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
             <!-- Enhanced Statistics Cards with Usage Context -->
             <div class="lg:col-span-2 space-y-6">
                 <div class="bg-white rounded-lg shadow-md p-6 relative">
@@ -119,7 +119,7 @@ window.EnhancedDashboardComponent = {
                         <h3 class="text-lg font-semibold text-gray-900">📊 Your Progress & Usage</h3>
                     </div>
                     
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                    <div class="dashboard-stats-grid grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                         <div class="text-center p-4 bg-blue-50 rounded-lg">
                             <div class="text-lg sm:text-xl md:text-2xl font-bold">{{ store.state.statistics.totalTopics }}</div>
                             <div class="text-xs sm:text-sm opacity-80">Topics</div>
@@ -182,7 +182,7 @@ window.EnhancedDashboardComponent = {
                         </span>
                     </div>
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="dashboard-subjects-grid space-y-4 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-4 sm:space-y-0">
                         <div
                             v-for="subject in store.state.subjects"
                             :key="subject.id"
