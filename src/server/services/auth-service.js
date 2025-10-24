@@ -70,7 +70,8 @@ class AuthService {
                 hasUser: !!authData?.user, 
                 userId: authData?.user?.id,
                 needsConfirmation: !authData?.user?.email_confirmed_at,
-                authError: authError?.message 
+                authError: authError?.message,
+                fullAuthError: authError
             });
 
             if (authError) {

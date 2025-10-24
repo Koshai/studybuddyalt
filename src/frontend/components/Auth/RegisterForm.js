@@ -162,6 +162,17 @@ window.RegisterFormComponent = {
             </button>
         </form>
         
+        <!-- Error Message Display -->
+        <div v-if="generalError" class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                <div>
+                    <p class="text-red-700 text-sm font-medium">Registration Failed</p>
+                    <p class="text-red-600 text-sm">{{ generalError }}</p>
+                </div>
+            </div>
+        </div>
+        
         <div class="mt-6 text-center">
             <p class="text-gray-600">
                 Already have an account? 
@@ -202,6 +213,7 @@ window.RegisterFormComponent = {
         // Form state
         const isLoading = Vue.ref(false);
         const errors = Vue.ref({});
+        const generalError = Vue.ref('');
         const registrationSuccess = Vue.ref(false);
 
         // Password strength calculation
@@ -321,6 +333,7 @@ window.RegisterFormComponent = {
             
             isLoading.value = true;
             errors.value = {};
+            generalError.value = '';
             
             try {
                 const userData = {
@@ -361,8 +374,14 @@ window.RegisterFormComponent = {
                     errors.value.email = 'This email is already registered';
                 } else if (error.message.includes('username already exists')) {
                     errors.value.username = 'This username is already taken';
+                } else if (error.message.includes('Database error')) {
+                    generalError.value = 'Database error occurred. Please try again later or contact support if the problem persists.';
+                } else if (error.message.includes('Server error')) {
+                    generalError.value = 'Server error occurred. Please try again later.';
+                } else if (error.message.includes('Network error')) {
+                    generalError.value = 'Network connection error. Please check your internet connection and try again.';
                 } else {
-                    // Generic error handling is done in the store
+                    generalError.value = error.message || 'Registration failed. Please try again.';
                 }
             } finally {
                 isLoading.value = false;
@@ -379,6 +398,7 @@ window.RegisterFormComponent = {
             selectedPlan.value = 'free';
             agreeToTerms.value = false;
             errors.value = {};
+            generalError.value = '';
             registrationSuccess.value = false;
         };
 
@@ -398,6 +418,7 @@ window.RegisterFormComponent = {
             agreeToTerms,
             isLoading,
             errors,
+            generalError,
             registrationSuccess,
             isFormValid,
             passwordStrength,
