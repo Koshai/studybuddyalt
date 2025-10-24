@@ -22,14 +22,12 @@ const App = {
             
             <!-- Auth Forms Container -->
             <div class="relative z-10 w-full max-w-md">
-                <!-- Email Confirmation Form -->
+                <!-- Email Confirmation Screen -->
                 <div v-if="authMode === 'confirm-email'" class="animate-fade-in">
-                    <EmailConfirmationComponent 
+                    <EmailConfirmationScreenComponent 
                         :email="confirmationEmail"
-                        :initial-confirmation-code="confirmationCode"
-                        @back-to-login="authMode = 'login'; confirmationEmail = ''; confirmationCode = ''"
-                        @switch-to-register="authMode = 'register'; confirmationEmail = ''; confirmationCode = ''"
-                        @email-confirmed="onEmailConfirmed"
+                        @switch-to-login="onEmailConfirmed"
+                        @back-to-register="authMode = 'register'; confirmationEmail = ''; confirmationCode = ''"
                     />
                 </div>
                 
@@ -571,9 +569,8 @@ const App = {
             if (data && data.needsConfirmation) {
                 // Switch to email confirmation mode
                 confirmationEmail.value = data.email;
-                confirmationCode.value = data.confirmationCode;
                 authMode.value = 'confirm-email';
-                store.showNotification('Registration successful! Please confirm your email to continue.', 'info');
+                safeStore.value.showNotification('Registration successful! Please check your email to confirm your account.', 'success');
             } else {
                 // Direct login (email already confirmed)
                 onAuthSuccess();
@@ -771,6 +768,7 @@ const app = createApp(App);
 // Authentication components
 app.component('RegisterFormComponent', window.RegisterFormComponent);
 app.component('EmailConfirmationComponent', window.EmailConfirmationComponent);
+app.component('EmailConfirmationScreenComponent', window.EmailConfirmationScreenComponent);
 app.component('UsageIndicatorComponent', window.UsageIndicatorComponent);
 
 // Enhanced Layout components

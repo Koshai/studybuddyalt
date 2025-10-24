@@ -308,7 +308,20 @@ class SimplifiedStore {
   async register(userData) {
     this.state.authLoading = true;
     try {
-      const user = await window.api.register(userData);
+      const response = await window.api.register(userData);
+      
+      // Check if email confirmation is needed
+      if (response.needsEmailConfirmation) {
+        console.log('📧 Registration requires email confirmation');
+        return {
+          needsEmailConfirmation: true,
+          email: userData.email,
+          message: response.message || 'Please check your email to confirm your account.'
+        };
+      }
+      
+      // Direct registration success (no email confirmation needed)
+      const user = response.user || response;
       this.state.user = user;
       this.state.isAuthenticated = true;
       this.state.subscriptionTier = user.subscriptionTier || 'free';
@@ -317,6 +330,8 @@ class SimplifiedStore {
       await this.loadUsageStats();
       this.showNotification(`Welcome to Jaquizy, ${user.firstName || user.email}!`, 'success');
       console.log('✅ User registered:', user.email);
+      
+      return { success: true, user };
     } catch (error) {
       console.error('❌ Registration error:', error);
       

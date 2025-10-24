@@ -189,9 +189,10 @@ window.RegisterFormComponent = {
         <div v-if="registrationSuccess" class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
             <div class="flex items-center">
                 <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                <p class="text-green-700 text-sm">
-                    Account created successfully! You can now sign in.
-                </p>
+                <div>
+                    <p class="text-green-700 text-sm font-medium">Account Created Successfully!</p>
+                    <p class="text-green-600 text-sm">Please check your email and click the confirmation link to complete registration.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -348,13 +349,19 @@ window.RegisterFormComponent = {
                 const result = await store.register(userData);
                 
                 // Check if user needs email confirmation
-                if (result && result.needsEmailConfirmation && result.confirmationCode) {
+                if (result && result.needsEmailConfirmation) {
                     console.log('📧 User needs email confirmation');
-                    emit('register-success', {
-                        needsConfirmation: true,
-                        email: userData.email,
-                        confirmationCode: result.confirmationCode
-                    });
+                    generalError.value = ''; // Clear any errors
+                    registrationSuccess.value = true;
+                    
+                    // Show success message about email confirmation
+                    setTimeout(() => {
+                        emit('register-success', {
+                            needsConfirmation: true,
+                            email: userData.email,
+                            message: 'Please check your email and click the confirmation link to complete registration.'
+                        });
+                    }, 2000);
                 } else {
                     // Show success message for direct login
                     registrationSuccess.value = true;

@@ -51,13 +51,16 @@ class AuthService {
                 throw new Error('User already exists. Please use login instead.');
             }
 
-            // STEP 2: Create user in Supabase Auth using signUp (simplified)
+            // STEP 2: Create user in Supabase Auth using signUp
             console.log('🔄 Attempting Supabase auth.signUp...');
             let { data: authData, error: authError } = await this.supabase.auth.signUp({
                 email,
                 password,
                 options: {
-                    emailRedirectTo: undefined // Disable email confirmation
+                    data: {
+                        full_name: firstName,
+                        username: username
+                    }
                 }
             });
 
@@ -77,38 +80,7 @@ class AuthService {
                     throw new Error('User already exists. Please use login instead.');
                 }
                 
-                // If regular signUp fails with database error, try admin.createUser as fallback
-                if (authError.message?.includes('Database error')) {
-                    console.log('🔄 Trying admin.createUser as fallback...');
-                    
-                    try {
-                        const { data: adminData, error: adminError } = await this.supabase.auth.admin.createUser({
-                            email,
-                            password,
-                            email_confirm: true, // Auto-confirm email
-                            user_metadata: {
-                                full_name: firstName,
-                                username: username
-                            }
-                        });
-                        
-                        if (adminError) {
-                            console.error('Admin createUser also failed:', adminError);
-                            throw new Error(`Registration failed: ${adminError.message}`);
-                        }
-                        
-                        if (adminData?.user) {
-                            console.log('✅ Admin createUser succeeded:', adminData.user.id);
-                            // Replace authData with adminData for the rest of the flow
-                            authData.user = adminData.user;
-                        }
-                    } catch (adminErr) {
-                        console.error('Admin createUser fallback failed:', adminErr);
-                        throw new Error(`Registration failed: ${authError.message}`);
-                    }
-                } else {
-                    throw new Error(`Registration failed: ${authError.message}`);
-                }
+                throw new Error(`Registration failed: ${authError.message}`);
             }
 
             if (!authData.user) {
@@ -116,27 +88,24 @@ class AuthService {
             }
 
             console.log('✅ Auth user created:', authData.user.id);
-
-            // STEP 2.5: Generate confirmation code for new users
-            let confirmationCode = null;
-            if (!authData.user.email_confirmed_at) {
-                confirmationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-                console.log('📧 Generated confirmation code for user:', confirmationCode);
-                
-                // Store the confirmation code in user metadata
-                try {
-                    await this.supabase.auth.admin.updateUserById(
-                        authData.user.id,
-                        { 
-                            user_metadata: { 
-                                confirmation_code: confirmationCode,
-                                confirmation_code_created: new Date().toISOString()
-                            }
-                        }
-                    );
-                } catch (error) {
-                    console.warn('⚠️ Could not store confirmation code:', error.message);
-                }
+            
+            // Check if email confirmation is required
+            const needsEmailConfirmation = !authData.user.email_confirmed_at;
+            console.log('📧 Needs email confirmation:', needsEmailConfirmation);
+            
+            // For users who need email confirmation, don't create profile yet
+            // They'll need to confirm email first, then complete registration
+            if (needsEmailConfirmation) {
+                console.log('📧 User needs to confirm email before completing registration');
+                return {
+                    user: {
+                        id: authData.user.id,
+                        email: authData.user.email,
+                        emailConfirmed: false
+                    },
+                    needsEmailConfirmation: true,
+                    message: 'Please check your email and click the confirmation link to complete registration.'
+                };
             }
 
             // STEP 3: Create user profile with conflict handling
@@ -193,16 +162,104 @@ class AuthService {
                 tokens: this.generateTokens(authData.user.id)
             };
 
-            // Include confirmation code if email is not confirmed
-            if (confirmationCode) {
-                result.confirmationCode = confirmationCode;
-                result.needsEmailConfirmation = true;
-            }
-
             return result;
 
         } catch (error) {
             console.error('Registration error:', error);
+            throw error;
+        }
+    }
+
+    // Complete registration after email confirmation
+    async completeRegistration(userId, userData) {
+        try {
+            console.log('🔄 Completing registration for confirmed user:', userId);
+            
+            // Get the confirmed user from auth
+            const { data: authUser, error: authError } = await this.supabase.auth.admin.getUserById(userId);
+            
+            if (authError || !authUser.user) {
+                throw new Error('User not found or not confirmed');
+            }
+            
+            if (!authUser.user.email_confirmed_at) {
+                throw new Error('Email not yet confirmed');
+            }
+            
+            // Create user profile
+            const profileData = {
+                id: authUser.user.id,
+                email: authUser.user.email,
+                full_name: userData.firstName,
+                username: userData.username,
+                last_name: userData.lastName,
+                subscription_tier: userData.subscriptionTier || 'free'
+            };
+
+            const { data: profile, error: profileError } = await this.supabase
+                .from('user_profiles')
+                .upsert(profileData, { 
+                    onConflict: 'id',
+                    ignoreDuplicates: false 
+                })
+                .select()
+                .single();
+
+            if (profileError) {
+                console.error('Profile creation error during completion:', profileError);
+                throw new Error(`Profile creation failed: ${profileError.message}`);
+            }
+
+            // Initialize usage tracking
+            try {
+                await this.initializeUserUsage(authUser.user.id);
+                console.log('✅ Usage tracking initialized');
+            } catch (usageError) {
+                console.warn('⚠️ Usage initialization failed:', usageError);
+            }
+
+            console.log('✅ Registration completed for:', profile.email);
+            
+            return {
+                user: {
+                    id: authUser.user.id,
+                    email: profile.email,
+                    username: profile.username,
+                    firstName: profile.full_name,
+                    lastName: profile.last_name,
+                    subscriptionTier: profile.subscription_tier,
+                    emailConfirmed: true
+                },
+                tokens: this.generateTokens(authUser.user.id)
+            };
+            
+        } catch (error) {
+            console.error('Complete registration error:', error);
+            throw error;
+        }
+    }
+
+    // Resend confirmation email
+    async resendConfirmationEmail(email) {
+        try {
+            console.log('🔄 Resending confirmation email for:', email);
+            
+            // Use Supabase's resend confirmation email method
+            const { error } = await this.supabase.auth.resend({
+                type: 'signup',
+                email: email
+            });
+            
+            if (error) {
+                console.error('Resend confirmation error:', error);
+                throw new Error(`Failed to resend confirmation email: ${error.message}`);
+            }
+            
+            console.log('✅ Confirmation email resent successfully');
+            return { success: true };
+            
+        } catch (error) {
+            console.error('Resend confirmation error:', error);
             throw error;
         }
     }

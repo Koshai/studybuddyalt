@@ -36,16 +36,71 @@ router.post('/register', async (req, res) => {
         
         const result = await authService.register(req.body);
         
-        console.log('✅ Registration successful:', result.user.email);
+        if (result.needsEmailConfirmation) {
+            console.log('📧 User created but needs email confirmation');
+            res.status(201).json({
+                status: 'pending_confirmation',
+                message: result.message,
+                needsEmailConfirmation: true,
+                userId: result.user.id
+            });
+        } else {
+            console.log('✅ Registration successful:', result.user.email);
+            res.status(201).json({
+                status: 'success',
+                message: 'User registered successfully',
+                user: result.user,
+                tokens: result.tokens
+            });
+        }
+    } catch (error) {
+        console.error('❌ Registration failed:', error.message);
         
-        res.status(201).json({
+        res.status(400).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Complete registration after email confirmation
+router.post('/complete-registration', async (req, res) => {
+    try {
+        console.log('🔄 Completing registration for user:', req.body.userId);
+        
+        const result = await authService.completeRegistration(req.body.userId, req.body);
+        
+        console.log('✅ Registration completed:', result.user.email);
+        
+        res.json({
             status: 'success',
-            message: 'User registered successfully',
+            message: 'Registration completed successfully',
             user: result.user,
             tokens: result.tokens
         });
     } catch (error) {
-        console.error('❌ Registration failed:', error.message);
+        console.error('❌ Complete registration failed:', error.message);
+        
+        res.status(400).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Resend confirmation email
+router.post('/resend-confirmation', async (req, res) => {
+    try {
+        console.log('🔄 Resending confirmation email for:', req.body.email);
+        
+        const result = await authService.resendConfirmationEmail(req.body.email);
+        
+        res.json({
+            status: 'success',
+            message: 'Confirmation email sent successfully'
+        });
+    } catch (error) {
+        console.error('❌ Resend confirmation failed:', error.message);
         
         res.status(400).json({
             status: 'error',
