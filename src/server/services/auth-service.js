@@ -51,18 +51,13 @@ class AuthService {
                 throw new Error('User already exists. Please use login instead.');
             }
 
-            // STEP 2: Create user in Supabase Auth using signUp
-            const { data: authData, error: authError } = await this.supabase.auth.signUp({
+            // STEP 2: Create user in Supabase Auth using signUp (simplified)
+            console.log('🔄 Attempting Supabase auth.signUp...');
+            let { data: authData, error: authError } = await this.supabase.auth.signUp({
                 email,
                 password,
                 options: {
-                    data: {
-                        full_name: firstName,
-                        last_name: lastName,
-                        username: username
-                    },
-                    emailRedirectTo: undefined, // Disable email confirmation for now
-                    captchaToken: undefined
+                    emailRedirectTo: undefined // Disable email confirmation
                 }
             });
 
@@ -82,7 +77,38 @@ class AuthService {
                     throw new Error('User already exists. Please use login instead.');
                 }
                 
-                throw new Error(`Registration failed: ${authError.message}`);
+                // If regular signUp fails with database error, try admin.createUser as fallback
+                if (authError.message?.includes('Database error')) {
+                    console.log('🔄 Trying admin.createUser as fallback...');
+                    
+                    try {
+                        const { data: adminData, error: adminError } = await this.supabase.auth.admin.createUser({
+                            email,
+                            password,
+                            email_confirm: true, // Auto-confirm email
+                            user_metadata: {
+                                full_name: firstName,
+                                username: username
+                            }
+                        });
+                        
+                        if (adminError) {
+                            console.error('Admin createUser also failed:', adminError);
+                            throw new Error(`Registration failed: ${adminError.message}`);
+                        }
+                        
+                        if (adminData?.user) {
+                            console.log('✅ Admin createUser succeeded:', adminData.user.id);
+                            // Replace authData with adminData for the rest of the flow
+                            authData.user = adminData.user;
+                        }
+                    } catch (adminErr) {
+                        console.error('Admin createUser fallback failed:', adminErr);
+                        throw new Error(`Registration failed: ${authError.message}`);
+                    }
+                } else {
+                    throw new Error(`Registration failed: ${authError.message}`);
+                }
             }
 
             if (!authData.user) {
@@ -118,6 +144,8 @@ class AuthService {
                 id: authData.user.id,
                 email,
                 full_name: firstName,
+                username: username,
+                last_name: lastName,
                 subscription_tier: subscriptionTier || 'free'
             };
 
