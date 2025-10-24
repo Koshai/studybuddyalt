@@ -74,7 +74,7 @@ window.EmailConfirmationScreenComponent = {
         <!-- Alternative Actions -->
         <div class="space-y-3">
             <button
-                @click="$emit('switch-to-login')"
+                @click="handleSignInClick"
                 class="w-full bg-gradient-to-r from-primary-500 to-secondary-500 text-white py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-300"
             >
                 <i class="fas fa-sign-in-alt mr-2"></i>
@@ -178,12 +178,21 @@ window.EmailConfirmationScreenComponent = {
             }
         });
         
+        const handleSignInClick = () => {
+            // Store the email for pre-filling login form
+            if (window.store && window.store.state) {
+                window.store.state.prefilledEmail = props.email;
+            }
+            emit('switch-to-login');
+        };
+
         return {
             isResending,
             resendMessage,
             resendSuccess,
             cooldownRemaining,
-            resendConfirmationEmail
+            resendConfirmationEmail,
+            handleSignInClick
         };
     },
     

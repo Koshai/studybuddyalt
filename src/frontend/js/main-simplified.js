@@ -414,6 +414,14 @@ const App = {
         Vue.onMounted(async () => {
             // Simple delay to ensure store is loaded
             await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Check for prefilled email from registration flow
+            if (safeStore.value.state && safeStore.value.state.prefilledEmail) {
+                loginEmail.value = safeStore.value.state.prefilledEmail;
+                // Clear it so it doesn't persist
+                delete safeStore.value.state.prefilledEmail;
+            }
+            
             await initializeApp();
         });
 
@@ -582,9 +590,13 @@ const App = {
             authMode.value = 'login';
             // Keep the email filled in for convenience
             loginEmail.value = confirmationEmail.value;
+            
+            // Clear confirmation state
             confirmationEmail.value = '';
             confirmationCode.value = '';
-            store.showNotification('Email confirmed! Please sign in now.', 'success');
+            
+            // Show success message
+            safeStore.value.showNotification('Registration complete! You can now sign in with your email and password.', 'success');
         };
 
         const showUpgradeModal = (reason = 'general') => {

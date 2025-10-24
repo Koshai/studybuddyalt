@@ -89,26 +89,10 @@ class AuthService {
 
             console.log('✅ Auth user created:', authData.user.id);
             
-            // Check if email confirmation is required
-            const needsEmailConfirmation = !authData.user.email_confirmed_at;
-            console.log('📧 Needs email confirmation:', needsEmailConfirmation);
+            // Always create user profile immediately (since trigger is disabled)
+            // We'll handle email confirmation separately
+            console.log('👤 Creating user profile...');
             
-            // For users who need email confirmation, don't create profile yet
-            // They'll need to confirm email first, then complete registration
-            if (needsEmailConfirmation) {
-                console.log('📧 User needs to confirm email before completing registration');
-                return {
-                    user: {
-                        id: authData.user.id,
-                        email: authData.user.email,
-                        emailConfirmed: false
-                    },
-                    needsEmailConfirmation: true,
-                    message: 'Please check your email and click the confirmation link to complete registration.'
-                };
-            }
-
-            // STEP 3: Create user profile with conflict handling
             const profileData = {
                 id: authData.user.id,
                 email,
@@ -129,25 +113,41 @@ class AuthService {
 
             if (profileError) {
                 console.error('Profile creation error:', profileError);
-                
-                // Note: In production, you'd want to set up a cleanup job for orphaned auth users
-                // For now, we'll just log the issue and continue
-                console.warn('⚠️ Auth user created but profile creation failed. Manual cleanup may be needed.');
-                
                 throw new Error(`Profile creation failed: ${profileError.message}`);
             }
 
             console.log('✅ User profile created:', profile.id);
 
-            // STEP 4: Initialize usage tracking
+            // Initialize usage tracking
             try {
                 await this.initializeUserUsage(authData.user.id);
                 console.log('✅ Usage tracking initialized');
             } catch (usageError) {
                 console.warn('⚠️ Usage initialization failed:', usageError);
-                // Don't fail registration for this
+            }
+            
+            // Check if email confirmation is required
+            const needsEmailConfirmation = !authData.user.email_confirmed_at;
+            console.log('📧 Needs email confirmation:', needsEmailConfirmation);
+            
+            if (needsEmailConfirmation) {
+                console.log('📧 User created with profile, but needs email confirmation');
+                return {
+                    user: {
+                        id: authData.user.id,
+                        email: authData.user.email,
+                        username: profile.username,
+                        firstName: profile.full_name,
+                        lastName: profile.last_name,
+                        subscriptionTier: profile.subscription_tier,
+                        emailConfirmed: false
+                    },
+                    needsEmailConfirmation: true,
+                    message: 'Please check your email and click the confirmation link to complete registration.'
+                };
             }
 
+            // For users with confirmed email, continue with normal flow
             const result = {
                 user: {
                     id: authData.user.id,
@@ -322,12 +322,46 @@ class AuthService {
             if (profileError) {
                 console.error('Profile loading error:', profileError);
                 
-                // If profile doesn't exist, this might be a user created through Supabase UI
+                // If profile doesn't exist, try to create it automatically
                 if (profileError.code === 'PGRST116') {
-                    throw new Error('User profile not found. Please contact support or try registering again.');
+                    console.log('🔄 Profile not found, creating missing profile...');
+                    
+                    try {
+                        const newProfileData = {
+                            id: authData.user.id,
+                            email: authData.user.email,
+                            full_name: authData.user.user_metadata?.full_name || '',
+                            username: authData.user.user_metadata?.username || '',
+                            subscription_tier: 'free'
+                        };
+
+                        const { data: newProfile, error: createError } = await this.supabase
+                            .from('user_profiles')
+                            .insert(newProfileData)
+                            .select()
+                            .single();
+
+                        if (createError) {
+                            throw new Error(`Failed to create missing profile: ${createError.message}`);
+                        }
+
+                        console.log('✅ Missing profile created successfully');
+                        profileData = newProfile;
+                        
+                        // Initialize usage tracking for the new profile
+                        try {
+                            await this.initializeUserUsage(authData.user.id);
+                        } catch (usageError) {
+                            console.warn('⚠️ Usage initialization failed for recovered profile:', usageError);
+                        }
+                        
+                    } catch (createError) {
+                        console.error('Failed to create missing profile:', createError);
+                        throw new Error('User profile not found. Please contact support or try registering again.');
+                    }
+                } else {
+                    throw new Error(`Failed to load user profile: ${profileError.message}`);
                 }
-                
-                throw new Error(`Failed to load user profile: ${profileError.message}`);
             }
 
             // Update last login
