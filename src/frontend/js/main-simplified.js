@@ -28,6 +28,7 @@ const App = {
                         :email="confirmationEmail"
                         @switch-to-login="onEmailConfirmed"
                         @back-to-register="authMode = 'register'; confirmationEmail = ''; confirmationCode = ''"
+                        @go-to-home="goToLandingPage"
                     />
                 </div>
                 
@@ -572,14 +573,18 @@ const App = {
         };
 
         const onRegisterSuccess = (data) => {
-            console.log('📝 Registration completed:', data);
+            console.log('📝 Registration completed in main app:', data);
             
             if (data && data.needsConfirmation) {
+                console.log('📧 Switching to email confirmation mode');
                 // Switch to email confirmation mode
                 confirmationEmail.value = data.email;
                 authMode.value = 'confirm-email';
+                console.log('📧 Auth mode set to:', authMode.value);
+                console.log('📧 Confirmation email set to:', confirmationEmail.value);
                 safeStore.value.showNotification('Registration successful! Please check your email to confirm your account.', 'success');
             } else {
+                console.log('📝 Direct login flow (no email confirmation needed)');
                 // Direct login (email already confirmed)
                 onAuthSuccess();
             }
@@ -597,6 +602,17 @@ const App = {
             
             // Show success message
             safeStore.value.showNotification('Registration complete! You can now sign in with your email and password.', 'success');
+        };
+
+        const goToLandingPage = () => {
+            console.log('📍 Navigating to landing page');
+            authMode.value = 'landing';
+            
+            // Clear any auth state
+            confirmationEmail.value = '';
+            confirmationCode.value = '';
+            loginEmail.value = '';
+            loginPassword.value = '';
         };
 
         const showUpgradeModal = (reason = 'general') => {
@@ -764,6 +780,7 @@ const App = {
             onAuthSuccess,
             onRegisterSuccess,
             onEmailConfirmed,
+            goToLandingPage,
             showUpgradeModal,
             closeUpgradeModal,
             showUpgradeModalState,

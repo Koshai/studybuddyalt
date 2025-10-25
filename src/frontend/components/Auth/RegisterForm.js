@@ -158,8 +158,16 @@ window.RegisterFormComponent = {
             >
                 <i v-if="isLoading" class="fas fa-spinner fa-spin mr-2"></i>
                 <i v-else class="fas fa-user-plus mr-2"></i>
-                {{ isLoading ? 'Creating account...' : 'Create Account' }}
+                {{ isLoading ? 'Creating your account...' : 'Create Account' }}
             </button>
+            
+            <!-- Loading State Message -->
+            <div v-if="isLoading" class="mt-3 text-center">
+                <p class="text-sm text-gray-600">
+                    <i class="fas fa-clock mr-1"></i>
+                    Setting up your account and sending confirmation email...
+                </p>
+            </div>
         </form>
         
         <!-- Error Message Display -->
@@ -336,6 +344,9 @@ window.RegisterFormComponent = {
             errors.value = {};
             generalError.value = '';
             
+            // Show immediate feedback
+            console.log('🔄 Starting registration process...');
+            
             try {
                 const userData = {
                     firstName: firstName.value.trim(),
@@ -350,18 +361,17 @@ window.RegisterFormComponent = {
                 
                 // Check if user needs email confirmation
                 if (result && result.needsEmailConfirmation) {
-                    console.log('📧 User needs email confirmation');
+                    console.log('📧 User needs email confirmation - switching to confirmation screen');
+                    console.log('📧 Registration result:', result);
                     generalError.value = ''; // Clear any errors
-                    registrationSuccess.value = true;
                     
-                    // Show success message about email confirmation
-                    setTimeout(() => {
-                        emit('register-success', {
-                            needsConfirmation: true,
-                            email: userData.email,
-                            message: 'Please check your email and click the confirmation link to complete registration.'
-                        });
-                    }, 2000);
+                    // Immediately emit the event to show confirmation screen
+                    console.log('📧 Emitting register-success event with confirmation data');
+                    emit('register-success', {
+                        needsConfirmation: true,
+                        email: userData.email,
+                        message: 'Please check your email and click the confirmation link to complete registration.'
+                    });
                 } else {
                     // Show success message for direct login
                     registrationSuccess.value = true;

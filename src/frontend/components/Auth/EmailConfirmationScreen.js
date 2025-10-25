@@ -82,6 +82,14 @@ window.EmailConfirmationScreenComponent = {
             </button>
             
             <button
+                @click="goToHomePage"
+                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-lg font-medium transition-colors"
+            >
+                <i class="fas fa-home mr-2"></i>
+                Visit Homepage
+            </button>
+            
+            <button
                 @click="$emit('back-to-register')"
                 class="w-full text-gray-600 hover:text-gray-800 py-2 text-sm font-medium hover:underline"
             >
@@ -186,15 +194,21 @@ window.EmailConfirmationScreenComponent = {
             emit('switch-to-login');
         };
 
+        const goToHomePage = () => {
+            // Navigate to landing page
+            emit('go-to-home');
+        };
+
         return {
             isResending,
             resendMessage,
             resendSuccess,
             cooldownRemaining,
             resendConfirmationEmail,
-            handleSignInClick
+            handleSignInClick,
+            goToHomePage
         };
     },
     
-    emits: ['switch-to-login', 'back-to-register']
+    emits: ['switch-to-login', 'back-to-register', 'go-to-home']
 };
