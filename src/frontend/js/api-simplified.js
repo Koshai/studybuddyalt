@@ -199,11 +199,19 @@ class SimplifiedApiService {
         method: 'POST',
         body: JSON.stringify(userData),
       });
-      
+
       if (response.status === 'success') {
         this.setTokens(response.tokens);
         console.log('✅ Registration successful for:', userData.email);
         return response.user;
+      } else if (response.status === 'pending_confirmation') {
+        // Email confirmation is needed
+        console.log('📧 Registration pending email confirmation');
+        return {
+          needsEmailConfirmation: response.needsEmailConfirmation,
+          message: response.message,
+          userId: response.userId
+        };
       } else {
         throw new Error(response.message || 'Registration failed');
       }
