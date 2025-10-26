@@ -348,10 +348,10 @@ const App = {
         }, { immediate: true });
         
         const authMode = Vue.ref('landing');
-        
+
         // Expose authMode globally for landing page navigation
         window.appAuthMode = authMode;
-        
+
         // Listen for auth mode changes from landing page
         window.addEventListener('setAuthMode', (event) => {
             authMode.value = event.detail;
@@ -410,6 +410,9 @@ const App = {
         // Email confirmation state
         const confirmationEmail = Vue.ref('');
         const confirmationCode = Vue.ref('');
+
+        // Expose confirmationEmail globally for child components to access
+        window.appConfirmationEmail = confirmationEmail;
 
         // Initialize app
         Vue.onMounted(async () => {

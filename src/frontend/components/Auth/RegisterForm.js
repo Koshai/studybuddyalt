@@ -207,6 +207,7 @@ window.RegisterFormComponent = {
     `,
     
     setup(props, { emit }) {
+        console.log('🔧 RegisterForm setup - emit function:', typeof emit, emit);
         const store = window.store;
         
         // Form fields
@@ -376,6 +377,17 @@ window.RegisterFormComponent = {
                     console.log('📧 About to call emit function...');
                     emit('register-success', eventData);
                     console.log('📧 emit() function called successfully');
+
+                    // WORKAROUND: Directly access parent authMode through global window
+                    console.log('📧 Setting authMode directly via window.appAuthMode');
+                    if (window.appAuthMode) {
+                        window.appAuthMode.value = 'confirm-email';
+                        console.log('📧 Direct authMode set to confirm-email');
+                    }
+                    if (window.appConfirmationEmail) {
+                        window.appConfirmationEmail.value = userData.email;
+                        console.log('📧 Direct confirmationEmail set to', userData.email);
+                    }
                 } else {
                     // Show success message for direct login
                     registrationSuccess.value = true;
