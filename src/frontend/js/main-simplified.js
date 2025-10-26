@@ -573,8 +573,11 @@ const App = {
         };
 
         const onRegisterSuccess = (data) => {
+            console.log('🎯 onRegisterSuccess HANDLER CALLED!');
             console.log('📝 Registration completed in main app:', data);
-            
+            console.log('📝 Data type:', typeof data);
+            console.log('📝 Data keys:', data ? Object.keys(data) : 'null/undefined');
+
             if (data && data.needsConfirmation) {
                 console.log('📧 Switching to email confirmation mode');
                 // Switch to email confirmation mode

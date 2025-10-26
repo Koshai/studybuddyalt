@@ -364,14 +364,18 @@ window.RegisterFormComponent = {
                     console.log('📧 User needs email confirmation - switching to confirmation screen');
                     console.log('📧 Registration result:', result);
                     generalError.value = ''; // Clear any errors
-                    
+
                     // Immediately emit the event to show confirmation screen
                     console.log('📧 Emitting register-success event with confirmation data');
-                    emit('register-success', {
+                    const eventData = {
                         needsConfirmation: true,
                         email: userData.email,
                         message: 'Please check your email and click the confirmation link to complete registration.'
-                    });
+                    };
+                    console.log('📧 Event data being emitted:', eventData);
+                    console.log('📧 About to call emit function...');
+                    emit('register-success', eventData);
+                    console.log('📧 emit() function called successfully');
                 } else {
                     // Show success message for direct login
                     registrationSuccess.value = true;
