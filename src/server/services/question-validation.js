@@ -123,8 +123,45 @@ class QuestionValidator {
       console.log(`❌ Math error detected: ${mathErrors[0]}`);
       return false;
     }
+
+    // For simple arithmetic MCQs, auto-align correct option with computed result.
+    this.reconcileArithmeticMcqAnswer(question);
     
     return this.validateGeneralQuestion(question);
+  }
+
+  reconcileArithmeticMcqAnswer(question) {
+    if (!question || question.type !== 'multiple_choice' || !Array.isArray(question.options) || question.options.length !== 4) {
+      return;
+    }
+
+    const exprMatch = String(question.question || '').match(/(\d+)\s*([+\-*/x×÷])\s*(\d+)/i);
+    if (!exprMatch) {
+      return;
+    }
+
+    const left = Number(exprMatch[1]);
+    const operator = exprMatch[2];
+    const right = Number(exprMatch[3]);
+
+    let computed = null;
+    if (operator === '+') computed = left + right;
+    if (operator === '-') computed = left - right;
+    if (operator === '*' || operator.toLowerCase() === 'x' || operator === '×') computed = left * right;
+    if ((operator === '/' || operator === '÷') && right !== 0) computed = left / right;
+
+    if (computed === null || Number.isNaN(computed)) {
+      return;
+    }
+
+    const normalizedComputed = String(computed).trim();
+    const optionIndex = question.options.findIndex(opt => String(opt).trim() === normalizedComputed);
+    if (optionIndex === -1) {
+      return;
+    }
+
+    question.correctIndex = optionIndex;
+    question.answer = question.options[optionIndex];
   }
 
   /**

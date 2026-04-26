@@ -91,11 +91,11 @@ window.EnhancedUploadFormComponent = {
                         <select
                             v-model="selectedSubject"
                             @change="handleSubjectChange"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-pink-50"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-pink-50 text-gray-900"
                             required
                         >
-                            <option value="">Choose a subject...</option>
-                            <option v-for="subject in subjects" :key="subject.id" :value="subject">
+                            <option value="" class="text-gray-900 bg-white">Choose a subject...</option>
+                            <option v-for="subject in subjects" :key="subject.id" :value="subject" class="text-gray-900 bg-white">
                                 {{ subject.name }}
                             </option>
                         </select>
@@ -114,11 +114,11 @@ window.EnhancedUploadFormComponent = {
                         <div class="flex space-x-3">
                             <select
                                 v-model="selectedTopic"
-                                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-pink-50"
+                                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-pink-50 text-gray-900"
                                 required
                             >
-                                <option value="">Choose a topic...</option>
-                                <option v-for="topic in availableTopics" :key="topic.id" :value="topic">
+                                <option value="" class="text-gray-900 bg-white">Choose a topic...</option>
+                                <option v-for="topic in availableTopics" :key="topic.id" :value="topic" class="text-gray-900 bg-white">
                                     {{ topic.name }}
                                 </option>
                             </select>

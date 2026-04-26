@@ -13,7 +13,7 @@ const AnswerEvaluationService = require('../services/answer-evaluation-service')
  */
 router.get('/topics-with-questions', authMiddleware.authenticateToken, async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user.user_id || req.user.id;
         
         console.log(`🎯 Getting topics with questions for practice, user ${userId}`);
         
@@ -61,7 +61,7 @@ router.get('/topics-with-questions', authMiddleware.authenticateToken, async (re
  */
 router.get('/stats', authMiddleware.authenticateToken, async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user.user_id || req.user.id;
         
         console.log(`📊 Getting practice stats for user ${userId}`);
         
@@ -122,7 +122,7 @@ router.get('/stats', authMiddleware.authenticateToken, async (req, res) => {
 router.post('/session', authMiddleware.authenticateToken, async (req, res) => {
     try {
         const { topicId, questionsCount, correctAnswers } = req.body;
-        const userId = req.user.id;
+        const userId = req.user.user_id || req.user.id;
         
         if (!topicId || questionsCount === undefined || correctAnswers === undefined) {
             return res.status(400).json({ error: 'topicId, questionsCount, and correctAnswers are required' });

@@ -8,6 +8,23 @@ const ServiceFactory = require('../services/service-factory');
 
 const router = express.Router();
 
+function tokenize(text = '') {
+    return String(text)
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(token => token.length >= 3);
+}
+
+function hasTopicFilenameOverlap(topicName = '', filename = '') {
+    const topicTokens = [...new Set(tokenize(topicName))];
+    const fileTokens = new Set(tokenize(filename));
+    if (topicTokens.length < 2 || fileTokens.size === 0) {
+        return true;
+    }
+    return topicTokens.some(token => fileTokens.has(token));
+}
+
 const requireDevelopment = (req, res, next) => {
     if (process.env.NODE_ENV !== 'development') {
         return res.status(404).json({ error: 'Not found' });
@@ -211,6 +228,14 @@ router.post('/upload-simplified',
                 return res.status(403).json({
                     success: false,
                     error: 'Access denied to this topic'
+                });
+            }
+
+            if (!hasTopicFilenameOverlap(topic.name, file.originalname)) {
+                return res.status(422).json({
+                    success: false,
+                    error: 'File name appears unrelated to the selected topic',
+                    details: `Selected topic is "${topic.name}" but file "${file.originalname}" looks unrelated. Choose the matching topic or rename the file for clarity.`
                 });
             }
             

@@ -167,34 +167,34 @@ window.EnhancedDashboardComponent = {
                     </div>
                     
                     <div class="dashboard-stats-grid grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                        <div class="text-center p-4 bg-blue-50 rounded-lg">
+                        <div class="text-center p-4 bg-blue-50 rounded-lg text-blue-900">
                             <div class="text-lg sm:text-xl md:text-2xl font-bold">{{ store.state.statistics.totalTopics }}</div>
-                            <div class="text-xs sm:text-sm opacity-80">Topics</div>
-                            <div class="text-xs opacity-60 mt-1">
+                            <div class="text-xs sm:text-sm text-blue-800">Topics</div>
+                            <div class="text-xs text-blue-700 mt-1">
                                 {{ store.state.usage?.topics?.used || 0 }}/{{ store.state.usage?.topics?.limit || 3 }} used
                             </div>
                         </div>
                         
-                        <div class="text-center p-4 bg-green-50 rounded-lg">
+                        <div class="text-center p-4 bg-green-50 rounded-lg text-green-900">
                             <div class="text-lg sm:text-xl md:text-2xl font-bold">{{ store.state.statistics.totalQuestions }}</div>
-                            <div class="text-xs sm:text-sm opacity-80">Questions</div>
-                            <div class="text-xs opacity-60 mt-1">
+                            <div class="text-xs sm:text-sm text-green-800">Questions</div>
+                            <div class="text-xs text-green-700 mt-1">
                                 {{ store.state.usage?.questions?.used || 0 }}/{{ store.state.usage?.questions?.limit || 50 }} used
                             </div>
                         </div>
                         
-                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-center p-4 bg-gray-50 rounded-lg text-gray-900">
                             <div class="text-lg sm:text-xl md:text-2xl font-bold">{{ store.state.statistics.totalPracticeSessions }}</div>
-                            <div class="text-xs sm:text-sm opacity-80">Sessions</div>
+                            <div class="text-xs sm:text-sm text-gray-700">Sessions</div>
                             <div class="text-xs text-gray-500 mt-1">
                                 {{ (store.state.statistics.averageScore || 0).toFixed(1) }}% avg score
                             </div>
                         </div>
                         
-                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-center p-4 bg-gray-50 rounded-lg text-gray-900">
                             <div class="text-lg sm:text-xl md:text-2xl font-bold">{{ storageUsedMB }}MB</div>
-                            <div class="text-xs sm:text-sm opacity-80">Storage</div>
-                            <div class="text-xs opacity-60 mt-1">
+                            <div class="text-xs sm:text-sm text-gray-700">Storage</div>
+                            <div class="text-xs text-gray-600 mt-1">
                                 {{ storageUsagePercentage.toFixed(1) }}% of {{ storageUsageLimitMB }}MB
                             </div>
                         </div>

@@ -422,10 +422,11 @@ class SimplifiedApiService {
    * Create a new topic under a subject
    */
   async createTopic(subjectId, name, description = '') {
-    return this.request(`/subjects/${subjectId}/topics`, {
+    const response = await this.request(`/subjects/${subjectId}/topics`, {
       method: 'POST',
       body: JSON.stringify({ name, description }),
     });
+    return response?.topic || response;
   }
 
   /**
