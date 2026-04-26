@@ -1,0 +1,648 @@
+{
+  "generatedAt": "2026-04-23T03:17:24.862Z",
+  "provider": "openai",
+  "count": 3,
+  "dryRun": false,
+  "dbPath": "C:\\Users\\boltu\\Documents\\Sites\\StudyBuddyAlt\\src\\data\\study_ai_simplified.db",
+  "datasetSize": 13,
+  "realSampleCount": 3,
+  "results": [
+    {
+      "subjectId": "mathematics",
+      "subjectName": "Mathematics",
+      "source": "synthetic",
+      "topic": "Quadratic Equations",
+      "generatedCount": 3,
+      "score": {
+        "total": 97,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 67,
+          "alignment": 100
+        },
+        "validCount": 3
+      },
+      "sampleQuestions": [
+        {
+          "question": "What is the discriminant of the quadratic equation 2x^2 - 4x + 1 = 0?",
+          "answer": "8",
+          "type": "multiple_choice",
+          "options": [
+            "4",
+            "8",
+            "0",
+            "-4"
+          ],
+          "correctIndex": 1,
+          "explanation": "The discriminant is calculated using the formula b^2 - 4ac. Here, a = 2, b = -4, and c = 1, so the discriminant is (-4)^2 - 4(2)(1) = 16 - 8 = 8. Options A, C, and D do not match this calculation."
+        },
+        {
+          "question": "What can be concluded if the discriminant of a quadratic equation is negative?",
+          "answer": "The equation has two complex roots.",
+          "type": "multiple_choice",
+          "options": [
+            "The equation has two distinct real roots.",
+            "The equation has one repeated real root.",
+            "The equation has two complex roots.",
+            "The equation has no roots."
+          ],
+          "correctIndex": 2,
+          "explanation": "A negative discriminant indicates that the quadratic equation has two complex roots, as stated in the material. Options A and B describe scenarios with a positive and zero discriminant, respectively, while D is incorrect since every quadratic equation has at least one root, albeit complex."
+        }
+      ]
+    },
+    {
+      "subjectId": "mathematics",
+      "subjectName": "Mathematics",
+      "source": "real",
+      "topic": "Basic Arithmetic",
+      "generatedCount": 3,
+      "score": {
+        "total": 80,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 0,
+          "alignment": 0
+        },
+        "validCount": 3
+      },
+      "sampleQuestions": [
+        {
+          "question": "What is the sum of 15 and 27?",
+          "answer": "42",
+          "type": "multiple_choice",
+          "options": [
+            "42",
+            "32",
+            "22",
+            "40"
+          ],
+          "correctIndex": 0,
+          "explanation": "The sum is calculated by adding the two numbers together: 15 + 27 = 42. Options B (32), C (22), and D (40) are incorrect as they do not represent the correct total of the addition."
+        },
+        {
+          "question": "What is the result of subtracting 9 from 25?",
+          "answer": "16",
+          "type": "multiple_choice",
+          "options": [
+            "16",
+            "14",
+            "18",
+            "20"
+          ],
+          "correctIndex": 0,
+          "explanation": "The difference is found by taking 9 away from 25: 25 - 9 = 16. Options B (14), C (18), and D (20) are incorrect as they do not reflect the correct result of the subtraction."
+        }
+      ]
+    },
+    {
+      "subjectId": "natural-sciences",
+      "subjectName": "Natural Sciences",
+      "source": "synthetic",
+      "topic": "Photosynthesis and Cellular Respiration",
+      "generatedCount": 3,
+      "score": {
+        "total": 100,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 100
+        },
+        "validCount": 3
+      },
+      "sampleQuestions": [
+        {
+          "question": "What is the primary function of photosynthesis in plants?",
+          "answer": "To convert light energy into chemical energy",
+          "type": "multiple_choice",
+          "options": [
+            "To produce ATP for cellular respiration",
+            "To convert light energy into chemical energy",
+            "To break down glucose for energy",
+            "To release oxygen into the atmosphere"
+          ],
+          "correctIndex": 1,
+          "explanation": "The primary function of photosynthesis is to convert light energy into chemical energy stored in glucose, as stated in the material. Options A and C describe processes related to cellular respiration, while D, although a byproduct, does not encompass the main function of photosynthesis."
+        },
+        {
+          "question": "Where does cellular respiration primarily take place in eukaryotic cells?",
+          "answer": "Mitochondria",
+          "type": "multiple_choice",
+          "options": [
+            "Chloroplasts",
+            "Nucleus",
+            "Mitochondria",
+            "Cytoplasm"
+          ],
+          "correctIndex": 2,
+          "explanation": "Cellular respiration mainly occurs in mitochondria, which are known as the powerhouses of the cell. Chloroplasts are involved in photosynthesis, the nucleus houses genetic material, and while some glycolysis occurs in the cytoplasm, the main energy production happens in mitochondria."
+        }
+      ]
+    },
+    {
+      "subjectId": "literature",
+      "subjectName": "Literature & Writing",
+      "source": "synthetic",
+      "topic": "Characterization and Theme",
+      "generatedCount": 3,
+      "score": {
+        "total": 93,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 33
+        },
+        "validCount": 3
+      },
+      "sampleQuestions": [
+        {
+          "question": "What type of characterization involves the narrator explicitly describing a character's traits?",
+          "answer": "Direct characterization",
+          "type": "multiple_choice",
+          "options": [
+            "Indirect characterization",
+            "Symbolic characterization",
+            "Direct characterization",
+            "Thematic characterization"
+          ],
+          "correctIndex": 2,
+          "explanation": "Direct characterization is defined as when the narrator explicitly describes a character's traits, making it clear and straightforward for the reader. Indirect characterization involves revealing traits through actions or dialogue, which does not fit the definition provided."
+        },
+        {
+          "question": "How does conflict contribute to character growth in a narrative?",
+          "answer": "It creates opportunities for characters to change or evolve.",
+          "type": "multiple_choice",
+          "options": [
+            "It distracts characters from their goals.",
+            "It creates opportunities for characters to change or evolve.",
+            "It eliminates the need for resolution.",
+            "It solely serves to entertain the audience."
+          ],
+          "correctIndex": 1,
+          "explanation": "Conflict is crucial in narratives as it creates challenges that characters must face, often leading to personal growth or change. The other options do not accurately reflect the role of conflict in character development."
+        }
+      ]
+    },
+    {
+      "subjectId": "literature",
+      "subjectName": "Literature & Writing",
+      "source": "real",
+      "topic": "Oliver Twist",
+      "generatedCount": 3,
+      "score": {
+        "total": 93,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 33
+        },
+        "validCount": 3
+      },
+      "sampleQuestions": [
+        {
+          "question": "What is the primary reason the board decides to send Oliver Twist to sea?",
+          "answer": "They consider it a means to rid themselves of him.",
+          "type": "multiple_choice",
+          "options": [
+            "They believe he will thrive in a new environment.",
+            "They consider it a means to rid themselves of him.",
+            "They want him to learn valuable skills.",
+            "They hope he will find friends among sailors."
+          ],
+          "correctIndex": 1,
+          "explanation": "The board views sending Oliver to sea as a way to effectively provide for him by getting rid of him, as indicated by their discussions on the \"manifold advantages\" of the step, which highlight their indifference towards his well-being."
+        },
+        {
+          "question": "How does Mr. Sowerberry's character contribute to the tone of the scene when he interacts with Mr. Bumble?",
+          "answer": "He displays a jovial demeanor, contrasting with the grim topic.",
+          "type": "multiple_choice",
+          "options": [
+            "He is portrayed as overly serious and somber.",
+            "He displays a jovial demeanor, contrasting with the grim topic.",
+            "He is depicted as indifferent to the business of death.",
+            "He shows hostility towards Mr. Bumble."
+          ],
+          "correctIndex": 1,
+          "explanation": "Mr. Sowerberry's \"professional jocosity\" and \"inward pleasantry\" create a contrast between the lightheartedness of his demeanor and the grim subject of death, contributing to a darkly comedic tone in the scene."
+        }
+      ]
+    },
+    {
+      "subjectId": "history",
+      "subjectName": "History & Social Studies",
+      "source": "synthetic",
+      "topic": "Industrial Revolution",
+      "generatedCount": 3,
+      "score": {
+        "total": 100,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 100
+        },
+        "validCount": 3
+      },
+      "sampleQuestions": [
+        {
+          "question": "What was a significant social consequence of the Industrial Revolution in Britain?",
+          "answer": "Increased economic output",
+          "type": "multiple_choice",
+          "options": [
+            "Decreased urban population",
+            "Increased economic output",
+            "Improved working conditions for all",
+            "Rise in rural employment opportunities"
+          ],
+          "correctIndex": 1,
+          "explanation": "Increased economic output was a direct consequence of the Industrial Revolution, driven by new machinery and factory systems. The other options are incorrect because urban populations grew, working conditions often worsened, and rural employment opportunities declined as people moved to cities."
+        },
+        {
+          "question": "Which of the following issues was a direct result of industrialization during the Industrial Revolution?",
+          "answer": "Poor working conditions",
+          "type": "multiple_choice",
+          "options": [
+            "Abolition of child labor",
+            "Enhanced environmental quality",
+            "Poor working conditions",
+            "Universal access to education"
+          ],
+          "correctIndex": 2,
+          "explanation": "Poor working conditions emerged as a direct result of industrialization, where factory systems prioritized production over worker welfare. The other options are incorrect as they reflect reforms that came later or are not aligned with the conditions during the Industrial Revolution."
+        }
+      ]
+    },
+    {
+      "subjectId": "history",
+      "subjectName": "History & Social Studies",
+      "source": "real",
+      "topic": "World War 2",
+      "generatedCount": 3,
+      "score": {
+        "total": 100,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 100
+        },
+        "validCount": 3
+      },
+      "sampleQuestions": [
+        {
+          "question": "What event marked the beginning of World War 2 in Europe?",
+          "answer": "Germany's invasion of Poland",
+          "type": "multiple_choice",
+          "options": [
+            "The attack on Pearl Harbor",
+            "Germany's invasion of Poland",
+            "The D-Day landings",
+            "The dropping of atomic bombs on Japan"
+          ],
+          "correctIndex": 1,
+          "explanation": "Germany's invasion of Poland in September 1939 is recognized as the event that triggered the start of World War 2 in Europe. The other options represent significant events that occurred later in the war."
+        },
+        {
+          "question": "Which major figure served as the Allied Supreme Commander during World War 2?",
+          "answer": "General Eisenhower",
+          "type": "multiple_choice",
+          "options": [
+            "Franklin D. Roosevelt",
+            "Joseph Stalin",
+            "General Eisenhower",
+            "Winston Churchill"
+          ],
+          "correctIndex": 2,
+          "explanation": "General Eisenhower was the Allied Supreme Commander responsible for planning and executing major operations, including the D-Day landings. The other figures held significant roles but did not serve in this specific capacity."
+        }
+      ]
+    },
+    {
+      "subjectId": "languages",
+      "subjectName": "Foreign Languages",
+      "source": "synthetic",
+      "topic": "Spanish Present Tense",
+      "generatedCount": 3,
+      "score": {
+        "total": 97,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 67,
+          "distractors": 100,
+          "alignment": 100
+        },
+        "validCount": 3
+      },
+      "sampleQuestions": [
+        {
+          "question": "What is the correct present tense conjugation of the verb \"hablar\" for the subject pronoun \"nosotros\"?",
+          "answer": "hablamos",
+          "type": "multiple_choice",
+          "options": [
+            "habláis",
+            "habla",
+            "hablamos",
+            "hablo"
+          ],
+          "correctIndex": 2,
+          "explanation": "The correct conjugation for \"hablar\" in the present tense with \"nosotros\" is \"hablamos,\" following the -ar verb ending rule for the first person plural."
+        },
+        {
+          "question": "Which of the following sentences correctly uses the verb \"comer\" in the present tense with the subject pronoun \"tú\"?",
+          "answer": "Tú comes pizza.",
+          "type": "multiple_choice",
+          "options": [
+            "Tú come pizza.",
+            "Tú comes pizza.",
+            "Tú coméis pizza.",
+            "Tú como pizza."
+          ],
+          "correctIndex": 1,
+          "explanation": "The correct form is \"tú comes,\" as -er verbs conjugate with -es for the second person singular. The other options incorrectly apply different subject pronouns or endings."
+        }
+      ]
+    },
+    {
+      "subjectId": "arts",
+      "subjectName": "Arts & Humanities",
+      "source": "synthetic",
+      "topic": "Elements of Visual Art",
+      "generatedCount": 3,
+      "score": {
+        "total": 100,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 100
+        },
+        "validCount": 3
+      },
+      "sampleQuestions": [
+        {
+          "question": "How do warm colors typically affect the viewer's emotional response in visual art?",
+          "answer": "They evoke energy and excitement.",
+          "type": "multiple_choice",
+          "options": [
+            "They create a sense of calmness.",
+            "They evoke energy and excitement.",
+            "They emphasize stability and balance.",
+            "They provide depth and perspective."
+          ],
+          "correctIndex": 1,
+          "explanation": "Warm colors are associated with energy and excitement, contrasting with cool colors, which suggest calmness. The other options either misrepresent the emotional impact of warm colors or relate to different visual elements."
+        },
+        {
+          "question": "What role does contrast play in a visual composition?",
+          "answer": "It emphasizes focal points.",
+          "type": "multiple_choice",
+          "options": [
+            "It creates visual stability.",
+            "It emphasizes focal points.",
+            "It defines the texture of objects.",
+            "It alters the color palette."
+          ],
+          "correctIndex": 1,
+          "explanation": "Contrast is used to emphasize focal points within a composition, drawing the viewer's attention. The other options describe different functions of visual elements that do not directly relate to the primary role of contrast."
+        }
+      ]
+    },
+    {
+      "subjectId": "computer-science",
+      "subjectName": "Computer Science",
+      "source": "synthetic",
+      "topic": "Time Complexity and Data Structures",
+      "generatedCount": 3,
+      "score": {
+        "total": 100,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 100
+        },
+        "validCount": 3
+      },
+      "sampleQuestions": [
+        {
+          "question": "What is the time complexity of accessing an element in an array by its index?",
+          "answer": "O(1)",
+          "type": "multiple_choice",
+          "options": [
+            "O(n)",
+            "O(log n)",
+            "O(1)",
+            "O(n log n)"
+          ],
+          "correctIndex": 2,
+          "explanation": "Accessing an element in an array by its index is O(1) because it allows direct access to any element based on its index without needing to traverse other elements. The other options represent complexities for different operations or data structures."
+        },
+        {
+          "question": "What is the average time complexity for lookup operations in a hash table?",
+          "answer": "O(1)",
+          "type": "multiple_choice",
+          "options": [
+            "O(n)",
+            "O(log n)",
+            "O(1)",
+            "O(n log n)"
+          ],
+          "correctIndex": 2,
+          "explanation": "The average time complexity for lookup operations in a hash table is O(1), as it allows for constant time access under ideal conditions. The other options represent time complexities for different data structures or operations."
+        }
+      ]
+    },
+    {
+      "subjectId": "business",
+      "subjectName": "Business & Economics",
+      "source": "synthetic",
+      "topic": "Market Structures",
+      "generatedCount": 3,
+      "score": {
+        "total": 97,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 67
+        },
+        "validCount": 3
+      },
+      "sampleQuestions": [
+        {
+          "question": "In a monopolistically competitive market, what is a key strategy firms use to maintain their market position?",
+          "answer": "Offering differentiated products to attract specific consumer preferences",
+          "type": "multiple_choice",
+          "options": [
+            "Reducing production costs to undercut competitors",
+            "Offering differentiated products to attract specific consumer preferences",
+            "Collaborating with other firms to set prices",
+            "Establishing high barriers to entry for new competitors"
+          ],
+          "correctIndex": 1,
+          "explanation": "Firms in monopolistic competition focus on differentiating their products to cater to specific consumer preferences, which helps them maintain market share despite having many competitors. The other options do not align with the characteristics of monopolistic competition, such as collaboration or high barriers to entry."
+        },
+        {
+          "question": "A firm operating in an oligopoly is considering whether to lower its prices to gain market share. What should be a primary consideration for this firm?",
+          "answer": "The potential reactions of competitors to the price change",
+          "type": "multiple_choice",
+          "options": [
+            "The number of competitors in the market",
+            "The impact of the price change on its own production costs",
+            "The potential reactions of competitors to the price change",
+            "The level of consumer demand for its products"
+          ],
+          "correctIndex": 2,
+          "explanation": "In an oligopoly, firms are interdependent; thus, a price change by one firm can lead to reactions from competitors, affecting overall market dynamics. While the other options are relevant, they do not directly address the strategic interdependence characteristic of oligopolistic markets."
+        }
+      ]
+    },
+    {
+      "subjectId": "health-medicine",
+      "subjectName": "Health & Medicine",
+      "source": "synthetic",
+      "topic": "Cardiovascular Health",
+      "generatedCount": 3,
+      "score": {
+        "total": 97,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 67,
+          "alignment": 100
+        },
+        "validCount": 3
+      },
+      "sampleQuestions": [
+        {
+          "question": "What role does the heart play in the cardiovascular system?",
+          "answer": "It pumps oxygenated blood to the body and returns deoxygenated blood.",
+          "type": "multiple_choice",
+          "options": [
+            "It filters toxins from the blood.",
+            "It pumps oxygenated blood to the body and returns deoxygenated blood.",
+            "It produces red blood cells.",
+            "It regulates body temperature."
+          ],
+          "correctIndex": 1,
+          "explanation": "The heart's primary function is to pump oxygenated blood through arteries to the body and return deoxygenated blood via veins, making option B the most accurate. Options A, C, and D misrepresent the heart's functions, attributing roles that belong to other systems or organs."
+        },
+        {
+          "question": "Which of the following is a modifiable risk factor for cardiovascular disease?",
+          "answer": "Smoking",
+          "type": "multiple_choice",
+          "options": [
+            "Age",
+            "Genetics",
+            "Smoking",
+            "Gender"
+          ],
+          "correctIndex": 2,
+          "explanation": "Smoking is a modifiable risk factor that can be changed to reduce cardiovascular disease risk. In contrast, age, genetics, and gender are non-modifiable factors that individuals cannot alter."
+        }
+      ]
+    },
+    {
+      "subjectId": "other",
+      "subjectName": "General Studies",
+      "source": "synthetic",
+      "topic": "Study Strategies",
+      "generatedCount": 3,
+      "score": {
+        "total": 97,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 67
+        },
+        "validCount": 3
+      },
+      "sampleQuestions": [
+        {
+          "question": "Which study strategy involves reviewing material at increasing intervals to enhance long-term retention?",
+          "answer": "Spaced repetition",
+          "type": "multiple_choice",
+          "options": [
+            "Active recall",
+            "Spaced repetition",
+            "Interleaving",
+            "Metacognitive reflection"
+          ],
+          "correctIndex": 1,
+          "explanation": "Spaced repetition is specifically designed to review material over progressively longer intervals, which improves retention. Active recall focuses on retrieving information, interleaving mixes topics, and metacognitive reflection is about self-assessment, making them less relevant to the question."
+        },
+        {
+          "question": "What is the primary benefit of interleaving in study sessions?",
+          "answer": "It strengthens the ability to discriminate between related topics.",
+          "type": "multiple_choice",
+          "options": [
+            "It helps in memorizing facts more quickly.",
+            "It strengthens the ability to discriminate between related topics.",
+            "It allows for longer study periods without breaks.",
+            "It encourages rote memorization of information."
+          ],
+          "correctIndex": 1,
+          "explanation": "Interleaving enhances discrimination and transfer of knowledge by mixing related topics, which helps learners apply concepts in various contexts. The other options do not accurately represent the primary benefit of interleaving."
+        }
+      ]
+    }
+  ]
+}

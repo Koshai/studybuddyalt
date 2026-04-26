@@ -1,4 +1,6 @@
 // src/server/services/ai-service-selector.js - Smart AI Service Selection
+// @deprecated Legacy architecture module.
+// Do not add new imports to this file. See ARCHITECTURE_DEPRECATION_MAP.md.
 const OpenAIService = require('./openai-service');
 const SimplifiedOllamaService = require('./ollama-simplified');
 

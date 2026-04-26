@@ -1023,7 +1023,17 @@ class WebStorageService {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            const errMsg = (error.message || '').toLowerCase();
+            if (errMsg.includes('does not exist') || errMsg.includes('relation')) {
+                console.warn('⚠️ flashcard_study_sessions table missing. Skipping study-session persistence.');
+                return {
+                    ...session,
+                    persisted: false
+                };
+            }
+            throw error;
+        }
         return data;
     }
 
@@ -1038,7 +1048,14 @@ class WebStorageService {
             .gte('session_date', startDate.toISOString())
             .order('session_date', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            const errMsg = (error.message || '').toLowerCase();
+            if (errMsg.includes('does not exist') || errMsg.includes('relation')) {
+                console.warn('⚠️ flashcard_study_sessions table missing. Returning empty study stats.');
+                return [];
+            }
+            throw error;
+        }
         return data;
     }
 
@@ -1203,7 +1220,31 @@ class WebStorageService {
             .eq('topic_id', topicId)
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            const errMsg = (error.message || '').toLowerCase();
+            if (errMsg.includes('does not exist') || errMsg.includes('relation')) {
+                console.warn('⚠️ files table missing. Falling back to notes-based file list.');
+                const { data: notesData, error: notesError } = await this.supabase
+                    .from('notes')
+                    .select('id, topic_id, file_name, word_count, created_at, updated_at')
+                    .eq('topic_id', topicId)
+                    .order('created_at', { ascending: false });
+
+                if (notesError) throw notesError;
+
+                return (notesData || [])
+                    .filter(note => !!note.file_name)
+                    .map(note => ({
+                        id: note.id,
+                        filename: note.file_name,
+                        word_count: note.word_count,
+                        upload_date: note.created_at,
+                        file_type: this.getFileTypeFromName(note.file_name),
+                        size: note.word_count ? note.word_count * 6 : 0
+                    }));
+            }
+            throw error;
+        }
         
         // Transform to match expected format
         return (data || []).map(file => ({

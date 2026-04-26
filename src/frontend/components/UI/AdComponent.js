@@ -32,7 +32,7 @@ window.AdComponent = {
             ></ins>
             
             <!-- Fallback content if ads are blocked -->
-            <div v-if="adBlocked" class="flex flex-col items-center justify-center h-[250px] text-gray-400 p-4 text-center">
+            <div v-if="adBlocked" class="flex flex-col items-center justify-center h-[250px] text-gray-500 p-4 text-center">
                 <i class="fas fa-ad text-2xl mb-2"></i>
                 <p class="text-sm mb-2">Ad content unavailable</p>
                 <button 
@@ -46,7 +46,7 @@ window.AdComponent = {
 
             <!-- Loading state for ads -->
             <div v-if="adLoading && !adBlocked" class="absolute inset-0 flex items-center justify-center bg-gray-50">
-                <div class="text-center text-gray-400">
+                <div class="text-center text-gray-500">
                     <i class="fas fa-spinner fa-spin text-xl mb-2"></i>
                     <p class="text-sm">Loading content...</p>
                 </div>

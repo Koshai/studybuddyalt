@@ -57,7 +57,7 @@ window.EmailConfirmationScreenComponent = {
             <button
                 @click="resendConfirmationEmail"
                 :disabled="isResending || cooldownRemaining > 0"
-                class="w-full bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:cursor-not-allowed text-gray-700 disabled:text-gray-400 py-3 rounded-lg font-medium transition-colors"
+                class="w-full bg-gray-100 hover:bg-gray-200 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 disabled:text-gray-500 py-3 rounded-lg font-medium transition-colors"
             >
                 <i v-if="isResending" class="fas fa-spinner fa-spin mr-2"></i>
                 <i v-else-if="cooldownRemaining > 0" class="fas fa-clock mr-2"></i>

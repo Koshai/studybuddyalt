@@ -7,6 +7,53 @@ class QuestionValidator {
   }
 
   /**
+   * Rewrite meta-reference stems into direct conceptual questions.
+   * This improves UX while preserving strict validation protections.
+   */
+  rewriteMetaReferenceStem(questionText = '') {
+    if (!questionText || typeof questionText !== 'string') {
+      return { text: questionText, changed: false };
+    }
+
+    let rewritten = questionText.trim();
+
+    // Common low-quality stem patterns -> direct phrasing.
+    rewritten = rewritten.replace(
+      /^according to (the )?(book|text|material|notes|passage)[,\s]+/i,
+      ''
+    );
+
+    rewritten = rewritten.replace(
+      /^what does (the )?(book|text|material|notes|passage)\s+say about\s+/i,
+      'What is true about '
+    );
+
+    rewritten = rewritten.replace(
+      /^in the (book|text|material|notes|passage)[,\s]+/i,
+      ''
+    );
+
+    rewritten = rewritten.replace(
+      /^(the )?(book|text|material|notes|passage)\s+(states|mentions|describes|explains)\s+that[,\s]+/i,
+      ''
+    );
+
+    // Normalize whitespace and ensure sentence capitalization.
+    rewritten = rewritten.replace(/\s+/g, ' ').trim();
+    if (rewritten.length > 0) {
+      rewritten = rewritten.charAt(0).toUpperCase() + rewritten.slice(1);
+    }
+
+    // Ensure it still reads as a question.
+    if (rewritten.length > 0 && !rewritten.endsWith('?')) {
+      rewritten = `${rewritten}?`;
+    }
+
+    const changed = rewritten !== questionText.trim();
+    return { text: rewritten, changed };
+  }
+
+  /**
    * Main validation method - routes to subject-specific validators
    */
   async validateQuestions(questions, subjectCategory) {
@@ -31,6 +78,12 @@ class QuestionValidator {
     const subjectId = subjectCategory.id;
     
     try {
+      // First pass: auto-rewrite low-quality meta-reference stems.
+      const rewriteResult = this.rewriteMetaReferenceStem(question.question);
+      if (rewriteResult.changed) {
+        question.question = rewriteResult.text;
+      }
+
       switch (subjectId) {
         case 'mathematics':
           return await this.validateMathQuestion(question);
@@ -566,6 +619,19 @@ class QuestionValidator {
     
     // Check for question clarity
     const questionText = question.question.toLowerCase();
+
+    // Hard reject meta-reference stems ("the book says", etc.)
+    const metaReferencePatterns = [
+      /\baccording to (the )?(book|text|material|notes|passage)\b/i,
+      /\b(the )?(book|text|material|notes|passage)\s+(says|states|mentions|describes|explains)\b/i,
+      /\bwhat does (the )?(book|text|material|notes|passage)\s+say\b/i,
+      /\bin the (book|text|material|notes|passage)\b/i
+    ];
+
+    const hasMetaReferenceStem = metaReferencePatterns.some((pattern) => pattern.test(question.question || ''));
+    if (hasMetaReferenceStem) {
+      issues.push('Question stem uses meta-reference phrasing');
+    }
     
     // Avoid questions that are too vague
     const vaguePatterns = [

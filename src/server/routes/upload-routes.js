@@ -8,6 +8,13 @@ const ServiceFactory = require('../services/service-factory');
 
 const router = express.Router();
 
+const requireDevelopment = (req, res, next) => {
+    if (process.env.NODE_ENV !== 'development') {
+        return res.status(404).json({ error: 'Not found' });
+    }
+    next();
+};
+
 // Configure multer for file uploads
 const storage = multer.memoryStorage(); // Store in memory for processing
 const upload = multer({
@@ -37,7 +44,7 @@ const upload = multer({
 /**
  * GET /api/upload-test - Test if upload route is accessible
  */
-router.get('/upload-test', (req, res) => {
+router.get('/upload-test', requireDevelopment, (req, res) => {
     console.log('🧪 Upload test endpoint hit');
     res.json({ 
         success: true, 
@@ -49,7 +56,7 @@ router.get('/upload-test', (req, res) => {
 /**
  * GET /api/list-topics - List available topics for testing
  */
-router.get('/list-topics', async (req, res) => {
+router.get('/list-topics', requireDevelopment, async (req, res) => {
     try {
         const db = ServiceFactory.getStorageService();
         const { data: topics, error } = await db.supabase
@@ -77,6 +84,7 @@ router.get('/list-topics', async (req, res) => {
  * POST /api/upload-debug - Debug upload without auth
  */
 router.post('/upload-debug', 
+    requireDevelopment,
     upload.single('file'),
     async (req, res) => {
         try {

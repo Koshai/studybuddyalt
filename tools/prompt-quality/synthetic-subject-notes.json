@@ -1,0 +1,42 @@
+{
+  "mathematics": {
+    "topic": "Quadratic Equations",
+    "content": "A quadratic equation has the form ax^2 + bx + c = 0 where a != 0. The discriminant is b^2 - 4ac. If the discriminant is positive, there are two distinct real roots. If it is zero, there is one repeated real root. If it is negative, there are two complex roots. Factoring can solve equations like x^2 - 5x + 6 = 0 by writing (x-2)(x-3)=0, giving roots x=2 and x=3. The quadratic formula is x = (-b +- sqrt(b^2 - 4ac)) / (2a)."
+  },
+  "natural-sciences": {
+    "topic": "Photosynthesis and Cellular Respiration",
+    "content": "Photosynthesis occurs in chloroplasts and uses light energy to convert carbon dioxide and water into glucose and oxygen. The overall photosynthesis equation is 6CO2 + 6H2O + light energy -> C6H12O6 + 6O2. Cellular respiration mainly occurs in mitochondria and breaks down glucose with oxygen to produce ATP, carbon dioxide, and water. Photosynthesis stores energy in glucose, while respiration releases that energy for cellular work. Producers perform photosynthesis; most organisms perform respiration."
+  },
+  "literature": {
+    "topic": "Characterization and Theme",
+    "content": "Characterization can be direct, where the narrator explicitly describes traits, or indirect, where traits are revealed through actions, dialogue, and reactions. A theme is a central idea about life or human nature. Symbolism occurs when an object or image represents a larger concept. In many stories, conflict drives character growth, and the resolution often reveals the author's message. Strong literary analysis uses evidence from the text to support claims rather than only personal opinion."
+  },
+  "history": {
+    "topic": "Industrial Revolution",
+    "content": "The Industrial Revolution began in Britain in the late 18th century and spread to Europe and North America. New machinery, factory systems, and improved transportation increased production. Urbanization accelerated as people moved from rural areas to cities for work. While industrialization increased economic output, it also led to poor working conditions, child labor, and pollution. Reform movements and labor organizations later pushed for safety laws, wage protections, and reduced working hours."
+  },
+  "computer-science": {
+    "topic": "Time Complexity and Data Structures",
+    "content": "Time complexity describes how runtime grows with input size. Big-O notation provides an upper bound. Array access by index is O(1), but insertion in the middle can be O(n). Linked lists allow efficient insertions when a node reference is known, but random access is O(n). Binary search requires sorted data and runs in O(log n). Hash tables offer average O(1) lookup but can degrade with collisions. Choosing a data structure depends on operation patterns and constraints."
+  },
+  "languages": {
+    "topic": "Spanish Present Tense",
+    "content": "Regular Spanish verbs in the present tense follow endings based on infinitive type. For -ar verbs: o, as, a, amos, an. For -er verbs: o, es, e, emos, en. For -ir verbs: o, es, e, imos, en. Subject pronouns include yo, tu, el/ella/usted, nosotros/as, and ellos/ellas/ustedes. Some common verbs are irregular, such as ser and ir. Agreement between subject and verb is required for grammatically correct sentences."
+  },
+  "business": {
+    "topic": "Market Structures",
+    "content": "Perfect competition has many small firms, identical products, and low barriers to entry. Monopolistic competition features many firms but differentiated products. Oligopoly has a few dominant firms with interdependent decision-making, often creating barriers for new entrants. Monopoly has a single seller with high barriers to entry. Price-setting power increases as market competition decreases. Firms analyze elasticity, costs, and competitor behavior when making pricing decisions."
+  },
+  "arts": {
+    "topic": "Elements of Visual Art",
+    "content": "Core elements of visual art include line, shape, form, color, value, texture, and space. Artists use these elements to create composition and direct viewer attention. Contrast can emphasize focal points, while balance creates visual stability. Warm colors often evoke energy, while cool colors may suggest calmness. Perspective techniques can create depth on a flat surface. Interpretation should connect visual evidence to meaning rather than rely on unsupported claims."
+  },
+  "health-medicine": {
+    "topic": "Cardiovascular Health",
+    "content": "The cardiovascular system includes the heart, blood, and blood vessels. The heart pumps oxygenated blood to the body through arteries and returns deoxygenated blood through veins. Blood pressure reflects force against artery walls; persistent high blood pressure increases risk of heart disease and stroke. Modifiable risk factors include smoking, poor diet, inactivity, obesity, and uncontrolled diabetes. Preventive strategies include regular exercise, balanced nutrition, stress management, and routine screenings."
+  },
+  "other": {
+    "topic": "Study Strategies",
+    "content": "Effective study strategies include spaced repetition, active recall, and interleaving. Spaced repetition reviews material at increasing intervals to improve long-term retention. Active recall involves retrieving information without looking at notes. Interleaving mixes related topics to strengthen discrimination and transfer. Metacognitive reflection helps learners identify weak areas and adjust techniques. Short, focused sessions with breaks are often more effective than last-minute cramming."
+  }
+}

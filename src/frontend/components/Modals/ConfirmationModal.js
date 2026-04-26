@@ -20,7 +20,7 @@ window.ConfirmationModal = {
                                     <i class="fas fa-exclamation-triangle text-red-600"></i>
                                 </div>
                                 <div v-else-if="type === 'warning'" class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-exclamation-circle text-yellow-600"></i>
+                                    <i class="fas fa-exclamation-circle text-yellow-700"></i>
                                 </div>
                                 <div v-else class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                                     <i class="fas fa-question-circle text-blue-600"></i>
@@ -82,7 +82,7 @@ window.ConfirmationModal = {
                             :class="[
                                 'px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
                                 type === 'danger' ? 'bg-red-600 hover:bg-red-700 text-white' :
-                                type === 'warning' ? 'bg-yellow-600 hover:bg-yellow-700 text-white' :
+                                type === 'warning' ? 'bg-yellow-700 hover:bg-yellow-800 text-white' :
                                 'bg-blue-600 hover:bg-blue-700 text-white'
                             ]"
                         >

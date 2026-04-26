@@ -1,0 +1,674 @@
+{
+  "generatedAt": "2026-04-23T03:03:55.278Z",
+  "provider": "ollama",
+  "count": 5,
+  "dryRun": false,
+  "dbPath": "C:\\Users\\boltu\\Documents\\Sites\\StudyBuddyAlt\\src\\data\\study_ai_simplified.db",
+  "datasetSize": 13,
+  "realSampleCount": 3,
+  "results": [
+    {
+      "subjectId": "mathematics",
+      "subjectName": "Mathematics",
+      "source": "synthetic",
+      "topic": "Quadratic Equations",
+      "generatedCount": 5,
+      "score": {
+        "total": 96,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 60,
+          "distractors": 100,
+          "alignment": 100
+        },
+        "validCount": 5
+      },
+      "sampleQuestions": [
+        {
+          "question": "Solve the quadratic equation x^2 + 5x + 6 = 0 using factoring.",
+          "answer": "(x-2)(x-3)",
+          "type": "text_based",
+          "options": [
+            "(x+2)(x+3)",
+            "(x-2)(x-3)",
+            "(x+1)(x+4)",
+            "(x-1)(x-5)"
+          ],
+          "correctIndex": 1,
+          "explanation": "The correct factorization of x^2 + 5x + 6 = 0 is (x+2)(x+3), but the provided material shows that factoring with (x-2)(x-3)=0 gives roots x=2 and x=3, which seems to be an error. However, according to the quadratic formula, we can find the correct factorization by first calculating b^2 - 4ac = 5^2 - 4(1)(6) = 25 - 24 = 1. Then, we can write (x-(-b)/2a)^2 = x^2 + 5x + 6/1 = x^2 + 5x + 6. To get the correct factorization, we need to find two numbers that multiply to 6 and add up to 5, which are -2 and -3. So, (x+(-2))(x+(-3))=0 is not a correct factorization but (x-(-2))(x-(-3))=0 would be if the original equation was x^2 + 5x -6 = 0. However, given that we have the original form of the equation, the best answer is B.",
+          "subjectOptimized": true
+        },
+        {
+          "question": "What does the discriminant b^2 - 4ac represent in a quadratic equation?",
+          "answer": "The number of real roots",
+          "type": "multiple_choice",
+          "options": [
+            "The sum of the roots",
+            "The product of the roots",
+            "The number of real roots",
+            "The value of 'a'"
+          ],
+          "correctIndex": 2,
+          "explanation": "According to the material, if the discriminant is positive, there are two distinct real roots. If it is zero, there is one repeated real root. If it is negative, there are two complex roots.",
+          "subjectOptimized": true
+        }
+      ]
+    },
+    {
+      "subjectId": "mathematics",
+      "subjectName": "Mathematics",
+      "source": "real",
+      "topic": "Basic Arithmetic",
+      "generatedCount": 5,
+      "score": {
+        "total": 90,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 0,
+          "alignment": 100
+        },
+        "validCount": 5
+      },
+      "sampleQuestions": [
+        {
+          "question": "What is the difference between 15 and 8?",
+          "answer": "10",
+          "type": "multiple_choice",
+          "options": [
+            "-7",
+            "10",
+            "-3",
+            "12"
+          ],
+          "correctIndex": 1,
+          "explanation": "The correct answer can be found by using the basic arithmetic operation of subtraction, which states that we take one number away from another to get a difference. In this case, subtracting 8 from 15 gives us 15 - 8 = 7.",
+          "subjectOptimized": true
+        },
+        {
+          "question": "What is the result of multiplying 4 and 9?",
+          "answer": "36",
+          "type": "multiple_choice",
+          "options": [
+            "32",
+            "36",
+            "40",
+            "45"
+          ],
+          "correctIndex": 1,
+          "explanation": "The correct answer can be found by using the basic arithmetic operation of multiplication, which states that we repeated addition of the same number. In this case, multiplying 4 and 9 gives us 4 × 9 = 36.",
+          "subjectOptimized": true
+        }
+      ]
+    },
+    {
+      "subjectId": "natural-sciences",
+      "subjectName": "Natural Sciences",
+      "source": "synthetic",
+      "topic": "Photosynthesis and Cellular Respiration",
+      "generatedCount": 5,
+      "score": {
+        "total": 100,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 100
+        },
+        "validCount": 5
+      },
+      "sampleQuestions": [
+        {
+          "question": "What is the primary location of photosynthesis in plant cells?",
+          "answer": "Chloroplasts",
+          "type": "multiple_choice",
+          "options": [
+            "Mitochondria",
+            "Chloroplasts",
+            "Cell wall",
+            "Nucleus"
+          ],
+          "correctIndex": 1,
+          "explanation": "Photosynthesis occurs in chloroplasts, which contain pigments that absorb light energy. This is a fundamental concept in understanding how plants produce their own food.",
+          "subjectOptimized": true
+        },
+        {
+          "question": "What is the byproduct of cellular respiration that is released into the environment?",
+          "answer": "Oxygen",
+          "type": "multiple_choice",
+          "options": [
+            "Oxygen",
+            "Carbon dioxide",
+            "Glucose",
+            "Water"
+          ],
+          "correctIndex": 0,
+          "explanation": "Cellular respiration produces oxygen as a byproduct, which is essential for the survival of most living organisms. This concept is central to understanding the relationship between respiration and the environment.",
+          "subjectOptimized": true
+        }
+      ]
+    },
+    {
+      "subjectId": "literature",
+      "subjectName": "Literature & Writing",
+      "source": "synthetic",
+      "topic": "Characterization and Theme",
+      "generatedCount": 5,
+      "score": {
+        "total": 96,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 60
+        },
+        "validCount": 5
+      },
+      "sampleQuestions": [
+        {
+          "question": "In a novel, an author uses characterization to reveal the protagonist's vulnerable side through their dialogue with a loved one. What literary technique is this example of?",
+          "answer": "Indirect characterization",
+          "type": "text_based",
+          "options": [
+            "Symbolism",
+            "Indirect characterization",
+            "Direct characterization",
+            "Foreshadowing"
+          ],
+          "correctIndex": 1,
+          "explanation": "The narrator explicitly describes traits, making it an example of direct characterization.",
+          "subjectOptimized": true
+        },
+        {
+          "question": "What literary device is used when an object or image represents a larger concept in a story?",
+          "answer": "Symbolism",
+          "type": "multiple_choice",
+          "options": [
+            "Metaphor",
+            "Simile",
+            "Symbolism",
+            "Allusion"
+          ],
+          "correctIndex": 2,
+          "explanation": "The correct answer is symbolism, as it involves an object or image representing a larger concept.",
+          "subjectOptimized": true
+        }
+      ]
+    },
+    {
+      "subjectId": "literature",
+      "subjectName": "Literature & Writing",
+      "source": "real",
+      "topic": "Oliver Twist",
+      "generatedCount": 5,
+      "score": {
+        "total": 94,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 40
+        },
+        "validCount": 5
+      },
+      "sampleQuestions": [
+        {
+          "question": "What was the plan proposed by the board regarding Oliver Twist's future?",
+          "answer": "To send him to sea as a cabin-boy",
+          "type": "multiple_choice",
+          "options": [
+            "To send him to a prestigious boarding school",
+            "To send him to sea as a cabin-boy",
+            "To allow him to live with his wealthy relatives",
+            "To put him up for adoption"
+          ],
+          "correctIndex": 1,
+          "explanation": "The text states that the board considered sending Oliver Twist \"to sea without delay\" as the best way to provide for him effectively.",
+          "subjectOptimized": true
+        },
+        {
+          "question": "Why does Mr. Bumble think he will make a fortune by going to the undertaker with a snuff-box?",
+          "answer": "Because he thinks the undertaker will laugh at his joke and offer him a reward",
+          "type": "text_based",
+          "options": [
+            "Because he wants to buy some expensive perfume",
+            "Because the undertaker is willing to trade him a valuable item",
+            "Because he thinks the undertaker will laugh at his joke and offer him a reward",
+            "Because he is trying to impress the undertaker's wife"
+          ],
+          "correctIndex": 2,
+          "explanation": "The text states that Mr. Bumble \"thrust [his] thumb and forefinger into the proffered snuff-box of the undertaker,\" implying that he hopes for a reaction from the undertaker, which is later revealed to be a joke.",
+          "subjectOptimized": true
+        }
+      ]
+    },
+    {
+      "subjectId": "history",
+      "subjectName": "History & Social Studies",
+      "source": "synthetic",
+      "topic": "Industrial Revolution",
+      "generatedCount": 5,
+      "score": {
+        "total": 98,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 80,
+          "alignment": 100
+        },
+        "validCount": 5
+      },
+      "sampleQuestions": [
+        {
+          "question": "What was a primary consequence of the Industrial Revolution in Britain?",
+          "answer": "An increase in rural populations moving to cities",
+          "type": "multiple_choice",
+          "options": [
+            "The decline of urban centers",
+            "Improved working conditions for laborers",
+            "An increase in rural populations moving to cities",
+            "A decrease in global trade and economic output"
+          ],
+          "correctIndex": 2,
+          "explanation": "According to the study material, industrialization led to an acceleration of urbanization as people moved from rural areas to cities for work. This is a direct consequence of the new machinery, factory systems, and improved transportation that characterized the Industrial Revolution.",
+          "subjectOptimized": true
+        },
+        {
+          "question": "Which of the following best describes the relationship between industrialization and economic output?",
+          "answer": "Economic output increased due to increased production",
+          "type": "text_based",
+          "options": [
+            "Economic output decreased significantly",
+            "Economic output remained relatively stable",
+            "Economic output increased due to increased production",
+            "Economic output was unaffected by industrialization"
+          ],
+          "correctIndex": 2,
+          "explanation": "The study material states that new machinery, factory systems, and improved transportation \"increased production.\" This suggests a positive relationship between industrialization and economic output.",
+          "subjectOptimized": true
+        }
+      ]
+    },
+    {
+      "subjectId": "history",
+      "subjectName": "History & Social Studies",
+      "source": "real",
+      "topic": "World War 2",
+      "generatedCount": 5,
+      "score": {
+        "total": 96,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 60
+        },
+        "validCount": 5
+      },
+      "sampleQuestions": [
+        {
+          "question": "What was the immediate cause of World War 2?",
+          "answer": "The rise of fascist and nationalist movements in Europe",
+          "type": "multiple_choice",
+          "options": [
+            "The rise of fascist and nationalist movements in Europe",
+            "Germany's rearmament under Adolf Hitler",
+            "Japan's invasion of Manchuria in 1931",
+            "The global economic crisis of the Great Depression"
+          ],
+          "correctIndex": 0,
+          "explanation": "While Germany's rearmament was a contributing factor, the immediate cause of World War 2 was the aggressive expansion of fascist and nationalist ideologies in Europe, which created an environment conducive to war. This is supported by historian Paul Kennedy's argument that the interwar period saw a surge in militarization and aggression in Europe.",
+          "subjectOptimized": true
+        },
+        {
+          "question": "Which of the following best describes the significance of the Atlantic Charter?",
+          "answer": "It was a joint statement by the US and UK outlining their war aims",
+          "type": "text_based",
+          "options": [
+            "It marked the beginning of the Allied victory",
+            "It outlined the post-war reorganization of Europe",
+            "It was a joint statement by the US and UK outlining their war aims",
+            "It led to the formation of the United Nations"
+          ],
+          "correctIndex": 2,
+          "explanation": "The Atlantic Charter, issued in 1941, was a joint statement by Franklin D. Roosevelt and Winston Churchill outlining the Allied goals for the post-war world, including self-determination, territorial integrity, and social justice. This document played a crucial role in shaping the post-war order.",
+          "subjectOptimized": true
+        }
+      ]
+    },
+    {
+      "subjectId": "languages",
+      "subjectName": "Foreign Languages",
+      "source": "synthetic",
+      "topic": "Spanish Present Tense",
+      "generatedCount": 5,
+      "score": {
+        "total": 84,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 20,
+          "distractors": 80,
+          "alignment": 40
+        },
+        "validCount": 5
+      },
+      "sampleQuestions": [
+        {
+          "question": "Complete the sentence with the correct form of \"hablar\" in the present tense.",
+          "answer": "hablas",
+          "type": "multiple_choice",
+          "options": [
+            "hablo",
+            "hablas",
+            "habla",
+            "hablamos"
+          ],
+          "correctIndex": 1,
+          "explanation": "The verb \"hablar\" follows the -ar ending pattern, which requires the addition of \"s\" for the second person singular form. This is a common usage in Spanish.",
+          "subjectOptimized": true
+        },
+        {
+          "question": "Which sentence would be grammatically incorrect because it does not agree with the subject pronoun?",
+          "answer": "El come una manzana todos los días.",
+          "type": "multiple_choice",
+          "options": [
+            "Yo como un manzana todos los días.",
+            "Tú comes una manzana todos los días.",
+            "El come una manzana todos los días.",
+            "Nosotros comemos una manzana todos los días."
+          ],
+          "correctIndex": 2,
+          "explanation": "The subject \"el\" is a masculine singular pronoun, and the verb \"come\" should also be in the masculine singular form (como) to agree with it. In this example, the verb is in the third person singular form, which is incorrect.",
+          "subjectOptimized": true
+        }
+      ]
+    },
+    {
+      "subjectId": "arts",
+      "subjectName": "Arts & Humanities",
+      "source": "synthetic",
+      "topic": "Elements of Visual Art",
+      "generatedCount": 5,
+      "score": {
+        "total": 98,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 80
+        },
+        "validCount": 5
+      },
+      "sampleQuestions": [
+        {
+          "question": "What fundamental element of visual art helps establish a focal point in a composition?",
+          "answer": "Line",
+          "type": "text_based",
+          "options": [
+            "Line",
+            "Shape",
+            "Form",
+            "Color"
+          ],
+          "correctIndex": 0,
+          "explanation": "According to the study material, contrast can emphasize focal points by using line elements. This creates visual tension that draws the viewer's attention.",
+          "subjectOptimized": true
+        },
+        {
+          "question": "Which artistic technique can create depth on a flat surface?",
+          "answer": "Perspective",
+          "type": "text_based",
+          "options": [
+            "Texture",
+            "Value",
+            "Space",
+            "Perspective"
+          ],
+          "correctIndex": 3,
+          "explanation": "The study material states that perspective techniques can create depth on a flat surface, making it appear three-dimensional. This is an evidence-based interpretation of the concept.",
+          "subjectOptimized": true
+        }
+      ]
+    },
+    {
+      "subjectId": "computer-science",
+      "subjectName": "Computer Science",
+      "source": "synthetic",
+      "topic": "Time Complexity and Data Structures",
+      "generatedCount": 5,
+      "score": {
+        "total": 98,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 80,
+          "alignment": 100
+        },
+        "validCount": 5
+      },
+      "sampleQuestions": [
+        {
+          "question": "What is the time complexity of accessing an element by its index in a data structure?",
+          "answer": "O(1)",
+          "type": "multiple_choice",
+          "options": [
+            "O(n)",
+            "O(log n)",
+            "O(1)",
+            "O(n log n)"
+          ],
+          "correctIndex": 2,
+          "explanation": "Array access by index has a constant time complexity because it directly accesses a specific location without needing to search or compare elements, regardless of the size of the array.",
+          "subjectOptimized": true
+        },
+        {
+          "question": "Which data structure offers average constant-time lookup but can degrade to linear time with collisions?",
+          "answer": "Hash Table",
+          "type": "multiple_choice",
+          "options": [
+            "Stack",
+            "Linked List",
+            "Hash Table",
+            "Queue"
+          ],
+          "correctIndex": 2,
+          "explanation": "Hash tables provide an average O(1) lookup, but in the worst-case scenario, they can experience collisions that lead to a linear time complexity. This is due to the way hash functions map keys to indices and handle collisions.",
+          "subjectOptimized": true
+        }
+      ]
+    },
+    {
+      "subjectId": "business",
+      "subjectName": "Business & Economics",
+      "source": "synthetic",
+      "topic": "Market Structures",
+      "generatedCount": 5,
+      "score": {
+        "total": 98,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 80
+        },
+        "validCount": 5
+      },
+      "sampleQuestions": [
+        {
+          "question": "In a perfectly competitive market, which of the following statements about firms' pricing decisions is true?",
+          "answer": "Firms analyze elasticity and competitor behavior when making pricing decisions",
+          "type": "multiple_choice",
+          "options": [
+            "Firms can easily set high prices due to low production costs",
+            "Firms price at cost to maximize profits",
+            "Firms analyze elasticity and competitor behavior when making pricing decisions",
+            "Firms have little control over prices because of high demand"
+          ],
+          "correctIndex": 2,
+          "explanation": "In perfect competition, firms face many small, identical producers, leading to low barriers to entry. As a result, firms must focus on minimizing costs and analyzing elasticity, costs, and competitor behavior when making pricing decisions.",
+          "subjectOptimized": true
+        },
+        {
+          "question": "A company is considering expanding its market share in a monopolistic competitive industry. Which of the following is a key consideration for this expansion?",
+          "answer": "Analyzing consumer preferences and adapting products accordingly",
+          "type": "multiple_choice",
+          "options": [
+            "Minimizing production costs to increase profit margins",
+            "Analyzing consumer preferences and adapting products accordingly",
+            "Pricing products at cost to eliminate competition",
+            "Focusing on increasing prices to maximize revenue"
+          ],
+          "correctIndex": 1,
+          "explanation": "In a monopolistic competitive industry, firms have differentiated products, and consumers care about product quality. Therefore, when expanding market share, the company should focus on understanding consumer preferences and adapting its products accordingly.",
+          "subjectOptimized": true
+        }
+      ]
+    },
+    {
+      "subjectId": "health-medicine",
+      "subjectName": "Health & Medicine",
+      "source": "synthetic",
+      "topic": "Cardiovascular Health",
+      "generatedCount": 5,
+      "score": {
+        "total": 98,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 80,
+          "alignment": 100
+        },
+        "validCount": 5
+      },
+      "sampleQuestions": [
+        {
+          "question": "What does blood pressure reflect in the cardiovascular system?",
+          "answer": "The force against artery walls",
+          "type": "text_based",
+          "options": [
+            "The amount of oxygenated blood",
+            "The force against artery walls",
+            "The diameter of blood vessels",
+            "The type of blood cells"
+          ],
+          "correctIndex": 1,
+          "explanation": "Blood pressure is a measure of the force exerted by blood against the walls of arteries. This force is what drives oxygenated blood to the body's tissues and deoxygenated blood back to the heart. High blood pressure, also known as hypertension, can lead to cardiovascular disease if left uncontrolled.",
+          "subjectOptimized": true
+        },
+        {
+          "question": "Which of the following is a modifiable risk factor for cardiovascular disease?",
+          "answer": "Smoking",
+          "type": "multiple_choice",
+          "options": [
+            "Family history",
+            "Smoking",
+            "Genetics",
+            "Age"
+          ],
+          "correctIndex": 1,
+          "explanation": "Smoking is a well-established modifiable risk factor for cardiovascular disease. It damages the inner lining of blood vessels, making them more susceptible to damage and narrowing. Quitting smoking can significantly reduce the risk of developing cardiovascular disease.",
+          "subjectOptimized": true
+        }
+      ]
+    },
+    {
+      "subjectId": "other",
+      "subjectName": "General Studies",
+      "source": "synthetic",
+      "topic": "Study Strategies",
+      "generatedCount": 5,
+      "score": {
+        "total": 100,
+        "breakdown": {
+          "structural": 100,
+          "options": 100,
+          "unique": 100,
+          "explain": 100,
+          "validation": 100,
+          "questionForm": 100,
+          "distractors": 100,
+          "alignment": 100
+        },
+        "validCount": 5
+      },
+      "sampleQuestions": [
+        {
+          "question": "What is the primary purpose of active recall in effective study strategies?",
+          "answer": "To actively try to remember information without looking at notes",
+          "type": "multiple_choice",
+          "options": [
+            "To re-read notes for understanding",
+            "To review previously learned information at increasingly longer intervals",
+            "To actively try to remember information without looking at notes",
+            "To summarize notes into key points"
+          ],
+          "correctIndex": 2,
+          "explanation": "Active recall is a technique where learners retrieve information from memory without referencing their notes. This strengthens long-term retention and understanding of the material.",
+          "subjectOptimized": true
+        },
+        {
+          "question": "Which of the following study strategies involves mixing related topics to improve learning?",
+          "answer": "Interleaving different types of material to build connections between them",
+          "type": "multiple_choice",
+          "options": [
+            "Chunking information for easier recall",
+            "Using flashcards for memorization",
+            "Interleaving different types of material to build connections between them",
+            "Creating concept maps to organize notes"
+          ],
+          "correctIndex": 2,
+          "explanation": "Interleaving is a strategy that involves alternating between different types or topics to improve learning and transfer of information. This helps strengthen discrimination between related concepts.",
+          "subjectOptimized": true
+        }
+      ]
+    }
+  ]
+}

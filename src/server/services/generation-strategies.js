@@ -108,6 +108,7 @@ Requirements:
 - Avoid complex calculations or interpretations
 - Use straightforward language
 - Ensure all information comes from the provided material
+- Ask direct topic questions; do not mention "the text/material/notes/book"
 
 Format each question as:
 
@@ -149,20 +150,21 @@ Create exactly ${count} questions following this format.`;
   async generateSimplified(content, count, subjectCategory, topicName) {
     console.log('📝 Using simplified generation');
     
-    const prompt = `Based on this material about "${topicName}", create ${count} basic questions:
+    const prompt = `Create ${count} basic questions for "${topicName}":
 
 ${content.substring(0, 800)}
 
 Each question should test basic understanding of the material.
+Use direct topical phrasing and never mention "the material", "the text", "the notes", or "the book" in question stems.
 
 QUESTION 1:
-What does the material say about [topic]?
+What is the best explanation of [topic concept]?
 A) [Direct answer from material]
 B) [Incorrect option]
 C) [Incorrect option]
 D) [Incorrect option]
 CORRECT: A
-EXPLANATION: This is stated in the material.
+EXPLANATION: Explain why A is correct based on the topic concept.
 
 Create ${count} questions in this format.`;
 

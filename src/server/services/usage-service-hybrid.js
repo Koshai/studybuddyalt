@@ -1,4 +1,6 @@
 // src/server/services/usage-service-hybrid.js
+// @deprecated Legacy architecture module.
+// Do not add new imports to this file. See ARCHITECTURE_DEPRECATION_MAP.md.
 // Hybrid usage tracking: Supabase (primary) + SQLite (fallback)
 
 const { createClient } = require('@supabase/supabase-js');

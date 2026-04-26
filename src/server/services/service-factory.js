@@ -154,7 +154,6 @@ class ServiceFactory {
      * Get service health status
      */
     async getServiceStatus() {
-        const services = this.getAllServices();
         const status = {
             environment: EnvironmentService.getEnvironment(),
             services: {}
@@ -162,18 +161,30 @@ class ServiceFactory {
 
         // Check AI service status
         try {
+            const aiService = this.getAIService();
             if (EnvironmentService.isDesktop()) {
                 // Check Ollama availability
-                const models = await services.ai.ollama.list();
+                const models = await aiService.ollama.list();
                 status.services.ai = {
                     type: 'ollama',
                     available: true,
                     models: models.models?.length || 0
                 };
             } else {
-                // Check AI selector status
-                const aiStatus = await services.ai.getServiceStatus();
-                status.services.ai = aiStatus;
+                // Web mode uses OpenAI service directly (not AI selector).
+                if (typeof aiService.testConnection === 'function') {
+                    const connected = await aiService.testConnection();
+                    status.services.ai = {
+                        type: 'openai',
+                        available: connected,
+                        model: aiService.model || 'unknown'
+                    };
+                } else {
+                    status.services.ai = {
+                        type: 'openai',
+                        available: true
+                    };
+                }
             }
         } catch (error) {
             status.services.ai = {
@@ -184,16 +195,20 @@ class ServiceFactory {
 
         // Check storage service status
         try {
+            const storageService = this.getStorageService();
             if (EnvironmentService.isDesktop()) {
                 // Check SQLite
-                const dbConnected = await services.storage.testConnection();
+                const dbConnected = await storageService.testConnection();
                 status.services.storage = {
                     type: 'sqlite',
                     available: dbConnected
                 };
             } else {
-                // Check hybrid storage
-                status.services.storage = services.storage.getConnectionStatus();
+                // Web mode uses Supabase-backed storage service directly.
+                status.services.storage = {
+                    type: 'supabase',
+                    available: !!storageService.supabase
+                };
             }
         } catch (error) {
             status.services.storage = {

@@ -114,19 +114,20 @@ class ResponseParser {
     
     for (let i = 0; i < Math.min(count, sentences.length); i++) {
       const sentence = sentences[i].trim();
+      const trimmedSentence = sentence.substring(0, 80).replace(/[.;:,]+$/, '');
       
       basicQuestions.push({
-        question: `According to the study material, which statement is most accurate?`,
+        question: `Which statement about ${topicName} is most accurate?`,
         answer: sentence.substring(0, 100),
         type: 'multiple_choice',
         options: [
           sentence.substring(0, 80),
-          "This information is not covered in the material",
-          "The material contradicts this statement", 
-          "This topic is not discussed"
+          `A common misconception is: ${trimmedSentence}`,
+          `An unrelated claim about ${topicName}`,
+          `An oversimplified statement about ${topicName}`
         ],
         correctIndex: 0,
-        explanation: `This is directly stated in the provided study material.`
+        explanation: `This option best matches the key concept for ${topicName}.`
       });
     }
     

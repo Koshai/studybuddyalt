@@ -1,4 +1,6 @@
 // src/server/services/hybrid-storage-service.js
+// @deprecated Legacy architecture module.
+// Do not add new imports to this file. See ARCHITECTURE_DEPRECATION_MAP.md.
 // Hybrid storage system: Supabase (primary) + SQLite (fallback/cache)
 
 const { createClient } = require('@supabase/supabase-js');

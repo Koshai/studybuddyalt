@@ -1,5 +1,6 @@
 // src/server/services/openai-service.js
 const OpenAI = require('openai');
+const PromptGenerator = require('./prompt-generation');
 
 class OpenAIService {
     constructor(userTier = 'free') {
@@ -8,6 +9,7 @@ class OpenAIService {
         });
         this.userTier = userTier;
         this.model = 'gpt-4o-mini'; // Cost-effective model
+        this.promptGenerator = new PromptGenerator();
         
         // Usage tracking for billing
         this.requestCounter = 0;
@@ -63,37 +65,48 @@ class OpenAIService {
     }
 
     createSubjectPrompt(content, count, subject, topic) {
-        const maxContentLength = this.userTier === 'free' ? 2000 : 4000;
-        const truncatedContent = content.substring(0, maxContentLength);
-        
-        return `Create exactly ${count} high-quality multiple choice questions for ${subject.name} - ${topic.name}.
+        const maxContentLength = this.userTier === 'free' ? 2200 : 3800;
+        const truncatedContent = (content || '').substring(0, maxContentLength);
+        const subjectCategory = this.resolveSubjectCategory(subject);
+        const topicName = typeof topic === 'string' ? topic : (topic?.name || 'General Topic');
 
-STUDY MATERIAL:
-${truncatedContent}
+        // Keep OpenAI output parser compatible by using MCQ-only sequence.
+        const questionTypeSequence = Array(count).fill('multiple_choice');
 
-Requirements:
-- Focus specifically on ${subject.name} concepts and terminology
-- Each question must have exactly 4 options (A, B, C, D)
-- Questions should test understanding, not just memorization
-- Include clear explanations for the correct answers
-- Ensure questions are answerable from the provided material only
-- Make questions appropriate for students studying ${topic.name}
+        return this.promptGenerator.createSubjectPrompt(
+            truncatedContent,
+            count,
+            subjectCategory,
+            topicName,
+            questionTypeSequence
+        );
+    }
 
-Format each question EXACTLY like this:
+    resolveSubjectCategory(subject) {
+        const fallback = { id: 'other', name: 'General' };
+        if (!subject) return fallback;
 
-QUESTION 1:
-[Your question text here]
-A) [Option A]
-B) [Option B]
-C) [Option C]
-D) [Option D]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Clear explanation of why this answer is correct]
+        if (subject.id && subject.name) {
+            return { id: subject.id, name: subject.name };
+        }
 
-QUESTION 2:
-[Next question...]
+        const rawName = (subject.name || subject.title || String(subject)).toLowerCase();
 
-Continue this exact format for all ${count} questions. Do not add any extra text or formatting.`;
+        const mappings = [
+            { key: 'math', id: 'mathematics', name: 'Mathematics' },
+            { key: 'science', id: 'natural-sciences', name: 'Natural Sciences' },
+            { key: 'literature', id: 'literature', name: 'Literature' },
+            { key: 'history', id: 'history', name: 'History' },
+            { key: 'computer', id: 'computer-science', name: 'Computer Science' },
+            { key: 'language', id: 'languages', name: 'Languages' },
+            { key: 'business', id: 'business', name: 'Business' },
+            { key: 'art', id: 'arts', name: 'Arts' },
+            { key: 'health', id: 'health-medicine', name: 'Health and Medicine' },
+            { key: 'medicine', id: 'health-medicine', name: 'Health and Medicine' }
+        ];
+
+        const match = mappings.find(item => rawName.includes(item.key));
+        return match ? { id: match.id, name: match.name } : { id: 'other', name: subject.name || 'General' };
     }
 
     parseQuestions(response, expectedCount) {

@@ -1,3 +1,5 @@
+// @deprecated Legacy backup module.
+// Do not add new imports to this file. See ARCHITECTURE_DEPRECATION_MAP.md.
 // src/server/services/database-simplified.js - REFACTORED Modular Database Service
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');

@@ -12,8 +12,15 @@ const usageService = new UsageService();
 const localUserService = new LocalUserService();
 // const accountSyncService = new AccountSyncService(); // Removed - using Supabase-only approach
 
-// Test route to check if auth service is working
-router.get('/test', async (req, res) => {
+const requireDevelopment = (req, res, next) => {
+    if (process.env.NODE_ENV !== 'development') {
+        return res.status(404).json({ error: 'Not found' });
+    }
+    next();
+};
+
+// Test route to check if auth service is working (development only)
+router.get('/test', requireDevelopment, async (req, res) => {
     try {
         res.json({
             status: 'success',
@@ -290,36 +297,6 @@ router.post('/generate-confirmation-code', async (req, res) => {
     }
 });
 
-// Resend confirmation email (legacy - kept for compatibility)
-router.post('/resend-confirmation', async (req, res) => {
-    try {
-        const { email } = req.body;
-        
-        if (!email) {
-            return res.status(400).json({
-                status: 'error',
-                message: 'Email is required'
-            });
-        }
-        
-        console.log('🔄 Resend confirmation request:', email);
-        
-        const result = await authService.resendConfirmation(email);
-        
-        res.json({
-            status: 'success',
-            message: result.message
-        });
-    } catch (error) {
-        console.error('❌ Resend confirmation failed:', error.message);
-        
-        res.status(400).json({
-            status: 'error',
-            message: error.message
-        });
-    }
-});
-
 // Test protected route with subscription check
 router.get('/pro-feature', 
     authMiddleware.authenticateToken,
@@ -334,12 +311,7 @@ router.get('/pro-feature',
 );
 
 // Cleanup endpoint for testing (DEVELOPMENT ONLY)
-router.post('/cleanup-test-user', async (req, res) => {
-    // Only allow in development
-    if (process.env.NODE_ENV !== 'development') {
-        return res.status(404).json({ error: 'Not found' });
-    }
-    
+router.post('/cleanup-test-user', requireDevelopment, async (req, res) => {
     try {
         const { email, username } = req.body;
         
@@ -443,11 +415,7 @@ router.post('/cleanup-test-user', async (req, res) => {
 });
 
 // Debug endpoint to check user status (DEVELOPMENT ONLY)
-router.get('/debug-user/:email', async (req, res) => {
-    if (process.env.NODE_ENV !== 'development') {
-        return res.status(404).json({ error: 'Not found' });
-    }
-    
+router.get('/debug-user/:email', requireDevelopment, async (req, res) => {
     try {
         const { email } = req.params;
         

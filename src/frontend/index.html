@@ -118,6 +118,7 @@
             --md-sys-color-surface-container: #e2dae7;
             --md-sys-color-surface-container-high: #004794;
             --md-sys-color-surface-container-highest: #004794;
+            --md-sys-color-on-surface-container-high: #ffffff;
             
             /* Success, Warning, Info colors */
             --md-sys-color-success: #2563eb;
@@ -224,7 +225,7 @@
         
         .md-surface-container-high {
             background-color: var(--md-sys-color-surface-container-high);
-            color: var(--md-sys-color-on-surface);
+            color: var(--md-sys-color-on-surface-container-high);
         }
         
         .md-surface-container-highest {
@@ -369,6 +370,14 @@
             border-right-color: var(--md-sys-color-outline-variant);
         }
 
+        .md-sidebar .md-text-primary {
+            color: #ffffff !important;
+        }
+
+        .md-sidebar .md-text-secondary {
+            color: rgba(255, 255, 255, 0.82) !important;
+        }
+
         /* Sidebar button text should be white */
         .md-sidebar button,
         .md-sidebar button span,
@@ -415,7 +424,7 @@
 
         .md-surface-container-high {
             background-color: var(--md-sys-color-surface-container-high);
-            color: var(--md-sys-color-on-surface);
+            color: var(--md-sys-color-on-surface-container-high);
         }
 
         .md-button-primary {
@@ -474,7 +483,7 @@
         .text-gray-700 { color: #374151; }
         .text-gray-600 { color: #4b5563; }
         .text-gray-500 { color: #6b7280; }
-        .text-gray-400 { color: #9ca3af; }
+        .text-gray-400 { color: #7c8796; }
         .text-gray-300 { color: #d1d5db; }
         .text-gray-200 { color: #e5e7eb; }
         .text-gray-100 { color: #f3f4f6; }
@@ -497,6 +506,7 @@
         .bg-gray-50 { background-color: #f9fafb; }
         .bg-gray-100 { background-color: #f3f4f6; }
         .bg-gray-200 { background-color: #e5e7eb; }
+        .border-gray-100 { border-color: #e5e7eb; }
         
         .bg-green-50 { background-color: #f0fdf4; }
         .bg-green-100 { background-color: #dcfce7; }

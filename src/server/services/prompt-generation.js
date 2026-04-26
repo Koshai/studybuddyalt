@@ -11,7 +11,7 @@ class PromptGenerator {
    */
   createSubjectPrompt(content, count, subjectCategory, topicName, questionTypeSequence = null) {
     const subjectId = subjectCategory.id;
-    const baseContent = content.substring(0, 2000);
+    const baseContent = this.prepareContent(content, 2600);
     
     // If no sequence provided, default to all MCQ (backwards compatibility)
     if (!questionTypeSequence) {
@@ -52,82 +52,94 @@ class PromptGenerator {
     }
   }
 
+  prepareContent(content, maxLength = 2600) {
+    if (!content || typeof content !== 'string') return '';
+    return content
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, maxLength);
+  }
+
+  buildUniversalRules(count, topicName, questionTypeSequence) {
+    const allMcq = questionTypeSequence.every(type => type === 'multiple_choice');
+
+    return `You are an expert teacher writing high-quality assessment items.
+
+TOPIC: ${topicName}
+QUESTION COUNT: ${count}
+
+GLOBAL QUALITY RULES:
+- Every question must be answerable using ONLY the provided study material.
+- Avoid vague wording; write one clear, unambiguous best answer.
+- Test understanding and application, not just copied phrases.
+- Include plausible distractors that are wrong for clear reasons.
+- Do NOT repeat near-duplicate questions.
+- Do NOT use "all of the above" or "none of the above".
+- Every question sentence must end with a question mark.
+- Keep question text concise but specific.
+- Explanation must justify the correct answer and briefly explain why alternatives are less accurate.
+- If the material is missing enough detail for a high-quality question, skip that idea.
+- Never use meta references such as "the passage", "the text", "the material", "the notes", or "the book" in the question stem.
+- Write stems as direct domain questions (for example, ask about the concept itself, not where it was mentioned).
+
+OUTPUT RULES:
+- Return exactly ${count} questions in sequence.
+- Use this exact numbering style: QUESTION 1:, QUESTION 2:, etc.
+${allMcq ? '- All questions must be MULTIPLE CHOICE with exactly four options (A-D).' : '- Follow requested question types exactly.'}
+- Do not add any intro or outro text.`;
+  }
+
+  getMcqFormatBlock() {
+    return `FORMAT FOR MULTIPLE CHOICE:
+QUESTION [N]:
+[Question]
+A) [Option A]
+B) [Option B]
+C) [Option C]
+D) [Option D]
+CORRECT: [A/B/C/D]
+EXPLANATION: [Why correct answer is best, citing concept from material]`;
+  }
+
   /**
    * Math prompt (keep existing one - it's working)
    */
-  createMathPrompt(content, count, topicName) {
-    return `You are a MATHEMATICS teacher creating ${count} practice questions for "${topicName}".
+  createMathPrompt(content, count, topicName, questionTypeSequence) {
+    return `${this.buildUniversalRules(count, topicName, questionTypeSequence)}
+
+SUBJECT: MATHEMATICS
+MATHEMATICS REQUIREMENTS:
+- Verify every numeric result before finalizing.
+- Prefer multi-step reasoning, formula use, and concept selection.
+- Include units only when relevant and consistent.
+- Avoid trivial arithmetic-only questions unless the material emphasizes it.
+- If formulas appear in source material, test correct formula selection and interpretation.
+- Use explicit numerical consistency checks before writing CORRECT.
+- Avoid distractors that are obviously impossible values.
 
 STUDY MATERIAL:
 ${content}
 
-🧮 CRITICAL MATH REQUIREMENTS:
-- VERIFY ALL ARITHMETIC: Every calculation must be 100% mathematically correct
-- Example: 5 × 4 = 20 (NOT 15, NOT 18)
-- Example: 8 + 7 = 15 (NOT 14, NOT 16) 
-- Example: 12 - 5 = 7 (NOT 8, NOT 6)
-- Double-check every number before finalizing
-- If unsure about arithmetic, recalculate step by step
-
-MATHEMATICS TEACHING FOCUS:
-- Test computational skills and mathematical reasoning
-- Ask about calculations, problem-solving, formulas
-- Include numerical examples from the material
-- Ensure mathematical accuracy above all else
-
-Create exactly ${count} multiple choice questions in this format:
-
-QUESTION 1:
-[Mathematical question testing concepts from the material]
-A) [Option A]
-B) [Option B] 
-C) [Option C]
-D) [Option D]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Mathematical explanation with correct arithmetic]
-
-Continue for all ${count} questions. Remember: Mathematical accuracy is non-negotiable!`;
+${this.getMcqFormatBlock()}`;
   }
 
   /**
    * Science prompt - ENHANCED
    */
-  createSciencePrompt(content, count, topicName) {
-    return `You are a SCIENCE teacher creating ${count} educational questions for "${topicName}".
+  createSciencePrompt(content, count, topicName, questionTypeSequence) {
+    return `${this.buildUniversalRules(count, topicName, questionTypeSequence)}
+
+SUBJECT: NATURAL SCIENCES
+SCIENCE REQUIREMENTS:
+- Focus on mechanisms, cause-and-effect, and process understanding.
+- Test reasoning with evidence from the material.
+- Use precise scientific terminology as presented in the text.
+- Avoid trick questions and unsupported hypotheticals.
 
 STUDY MATERIAL:
 ${content}
 
-🔬 SCIENCE TEACHING REQUIREMENTS:
-- Focus on scientific concepts, processes, and reasoning
-- Test understanding of cause and effect relationships
-- Include proper scientific terminology from the material
-- Ensure scientific accuracy - no misconceptions
-- Ask about HOW and WHY, not just WHAT
-
-SCIENCE QUESTION GUIDELINES:
-✅ Test understanding of scientific processes
-✅ Ask about relationships between concepts
-✅ Include scientific reasoning and evidence
-✅ Use proper scientific vocabulary from material
-✅ Focus on concepts that can be learned from text
-
-❌ Don't require lab equipment or experiments
-❌ Don't ask about specific measurements not in material
-❌ Don't include common scientific misconceptions
-
-Create exactly ${count} multiple choice questions in this format:
-
-QUESTION 1:
-[Science question testing understanding of concepts from the material]
-A) [Scientific option A]
-B) [Scientific option B]
-C) [Scientific option C]
-D) [Scientific option D]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Scientific explanation with reasoning]
-
-Continue for all ${count} questions. Focus on scientific understanding!`;
+${this.getMcqFormatBlock()}`;
   }
 
   /**
@@ -137,341 +149,169 @@ Continue for all ${count} questions. Focus on scientific understanding!`;
     const mcqCount = questionTypeSequence.filter(type => type === 'multiple_choice').length;
     const textCount = questionTypeSequence.filter(type => type === 'text_based').length;
     
-    return `You are a LITERATURE teacher creating ${count} analytical questions for "${topicName}".
+    return `${this.buildUniversalRules(count, topicName, questionTypeSequence)}
+
+SUBJECT: LITERATURE
 Distribution: ${mcqCount} multiple choice, ${textCount} text-based questions.
+LITERATURE REQUIREMENTS:
+- Prioritize interpretation, theme, tone, characterization, and author choices.
+- Favor evidence-based reading over plot trivia.
+- Ask "why/how" questions that require textual reasoning.
+- For text-based items, require quoted or paraphrased textual evidence in the expected answer.
 
 STUDY MATERIAL:
 ${content}
 
-📚 LITERATURE ANALYSIS REQUIREMENTS:
-- Focus on literary analysis, not plot summary
-- Test understanding of themes, character development, literary devices
-- Ask about author's purpose and writing techniques
-- Include questions about textual evidence and interpretation
-- Encourage critical thinking about literature
-
-LITERATURE QUESTION GUIDELINES:
-✅ Ask about themes, symbolism, character motivation
-✅ Test understanding of literary devices and techniques
-✅ Include questions about author's purpose and style
-✅ Focus on interpretation and analysis
-✅ Ask "why" and "how" questions about the text
-
-❌ Don't ask simple plot summary questions
-❌ Don't ask about events not covered in the material
-❌ Don't require knowledge of other works not mentioned
-
-QUESTION TYPES:
-- Multiple Choice: Good for literary device identification, character analysis, theme recognition
-- Text-Based: Perfect for interpretation, personal response, detailed analysis, explaining significance
-
 Generate questions in this exact sequence: ${questionTypeSequence.join(', ')}
 
-FORMAT FOR MULTIPLE CHOICE:
-QUESTION [N]:
-[Literary analysis question]
-A) [Option A]
-B) [Option B]
-C) [Option C]
-D) [Option D]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Literary analysis explanation]
+${this.getMcqFormatBlock()}
 
 FORMAT FOR TEXT-BASED:
 QUESTION [N]:
 [Open-ended analytical question requiring explanation]
 TYPE: TEXT_BASED
-ANSWER: [Expected answer showing depth of analysis - accept varied interpretations that demonstrate understanding]
+ANSWER: [Expected answer showing depth of analysis and textual evidence; accept varied interpretations only if evidence-based]
 EXPLANATION: [What you're looking for in student responses]
 
-Create exactly ${count} questions following the sequence. Focus on literary analysis and critical thinking!`;
+Create exactly ${count} questions following the sequence.`;
   }
 
   /**
    * History prompt - ENHANCED
    */
-  createHistoryPrompt(content, count, topicName) {
-    return `You are a HISTORY teacher creating ${count} analytical questions for "${topicName}".
+  createHistoryPrompt(content, count, topicName, questionTypeSequence) {
+    return `${this.buildUniversalRules(count, topicName, questionTypeSequence)}
+
+SUBJECT: HISTORY
+HISTORY REQUIREMENTS:
+- Emphasize causation, consequence, continuity, and change over time.
+- Prioritize context and significance over date memorization.
+- Include perspective-based reasoning when supported by source text.
 
 STUDY MATERIAL:
 ${content}
 
-🏛️ HISTORY ANALYSIS REQUIREMENTS:
-- Focus on historical analysis, causation, and significance
-- Test understanding of cause and effect relationships
-- Ask about historical context and perspectives
-- Include questions about change and continuity over time
-- Encourage critical thinking about historical events
-
-HISTORY QUESTION GUIDELINES:
-✅ Ask about causes and effects of historical events
-✅ Test understanding of historical significance
-✅ Include questions about different perspectives
-✅ Focus on change and continuity over time
-✅ Ask about historical context and background
-
-❌ Don't ask simple memorization of dates
-❌ Don't require information not in the material
-❌ Don't ask about events without context
-
-Create exactly ${count} multiple choice questions in this format:
-
-QUESTION 1:
-[Historical analysis question based on the material]
-A) [Historical option A]
-B) [Historical option B]
-C) [Historical option C]
-D) [Historical option D]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Historical explanation with reasoning about causation/significance]
-
-Continue for all ${count} questions. Focus on historical thinking and analysis!`;
+${this.getMcqFormatBlock()}`;
   }
 
   /**
    * Computer Science prompt - NEW
    */
-  createComputerSciencePrompt(content, count, topicName) {
-    return `You are a COMPUTER SCIENCE teacher creating ${count} programming questions for "${topicName}".
+  createComputerSciencePrompt(content, count, topicName, questionTypeSequence) {
+    return `${this.buildUniversalRules(count, topicName, questionTypeSequence)}
+
+SUBJECT: COMPUTER SCIENCE
+COMPUTER SCIENCE REQUIREMENTS:
+- Focus on logic, algorithmic thinking, and correct interpretation of code concepts.
+- Keep examples language-consistent with provided material.
+- Prefer conceptual debugging and reasoning over obscure syntax traps.
+- Ensure technical correctness in all options and explanations.
 
 STUDY MATERIAL:
 ${content}
 
-💻 COMPUTER SCIENCE REQUIREMENTS:
-- Focus on programming concepts, algorithms, and computational thinking
-- Test understanding of code logic and problem-solving
-- Include questions about programming constructs from the material
-- Ensure code accuracy - proper syntax and logic
-- Ask about problem-solving approaches and efficiency
-
-PROGRAMMING QUESTION GUIDELINES:
-✅ Test understanding of programming concepts and logic
-✅ Ask about algorithm efficiency and problem-solving
-✅ Include questions about code functionality
-✅ Focus on computational thinking skills
-✅ Test debugging and code analysis skills
-
-❌ Don't use programming languages not mentioned in material
-❌ Don't require advanced concepts not covered
-❌ Don't include syntax errors in code examples
-
-Create exactly ${count} multiple choice questions in this format:
-
-QUESTION 1:
-[Programming/CS question based on the material]
-A) [Programming option A]
-B) [Programming option B]
-C) [Programming option C]
-D) [Programming option D]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Technical explanation with reasoning about code/algorithms]
-
-Continue for all ${count} questions. Focus on computational thinking!`;
+${this.getMcqFormatBlock()}`;
   }
 
   /**
    * Language Learning prompt - NEW
    */
-  createLanguagePrompt(content, count, topicName) {
-    return `You are a LANGUAGE teacher creating ${count} educational questions for "${topicName}".
+  createLanguagePrompt(content, count, topicName, questionTypeSequence) {
+    return `${this.buildUniversalRules(count, topicName, questionTypeSequence)}
+
+SUBJECT: LANGUAGES
+LANGUAGE REQUIREMENTS:
+- Focus on meaning, grammar, usage, and context.
+- Use examples anchored in the provided text.
+- Ensure grammatical correctness and realistic distractors.
+- Prioritize comprehension and application over isolated memorization.
+- Every item must be phrased as a direct question ending in "?".
+- For grammar items, include a short sentence context so choices are meaningfully comparable.
+- Explanations must state the grammar/usage rule being tested.
 
 STUDY MATERIAL:
 ${content}
 
-🗣️ LANGUAGE LEARNING REQUIREMENTS:
-- Focus on grammar, vocabulary, and language structure
-- Test understanding of language rules and patterns
-- Include questions about word meanings and usage
-- Ensure linguistic accuracy
-- Ask about language structure and communication
-
-LANGUAGE QUESTION GUIDELINES:
-✅ Test grammar rules and sentence structure
-✅ Ask about vocabulary meanings and usage
-✅ Include questions about language patterns
-✅ Focus on communication and comprehension
-✅ Test translation and interpretation skills
-
-❌ Don't require audio or pronunciation
-❌ Don't use languages not mentioned in material
-❌ Don't include culturally specific references not covered
-
-Create exactly ${count} multiple choice questions in this format:
-
-QUESTION 1:
-[Language learning question based on the material]
-A) [Language option A]
-B) [Language option B]
-C) [Language option C]
-D) [Language option D]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Linguistic explanation with grammar/usage reasoning]
-
-Continue for all ${count} questions. Focus on language understanding!`;
+${this.getMcqFormatBlock()}`;
   }
 
   /**
    * Business prompt - NEW
    */
-  createBusinessPrompt(content, count, topicName) {
-    return `You are a BUSINESS teacher creating ${count} practical questions for "${topicName}".
+  createBusinessPrompt(content, count, topicName, questionTypeSequence) {
+    return `${this.buildUniversalRules(count, topicName, questionTypeSequence)}
+
+SUBJECT: BUSINESS
+BUSINESS REQUIREMENTS:
+- Test strategic reasoning, trade-offs, and practical interpretation.
+- Use scenario-style questions when possible.
+- Keep assumptions realistic and directly linked to source material.
+- Include concise explanations grounded in business logic.
+- At least half of questions should involve a decision or trade-off.
+- Distractors should represent common but flawed business reasoning.
 
 STUDY MATERIAL:
 ${content}
 
-💼 BUSINESS EDUCATION REQUIREMENTS:
-- Focus on business concepts, strategy, and real-world applications
-- Test understanding of business principles and practices
-- Include questions about decision-making and problem-solving
-- Ensure practical relevance to business situations
-- Ask about analysis and evaluation of business scenarios
-
-BUSINESS QUESTION GUIDELINES:
-✅ Test understanding of business concepts and principles
-✅ Ask about strategic thinking and decision-making
-✅ Include questions about market analysis and competition
-✅ Focus on practical business applications
-✅ Test financial literacy and business calculations
-
-❌ Don't require specific company knowledge not in material
-❌ Don't include outdated business practices
-❌ Don't ask about personal financial advice
-
-Create exactly ${count} multiple choice questions in this format:
-
-QUESTION 1:
-[Business question based on the material]
-A) [Business option A]
-B) [Business option B]
-C) [Business option C]
-D) [Business option D]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Business reasoning with practical application]
-
-Continue for all ${count} questions. Focus on business thinking and application!`;
+${this.getMcqFormatBlock()}`;
   }
 
   /**
    * Arts prompt - NEW
    */
-  createArtsPrompt(content, count, topicName) {
-    return `You are an ARTS teacher creating ${count} educational questions for "${topicName}".
+  createArtsPrompt(content, count, topicName, questionTypeSequence) {
+    return `${this.buildUniversalRules(count, topicName, questionTypeSequence)}
+
+SUBJECT: ARTS
+ARTS REQUIREMENTS:
+- Emphasize interpretation, technique, style, and cultural context.
+- Ask evidence-based interpretation questions when possible.
+- Avoid purely subjective preference questions.
+- Keep references limited to what is present in source material.
 
 STUDY MATERIAL:
 ${content}
 
-🎨 ARTS EDUCATION REQUIREMENTS:
-- Focus on artistic concepts, techniques, and cultural significance
-- Test understanding of artistic movements and styles
-- Include questions about creative processes and interpretation
-- Ensure cultural and historical accuracy
-- Ask about artistic analysis and appreciation
-
-ARTS QUESTION GUIDELINES:
-✅ Test understanding of artistic techniques and styles
-✅ Ask about cultural and historical context of art
-✅ Include questions about artistic interpretation
-✅ Focus on creative processes and artistic thinking
-✅ Test knowledge of artistic movements and influences
-
-❌ Don't require viewing specific artworks not described
-❌ Don't include highly subjective aesthetic judgments
-❌ Don't ask about techniques requiring visual demonstration
-
-Create exactly ${count} multiple choice questions in this format:
-
-QUESTION 1:
-[Arts question based on the material]
-A) [Artistic option A]
-B) [Artistic option B]
-C) [Artistic option C]
-D) [Artistic option D]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Artistic explanation with cultural/technical reasoning]
-
-Continue for all ${count} questions. Focus on artistic understanding and appreciation!`;
+${this.getMcqFormatBlock()}`;
   }
 
   /**
    * Health/Medicine prompt - NEW
    */
-  createHealthPrompt(content, count, topicName) {
-    return `You are a HEALTH EDUCATION teacher creating ${count} educational questions for "${topicName}".
+  createHealthPrompt(content, count, topicName, questionTypeSequence) {
+    return `${this.buildUniversalRules(count, topicName, questionTypeSequence)}
+
+SUBJECT: HEALTH AND MEDICINE
+HEALTH REQUIREMENTS:
+- Prioritize medically accurate, general educational understanding.
+- Focus on systems, mechanisms, prevention, and safe health literacy.
+- Avoid diagnosis/treatment advice beyond educational scope.
+- Use precise and non-alarmist language.
+- Explanations must include mechanism or prevention logic, not just factual restatement.
+- Avoid absolute words like "always" or "never" unless explicitly supported by the material.
 
 STUDY MATERIAL:
 ${content}
 
-⚕️ HEALTH EDUCATION REQUIREMENTS:
-- Focus on general health concepts and education
-- Test understanding of body systems and health principles
-- Include questions about wellness and prevention
-- Ensure medical accuracy but avoid specific medical advice
-- Ask about health literacy and understanding
-
-HEALTH QUESTION GUIDELINES:
-✅ Test understanding of anatomy and physiology
-✅ Ask about health promotion and disease prevention
-✅ Include questions about nutrition and wellness
-✅ Focus on general health education
-✅ Test knowledge of health systems and processes
-
-❌ Don't provide specific medical diagnosis or treatment advice
-❌ Don't include drug dosages or specific medications
-❌ Don't ask about personal medical situations
-
-Create exactly ${count} multiple choice questions in this format:
-
-QUESTION 1:
-[Health education question based on the material]
-A) [Health option A]
-B) [Health option B]
-C) [Health option C]
-D) [Health option D]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Health education explanation with scientific reasoning]
-
-Continue for all ${count} questions. Focus on health education and literacy!`;
+${this.getMcqFormatBlock()}`;
   }
 
   /**
    * General prompt - ENHANCED
    */
-  createGeneralPrompt(content, count, topicName, subjectName) {
-    return `You are an educator creating ${count} educational questions for "${topicName}" in ${subjectName}.
+  createGeneralPrompt(content, count, topicName, subjectName, questionTypeSequence) {
+    return `${this.buildUniversalRules(count, topicName, questionTypeSequence)}
+
+SUBJECT: ${subjectName}
+GENERAL REQUIREMENTS:
+- Target key ideas, concept relationships, and practical understanding.
+- Keep wording accessible for learners.
+- Prefer applied comprehension questions over pure recall.
 
 STUDY MATERIAL:
 ${content}
 
-📖 GENERAL EDUCATION REQUIREMENTS:
-- Focus on key concepts and understanding from the material
-- Test comprehension and application of ideas
-- Include questions that promote critical thinking
-- Ensure accuracy and clarity
-- Ask about important principles and relationships
-
-EDUCATIONAL QUESTION GUIDELINES:
-✅ Test understanding of main concepts in the material
-✅ Ask about relationships between ideas
-✅ Include questions that require analysis and reasoning
-✅ Focus on practical application of knowledge
-✅ Test comprehension and critical thinking
-
-❌ Don't ask about information not covered in the material
-❌ Don't include overly technical terms without context
-❌ Don't make assumptions about prior knowledge
-
-Create exactly ${count} multiple choice questions in this format:
-
-QUESTION 1:
-[Educational question based on the material]
-A) [Option A]
-B) [Option B]
-C) [Option C]
-D) [Option D]
-CORRECT: [A/B/C/D]
-EXPLANATION: [Clear explanation with reasoning]
-
-Continue for all ${count} questions. Focus on understanding and application!`;
+${this.getMcqFormatBlock()}`;
   }
 
   /**

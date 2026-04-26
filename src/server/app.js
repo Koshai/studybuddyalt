@@ -24,8 +24,18 @@ const feedbackRoutes = require('./routes/feedback-routes');
 // Import middleware
 const securityMiddleware = require('./middleware/security-middleware');
 const rateLimitMiddleware = require('./middleware/rate-limit-middleware');
+const requestContextMiddleware = require('./middleware/request-context-middleware');
+const apiResponseMiddleware = require('./middleware/api-response-middleware');
 
 const app = express();
+const authMiddleware = require('./middleware/auth-middleware');
+
+const requireDevelopment = (req, res, next) => {
+    if (process.env.NODE_ENV !== 'development') {
+        return res.status(404).json({ error: 'Not found' });
+    }
+    next();
+};
 
 // =============================================================================
 // MIDDLEWARE SETUP
@@ -43,6 +53,10 @@ securityMiddleware.apply(app);
 // Rate limiting
 rateLimitMiddleware.apply(app);
 
+// Request context (request IDs) and API response helpers
+requestContextMiddleware.apply(app);
+apiResponseMiddleware.apply(app);
+
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -54,6 +68,16 @@ app.use(cors({
         : ['http://localhost:3000', 'http://127.0.0.1:3000'],
     credentials: true
 }));
+
+// Lightweight request log with request ID for traceability
+app.use((req, res, next) => {
+    const startedAt = Date.now();
+    res.on('finish', () => {
+        const durationMs = Date.now() - startedAt;
+        console.log(`[${req.requestId}] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${durationMs}ms)`);
+    });
+    next();
+});
 
 // =============================================================================
 // ROUTES
@@ -69,8 +93,8 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Architecture test endpoint
-app.get('/api/architecture', async (req, res) => {
+// Architecture test endpoint (development only)
+app.get('/api/architecture', requireDevelopment, async (req, res) => {
     try {
         const EnvironmentService = require('./services/environment-service');
         const ServiceFactory = require('./services/service-factory');
@@ -139,14 +163,14 @@ app.get('/api/setup/offline/status', (req, res) => {
     });
 });
 
-app.get('/api/setup/offline/test', (req, res) => {
+app.get('/api/setup/offline/test', requireDevelopment, (req, res) => {
     res.json({
         success: false,
         message: 'Offline mode not available in web deployment'
     });
 });
 
-app.get('/api/admin/sync/status', (req, res) => {
+app.get('/api/admin/sync/status', authMiddleware.authenticateToken, authMiddleware.requireAdmin, (req, res) => {
     res.json({
         success: true,
         status: {
@@ -156,7 +180,7 @@ app.get('/api/admin/sync/status', (req, res) => {
     });
 });
 
-app.get('/api/admin/sync/logs', (req, res) => {
+app.get('/api/admin/sync/logs', authMiddleware.authenticateToken, authMiddleware.requireAdmin, (req, res) => {
     res.json({
         success: true,
         logs: [
@@ -165,7 +189,7 @@ app.get('/api/admin/sync/logs', (req, res) => {
     });
 });
 
-app.get('/api/user/settings', require('./middleware/auth-middleware').authenticateToken, (req, res) => {
+app.get('/api/user/settings', authMiddleware.authenticateToken, (req, res) => {
     res.json({
         success: true,
         settings: {
@@ -178,7 +202,7 @@ app.get('/api/user/settings', require('./middleware/auth-middleware').authentica
 
 
 // Health check routes (separate from main API health)
-app.get('/api/health/ai', require('./middleware/auth-middleware').authenticateToken, async (req, res) => {
+app.get('/api/health/ai', authMiddleware.authenticateToken, async (req, res) => {
     try {
         const ServiceFactory = require('./services/service-factory');
         const serviceStatus = await ServiceFactory.getServiceStatus();
@@ -204,6 +228,15 @@ app.get('/api/health/ai', require('./middleware/auth-middleware').authenticateTo
     }
 });
 
+// API 404 fallback
+app.use('/api', (req, res) => {
+    return res.apiError({
+        status: 404,
+        code: 'NOT_FOUND',
+        message: 'API endpoint not found'
+    });
+});
+
 // Static file serving
 app.use(express.static(path.join(__dirname, '../frontend')));
 
@@ -214,11 +247,12 @@ app.get('*', (req, res) => {
 
 // Error handling middleware
 app.use((error, req, res, next) => {
-    console.error('❌ Server error:', error);
-    res.status(500).json({
-        error: process.env.NODE_ENV === 'production' 
-            ? 'Internal server error' 
-            : error.message
+    console.error(`[${req.requestId || 'no-request-id'}] ❌ Server error:`, error);
+    return res.apiError({
+        status: 500,
+        code: 'INTERNAL_SERVER_ERROR',
+        message: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message,
+        details: process.env.NODE_ENV === 'production' ? null : error.stack
     });
 });
 
