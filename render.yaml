@@ -1,0 +1,32 @@
+# Render blueprint for product/bangladesh only.
+# Do not deploy this file from master/feature/simplified-architecture on Railway.
+
+services:
+  - type: web
+    name: quizbd
+    runtime: node
+    branch: product/bangladesh
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JAQUIZY_MODE
+        value: web
+      - key: PRODUCT_MARKET
+        value: bangladesh
+      - key: PORT
+        value: 3001
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: APP_URL
+        sync: false

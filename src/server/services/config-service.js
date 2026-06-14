@@ -20,6 +20,19 @@ class ConfigService {
         try {
             const configData = fs.readFileSync(this.configPath, 'utf8');
             this.config = JSON.parse(configData);
+
+            const market = process.env.PRODUCT_MARKET;
+            if (market) {
+                const marketPath = path.join(__dirname, `../../../config/markets/${market}.json`);
+                if (fs.existsSync(marketPath)) {
+                    const marketData = JSON.parse(fs.readFileSync(marketPath, 'utf8'));
+                    this.config = this.deepMerge(this.config, marketData);
+                    console.log(`🌏 Market overlay applied: ${market}`);
+                } else {
+                    console.warn(`⚠️ PRODUCT_MARKET=${market} but no overlay at ${marketPath}`);
+                }
+            }
+
             this.lastLoaded = new Date();
             
             console.log('✅ App configuration loaded successfully');

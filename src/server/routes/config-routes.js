@@ -13,6 +13,7 @@ router.get('/public', async (req, res) => {
         
         // Return only safe/public configuration
         const publicConfig = {
+            market: config.market || null,
             app: {
                 name: config.app.name,
                 version: config.app.version,

@@ -1,0 +1,70 @@
+{
+  "market": {
+    "id": "bangladesh",
+    "label": "Bangladesh",
+    "locale": "bn-BD",
+    "defaultLanguage": "bn",
+    "currency": "BDT",
+    "currencySymbol": "৳",
+    "timezone": "Asia/Dhaka"
+  },
+  "app": {
+    "name": "QuizBD",
+    "environment": "production"
+  },
+  "tiers": {
+    "free": {
+      "limits": {
+        "questionsPerMonth": 100,
+        "topicsPerAccount": 5,
+        "storagePerAccount": "100MB",
+        "aiGenerationsPerDay": 20,
+        "practiceSessionsPerDay": 10,
+        "fileUploadsPerDay": 2,
+        "fileUploadsPerMonth": 5
+      },
+      "features": {
+        "offlineMode": false,
+        "advancedAI": false
+      }
+    },
+    "pro": {
+      "name": "Student Pro",
+      "price": 149,
+      "currency": "BDT",
+      "interval": "monthly",
+      "limits": {
+        "questionsPerMonth": 2000,
+        "topicsPerAccount": 50,
+        "storagePerAccount": "1GB",
+        "aiGenerationsPerDay": 500,
+        "practiceSessionsPerDay": -1,
+        "fileUploadsPerDay": 100,
+        "fileUploadsPerMonth": -1
+      }
+    }
+  },
+  "monetization": {
+    "adsEnabled": false,
+    "stripeEnabled": false,
+    "bkashEnabled": true,
+    "sslcommerzEnabled": false,
+    "trialPeriod": 0,
+    "upgradePrompts": {
+      "frequency": "moderate",
+      "showAfterActions": 3,
+      "dismissibleForDays": 3
+    }
+  },
+  "ui": {
+    "showBetaBadge": true,
+    "showUsageLimits": true,
+    "showUpgradePrompts": true
+  },
+  "notifications": {
+    "welcomeMessage": {
+      "title": "QuizBD-তে স্বাগতম!",
+      "message": "আপনার অধ্যায় আপলোড করুন এবং তৎক্ষণাৎ প্র্যাকটিস কুইজ পান।"
+    }
+  }
+}

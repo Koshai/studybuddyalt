@@ -1,0 +1,128 @@
+AI-POWERED STUDY APP
+Business Plan & Go-to-Market Strategy
+For the Bangladesh Student Market
+
+Prepared by	[Your Name / Company]
+Date	May 2026
+Currency	Bangladeshi Taka (BDT, ৳)
+Exchange rate used	৳1 USD = ৳122 BDT (approx., May 2026)
+Target market	School & college students, Bangladesh
+
+CONFIDENTIAL
+
+1. Product Overview
+This document outlines the plan to build and sell an AI-powered educational app that helps school and college students study more effectively. Students upload any textbook chapter, PDF, or handwritten notes, and the app instantly generates practice questions, model answers, and a performance scorecard.
+
+1.1 Core Features
+•	Document upload: PDF, scanned textbook pages, typed notes
+•	AI question generation: MCQ, true/false, short answer, fill-in-the-blank
+•	Model answers with step-by-step explanations
+•	Timed quiz mode and open practice mode
+•	Performance scorecard: score, weak topics, improvement trends
+•	Retake system that focuses on areas the student got wrong
+•	Student dashboard with subject-wise progress tracking
+
+1.2 How It Works
+The app is powered by the Claude AI API (Anthropic). When a student uploads a document, the text is extracted and sent to Claude with a structured prompt. Claude returns a set of questions and answers, which are displayed in the app. After the student completes the quiz, results are saved and the scorecard is generated automatically.
+No custom AI training is required. The product is built on top of existing AI infrastructure, which dramatically reduces development cost and time.
+
+2. Technology Stack
+The recommended stack is cost-efficient, scalable, and well-suited for a solo founder or small team.
+
+Component	Technology	Monthly Cost (BDT)
+Frontend (web)	React.js	৳0 (open source)
+Mobile app	Flutter (iOS + Android)	৳0 (open source)
+Backend	Node.js / Python (FastAPI)	৳0 (open source)
+AI engine	Claude API (Anthropic)	৳12,200–36,600 (usage-based)
+Database	PostgreSQL / Supabase	৳0–2,440 (free tier available)
+PDF parsing	PyPDF2 / PDF.js	৳0 (open source)
+Hosting	Vercel + Railway / Render	৳2,440–4,880/month
+Authentication	Supabase Auth / Firebase	৳0–1,220 (free tier available)
+
+Total estimated monthly infrastructure cost at early stage: ৳15,000–45,000 depending on user volume and Claude API usage.
+
+3. Pricing Strategy
+Pricing is designed to be accessible to Bangladeshi students while generating sustainable revenue. A freemium model is recommended to reduce signup friction and convert engaged users to paid plans.
+
+3.1 Individual Student Plans
+Plan	Price	What's Included
+Free	৳0 / month	5 document uploads/month, MCQ only, basic scorecard
+Student Pro	৳149 / month	Unlimited uploads, all question types, full scorecard & analytics
+Student Pro (Annual)	৳1,299 / year	Same as Pro — saves ৳489 vs monthly (3 months free)
+
+3.2 Institutional Plans (Schools & Coaching Centres)
+Plan	Price	What's Included
+Small Institute	৳4,999 / month	Up to 50 students, teacher dashboard, quiz assignment
+Medium Institute	৳12,999 / month	Up to 200 students, class analytics, branded reports
+Large Institute / School	৳29,999 / month	Unlimited students, API access, custom onboarding
+
+Note: 1 USD = ৳122 (approx. exchange rate, May 2026). Individual plan prices are benchmarked against popular Bangladeshi edtech apps (Shikho, 10 Minute School) which charge ৳100–300/month.
+
+4. Revenue Projections
+Conservative projections based on a 12-month launch timeline starting from Month 1. Assumes organic growth via student communities, WhatsApp groups, and social media.
+
+Period	Free Users	Pro Subscribers	Institutes	Monthly Revenue (BDT)
+Month 1–3	200	20	0	৳2,980
+Month 4–6	800	80	1	৳16,920
+Month 7–9	2,500	250	3	৳84,747
+Month 10–12	6,000	600	8	৳329,492
+Year 1 Total	—	—	—	৳~1,200,000
+Year 2 Target	—	2,000+	30+	৳~5,000,000+
+
+Year 1 target of ৳12 lakh (৳1,200,000) is achievable with strong marketing in the Dhaka coaching centre belt and active student ambassador programs at universities.
+
+5. Go-to-Market Strategy
+5.1 Target Customer Segments
+•	SSC and HSC students preparing for board exams
+•	University students (public and private) studying for semester finals
+•	Students enrolled in coaching centres in Dhaka, Chittagong, Sylhet
+•	Teachers and coaching institute owners looking for automated test tools
+
+5.2 Marketing Channels
+•	YouTube: tutorial videos showing document-to-quiz in under 60 seconds
+•	Facebook & Instagram reels: before/after demos targeting students 14–25
+•	WhatsApp groups: student and coaching networks in Dhaka and beyond
+•	Campus ambassadors: 1 per university, incentivised with free Pro access
+•	Coaching centre partnerships: B2B outreach to institutes in Nilkhet, Dhanmondi
+•	Reddit / Discord study communities: r/BangladeshStudents and local groups
+
+5.3 Launch Plan
+Phase	Timeline	Goal
+Beta launch	Month 1–2	50 free users, collect feedback, fix UX issues
+Soft launch	Month 3	Open to public, start social media campaign
+Coaching B2B	Month 4–5	Sign first 3 institutional clients
+Scale	Month 6+	Campus ambassador program, paid ads
+
+6. Estimated Startup Costs
+Costs below are for a lean MVP (Minimum Viable Product) built by 1–2 developers over 2–3 months.
+
+Item	Cost (BDT)	Notes
+App development (freelance)	৳150,000–300,000	2–3 month freelance or agency contract
+UI/UX design	৳30,000–60,000	Figma prototype + final screens
+Domain & SSL	৳3,000–5,000 / year	e.g., .com.bd domain
+Hosting (first 6 months)	৳15,000–30,000	Vercel + backend cloud hosting
+Claude API (first 3 months)	৳15,000–40,000	Depends on upload volume
+Marketing (launch)	৳20,000–50,000	Social ads, printed flyers for institutes
+Legal / registration	৳10,000–20,000	Company registration, trade licence
+Contingency (10%)	৳24,000–50,000	Buffer for unexpected costs
+TOTAL ESTIMATE	৳267,000–555,000	Approx. ৳3–5.5 lakh
+
+At the lower end (৳3 lakh / ~$2,500 USD), this is a very capital-efficient startup. If you are a developer yourself, costs can be reduced to ৳1–1.5 lakh.
+
+7. Risks & Mitigation
+Risk	Likelihood	Mitigation
+Low student willingness to pay	Medium	Freemium model; prove value before asking for payment
+AI API costs rise unexpectedly	Low	Set per-user limits; cache repeated responses
+Competition from Shikho / 10MS	Medium	Focus on document-upload niche they don’t cover
+Poor document OCR quality	Medium	Use high-quality PDF.js + allow text paste fallback
+Student churn after exams	High	Build year-round use case (assignments, revisions)
+
+8. Immediate Next Steps
+1.	Register a company or trade licence in Bangladesh (est. cost: ৳10,000–20,000)
+2.	Get an Anthropic API key and build a simple prototype in 1–2 weeks
+3.	Test the prototype with 10–20 students from your network and collect honest feedback
+4.	Set up a simple landing page and waitlist to gauge interest before full build
+5.	Approach 2–3 coaching centres in Dhaka for a free pilot partnership
+6.	Hire or partner with a developer if you are not technical yourself
+
+The Bangladeshi edtech market is growing rapidly. SSC and HSC exam preparation alone represents millions of students who actively seek study tools. An AI-powered quiz generator from any textbook is a differentiated product that no major local competitor offers today. Move quickly, launch lean, and iterate based on student feedback.
